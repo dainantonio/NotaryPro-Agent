@@ -26,9 +26,133 @@
 
     <script type="text/babel">
         // ---------------------------------------------------------
-        // STATE DATABASE (Paste new states here as you extract them)
+        // STATE DATABASE
         // ---------------------------------------------------------
         const STATE_DATABASE = {
+            "AL": {
+                "state": "Alabama (Civil Law Notaries)",
+                "fees": {
+                    "acknowledgment": "null",
+                    "jurat": "null",
+                    "oath": "null",
+                    "travel": "null"
+                },
+                "id_requirements": {
+                    "credible_witnesses": "Mentioned as a method for identity proofing for electronic and remote online notarial acts.",
+                    "expired_id_rule": "null"
+                },
+                "biometrics": {
+                    "journal_thumbprint": "null"
+                },
+                "certificates": {
+                    "acknowledgment_text": "Each Authentic Act shall contain: The handwritten signature and original seal... (Check Handbook for full text)",
+                    "jurat_text": "null"
+                },
+                "red_flags": [
+                    "Must refrain from representing any party in any matter arising from or related to the notary's authentic act.",
+                    "Cannot take official action until signature and seal are properly registered.",
+                    "Prohibited from providing advice that does not treat all parties equally, accurately, fully, and impartially."
+                ]
+            },
+            "AK": {
+                "state": "Alaska",
+                "fees": {
+                    "acknowledgment": "null",
+                    "jurat": "null",
+                    "oath": "null",
+                    "travel": "null"
+                },
+                "id_requirements": {
+                    "credible_witnesses": "null",
+                    "expired_id_rule": "null"
+                },
+                "biometrics": {
+                    "journal_thumbprint": "null"
+                },
+                "certificates": {
+                    "acknowledgment_text": "null",
+                    "jurat_text": "null"
+                },
+                "red_flags": [
+                    "Applicants may not have been convicted of a felony or incarcerated for a felony conviction within 10 years before commission.",
+                    "Sureties/employers have no authority to request that regular notary commissions be revoked."
+                ]
+            },
+            "AZ": {
+                "state": "Arizona",
+                "fees": {
+                    "acknowledgment": "$10 per notary public signature",
+                    "jurat": "$10 per notary public signature",
+                    "oath": "$10 per notarial act",
+                    "travel": "Mileage fees can be charged at the rate allowed for Arizona state employees."
+                },
+                "id_requirements": {
+                    "credible_witnesses": "Two types: 1. Personal Knowledge. 2. Stranger with valid ID who knows signer.",
+                    "expired_id_rule": "Generally requires unexpired ID; exceptions for real estate conveyance/financing."
+                },
+                "biometrics": {
+                    "journal_thumbprint": "Optional; not required under law but helpful."
+                },
+                "certificates": {
+                    "acknowledgment_text": "State of Arizona, County of... (Check Handbook for full text)",
+                    "jurat_text": "State of Arizona, County of... (Check Handbook for full text)"
+                },
+                "red_flags": [
+                    "Cannot use the term 'notario' or 'notario publico' unless an attorney.",
+                    "Cannot perform act if officer or spouse is a party or has direct beneficial interest.",
+                    "Cannot withhold access to original record provided by person seeking act.",
+                    "Charging higher fees is a class 5 felony."
+                ]
+            },
+            "AR": {
+                "state": "Arkansas",
+                "fees": {
+                    "acknowledgment": "Not required to charge; if charged, must be reasonable and agreed upon.",
+                    "jurat": "null",
+                    "oath": "null",
+                    "travel": "null"
+                },
+                "id_requirements": {
+                    "credible_witnesses": "For RON, individual personally known to notary or identified via remote ID.",
+                    "expired_id_rule": "null"
+                },
+                "biometrics": {
+                    "journal_thumbprint": "null"
+                },
+                "certificates": {
+                    "acknowledgment_text": "State of Arkansas, County of... (Check Handbook for full text)",
+                    "jurat_text": "State of Arkansas, County of... (Check Handbook for full text)"
+                },
+                "red_flags": [
+                    "Cannot notarize own signature.",
+                    "Cannot notarize document with direct/indirect financial benefit.",
+                    "Cannot perform acts for corporation if personally involved or acting as representative."
+                ]
+            },
+            "NY": {
+                "state": "New York",
+                "fees": {
+                    "acknowledgment": "Not specified in data (Check Handbook)",
+                    "jurat": "Not specified in data",
+                    "oath": "Not specified in data"
+                },
+                "id_requirements": {
+                    "credible_witnesses": "Not specified",
+                    "expired_id_rule": "Not specified"
+                },
+                "biometrics": {
+                    "journal_thumbprint": "Not required"
+                },
+                "certificates": {
+                    "acknowledgment_text": "Not specified",
+                    "jurat_text": "Sworn to before me on this ___ day of ___..."
+                },
+                "red_flags": [
+                    "Name must match signature exactly",
+                    "Initials like 'J. Doe' prohibited if commissioned as full name",
+                    "Oath of office must be signed in presence of Notary"
+                ]
+            },
             "OH": {
                 "state": "Ohio",
                 "fees": {
@@ -82,36 +206,13 @@
                     "No direct/indirect financial interest",
                     "No immediate family notarizations if beneficial interest exists"
                 ]
-            },
-            "NY": {
-                "state": "New York",
-                "fees": {
-                    "acknowledgment": "Not specified in data (Check Handbook)",
-                    "jurat": "Not specified in data",
-                    "oath": "Not specified in data"
-                },
-                "id_requirements": {
-                    "credible_witnesses": "Not specified",
-                    "expired_id_rule": "Not specified"
-                },
-                "biometrics": {
-                    "journal_thumbprint": "Not required"
-                },
-                "certificates": {
-                    "acknowledgment_text": "Not specified",
-                    "jurat_text": "Sworn to before me on this ___ day of ___..."
-                },
-                "red_flags": [
-                    "Name must match signature exactly",
-                    "Initials like 'J. Doe' prohibited if commissioned as full name",
-                    "Oath of office must be signed in presence of Notary"
-                ]
             }
         };
 
         function App() {
             const [apiKey, setApiKey] = React.useState('');
             const [hasKey, setHasKey] = React.useState(false);
+            // Default to OH, but user can change
             const [selectedStateKey, setSelectedStateKey] = React.useState('OH');
             const [messages, setMessages] = React.useState([]);
             const [input, setInput] = React.useState('');
