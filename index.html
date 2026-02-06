@@ -25,30 +25,106 @@
     <div id="root"></div>
 
     <script type="text/babel">
+        // ---------------------------------------------------------
+        // STATE DATABASE (Paste new states here as you extract them)
+        // ---------------------------------------------------------
+        const STATE_DATABASE = {
+            "OH": {
+                "state": "Ohio",
+                "fees": {
+                    "acknowledgment": "$0.80",
+                    "jurat": "Not specified (null)",
+                    "oath": "$0.10",
+                    "travel": "Not specified"
+                },
+                "id_requirements": {
+                    "credible_witnesses": "Proof of identity may be satisfied by a third person known to the notary who introduces the signer to the notary.",
+                    "expired_id_rule": "Not specified"
+                },
+                "biometrics": {
+                    "journal_thumbprint": "Not required"
+                },
+                "certificates": {
+                    "acknowledgment_text": "State of Ohio... (Check Handbook for full text)",
+                    "jurat_text": "State of Ohio, County of... (Check Handbook for full text)"
+                },
+                "red_flags": [
+                    "Never prepare instruments or give advice",
+                    "Cannot notarize if you have an interest",
+                    "Cannot notarize outside physical boundaries of the state",
+                    "Must administer oath for affidavits",
+                    "Cannot charge more than prescribed by law"
+                ]
+            },
+            "WV": {
+                "state": "West Virginia",
+                "fees": {
+                    "acknowledgment": "$10.00 max per signature",
+                    "jurat": "$10.00 max",
+                    "oath": "$10.00 max",
+                    "travel": "Not specified"
+                },
+                "id_requirements": {
+                    "credible_witnesses": "Personal knowledge OR oath of a credible witness.",
+                    "expired_id_rule": "Allowed if expired less than 3 years."
+                },
+                "biometrics": {
+                    "journal_thumbprint": "Not required"
+                },
+                "certificates": {
+                    "acknowledgment_text": "State of West Virginia... (Check Handbook)",
+                    "jurat_text": "State of West Virginia... (Check Handbook)"
+                },
+                "red_flags": [
+                    "Do not draft legal records or practice law",
+                    "Do not act as immigration consultant",
+                    "Do not charge >$10.00",
+                    "No direct/indirect financial interest",
+                    "No immediate family notarizations if beneficial interest exists"
+                ]
+            },
+            "NY": {
+                "state": "New York",
+                "fees": {
+                    "acknowledgment": "Not specified in data (Check Handbook)",
+                    "jurat": "Not specified in data",
+                    "oath": "Not specified in data"
+                },
+                "id_requirements": {
+                    "credible_witnesses": "Not specified",
+                    "expired_id_rule": "Not specified"
+                },
+                "biometrics": {
+                    "journal_thumbprint": "Not required"
+                },
+                "certificates": {
+                    "acknowledgment_text": "Not specified",
+                    "jurat_text": "Sworn to before me on this ___ day of ___..."
+                },
+                "red_flags": [
+                    "Name must match signature exactly",
+                    "Initials like 'J. Doe' prohibited if commissioned as full name",
+                    "Oath of office must be signed in presence of Notary"
+                ]
+            }
+        };
+
         function App() {
             const [apiKey, setApiKey] = React.useState('');
             const [hasKey, setHasKey] = React.useState(false);
-            const [messages, setMessages] = React.useState([
-                { role: 'assistant', content: "Welcome to NotaryPro Trainer. I am your Agentic Instructor. To begin, please tell me which State you are training for?" }
-            ]);
+            const [selectedStateKey, setSelectedStateKey] = React.useState('OH');
+            const [messages, setMessages] = React.useState([]);
             const [input, setInput] = React.useState('');
             const [loading, setLoading] = React.useState(false);
-            const [mode, setMode] = React.useState('study'); // study | scenario
+            const [mode, setMode] = React.useState('study'); 
 
-            const SYSTEM_PROMPT = `
-                You are an expert Notary Public Instructor and Roleplay Agent.
-                1. FIRST: Identify the user's US State. Do not proceed without it.
-                2. ADAPT: Apply the specific laws of that state (e.g., California requires a thumbprint for Deeds of Trust; Florida allows RON).
-                3. MODES:
-                   - If mode is "study": Answer questions Socratically. Don't just give answers, guide them.
-                   - If mode is "scenario": PLAY A CHARACTER. You are a client (the signer).
-                     * Set a scene (e.g., "I'm in a rush, here's my papers").
-                     * Introduce a problem (e.g., expired ID, wrong name, nervous behavior).
-                     * Wait for the user (the notary) to respond.
-                     * If they fail a critical step, stop and correct them.
-                4. GOAL: Train them to catch fraud and follow procedure.
-                5. Keep responses concise (under 100 words) unless explaining a complex law.
-            `;
+            // Initialize message when state changes or on load
+            React.useEffect(() => {
+                const currentStateName = STATE_DATABASE[selectedStateKey].state;
+                setMessages([
+                    { role: 'assistant', content: `Welcome to the ${currentStateName} Notary Training Module. I have loaded the specific laws for ${currentStateName}. Select "Roleplay Sim" to begin a scenario.` }
+                ]);
+            }, [selectedStateKey]);
 
             const handleStart = () => {
                 if(apiKey.trim().length > 0) setHasKey(true);
@@ -62,12 +138,32 @@
                 setInput('');
                 setLoading(true);
 
-                try {
-                    // Prepare the conversation history for the API
-                    // We map 'assistant' -> 'model' for Gemini API compatibility if needed, 
-                    // but standard structure usually works with prompt construction.
-                    // Here we construct a "chat" structure for the API payload.
+                // Get current state data
+                const currentStateData = STATE_DATABASE[selectedStateKey];
+
+                const SYSTEM_PROMPT = `
+                    You are an expert Notary Public Instructor and Roleplay Agent for the state of ${currentStateData.state}.
                     
+                    CRITICAL INSTRUCTIONS:
+                    1. KNOWLEDGE BASE: You must strictly adhere to the following rules for ${currentStateData.state}:
+                       - Fees: ${JSON.stringify(currentStateData.fees)}
+                       - ID Rules: ${JSON.stringify(currentStateData.id_requirements)}
+                       - Red Flags/Prohibitions: ${JSON.stringify(currentStateData.red_flags)}
+                       - Biometrics: ${JSON.stringify(currentStateData.biometrics)}
+                    
+                    2. MODES:
+                       - If mode is "study": Answer questions Socratically. Use the data above to correct the user if they are wrong about fees or rules.
+                       - If mode is "scenario": PLAY A CHARACTER. You are a client.
+                         * Create a scenario that specifically tests one of the "Red Flags" or "ID Rules" listed above.
+                         * Example: If 'expired_id_rule' says 5 years, present an ID expired 6 years ago and see if they catch it.
+                         * If the user makes a mistake based on the provided JSON rules, FAIL them and cite the rule.
+                         * If data is "null" or "Not specified", assume standard notary best practices but warn the user to check the handbook.
+
+                    3. GOAL: Train them to catch fraud and follow procedure.
+                    4. Keep responses concise (under 100 words).
+                `;
+
+                try {
                     const contents = [
                         { role: "user", parts: [{ text: SYSTEM_PROMPT + `\n\nCurrent Mode: ${mode.toUpperCase()}\n\n` }] },
                         ...newMessages.map(m => ({
@@ -76,7 +172,6 @@
                         }))
                     ];
 
-                    // Calls Google Gemini API
                     const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -109,10 +204,22 @@
                         <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full">
                             <div className="text-center mb-6">
                                 <i className="fas fa-stamp text-5xl text-blue-600 mb-4"></i>
-                                <h1 className="text-2xl font-bold text-gray-800">Notary Agent Trainer</h1>
-                                <p className="text-gray-500 text-sm mt-2">AI-Powered Simulation & Training</p>
+                                <h1 className="text-2xl font-bold text-gray-800">NotaryPro Agent</h1>
+                                <p className="text-gray-500 text-sm mt-2">Multi-State Training System</p>
                             </div>
                             <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Select State to Train In</label>
+                                    <select 
+                                        value={selectedStateKey}
+                                        onChange={(e) => setSelectedStateKey(e.target.value)}
+                                        className="w-full p-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 outline-none"
+                                    >
+                                        {Object.entries(STATE_DATABASE).map(([key, data]) => (
+                                            <option key={key} value={key}>{data.state}</option>
+                                        ))}
+                                    </select>
+                                </div>
                                 <div>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">Google Gemini API Key</label>
                                     <input 
@@ -148,8 +255,21 @@
                             </div>
                             <div>
                                 <h1 className="font-bold text-lg text-gray-800">NotaryPro Agent</h1>
-                                <div className="text-xs text-green-500 flex items-center gap-1">
-                                    <span className="w-2 h-2 bg-green-500 rounded-full"></span> Online
+                                <div className="text-xs text-gray-500 flex items-center gap-2">
+                                    <span>Training:</span>
+                                    <select 
+                                        value={selectedStateKey}
+                                        onChange={(e) => {
+                                            setSelectedStateKey(e.target.value);
+                                            // Reset messages when switching states mid-session
+                                            setMessages([]); 
+                                        }}
+                                        className="bg-gray-100 border-none text-blue-600 font-bold text-xs rounded p-1 cursor-pointer focus:ring-0"
+                                    >
+                                        {Object.entries(STATE_DATABASE).map(([key, data]) => (
+                                            <option key={key} value={key}>{data.state}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
                         </div>
@@ -206,7 +326,7 @@
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                placeholder="Type your response..."
+                                placeholder={`Ask a question about ${STATE_DATABASE[selectedStateKey].state} law...`}
                                 className="flex-1 bg-gray-100 text-gray-800 p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                             />
                             <button 
