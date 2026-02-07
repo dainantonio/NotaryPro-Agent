@@ -55,6 +55,12 @@
             border: 1px solid #e5e7eb;
             font-family: 'Courier Prime', monospace;
         }
+
+        /* Mobile Sidebar Overlay */
+        .mobile-sidebar-overlay {
+            background-color: rgba(0,0,0,0.5);
+            transition: opacity 0.3s;
+        }
     </style>
 </head>
 <body>
@@ -81,20 +87,60 @@
             }
         };
 
-        // --- KNOWLEDGE BASE (Abridged for brevity in this file update, but full content logic remains) ---
-        // Note: In a real deployment, this large object would be in a separate file. 
-        // For this single-file MVP, we keep the structure but I will include the logic to access it.
-        // We will re-use the full state database from previous versions.
+        // --- KNOWLEDGE BASE (Full 50 States + DC) ---
         const STATE_DATABASE = {
              "AL": { "state": "Alabama", "fees": { "acknowledgment": "null", "jurat": "null", "oath": "null", "travel": "null" }, "id_requirements": { "credible_witnesses": "Mentioned as a method for identity proofing for electronic and remote online notarial acts.", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "Each Authentic Act shall contain: The handwritten signature and original seal... (Check Handbook for full text)", "jurat_text": "null" }, "red_flags": [ "Must refrain from representing any party in any matter arising from or related to the notary's authentic act.", "Cannot take official action until signature and seal are properly registered.", "Prohibited from providing advice that does not treat all parties equally, accurately, fully, and impartially." ] },
-             "CA": { "state": "California", "fees": { "acknowledgment": "$15 per sig", "jurat": "$15", "oath": "$15", "travel": "null" }, "id_requirements": { "credible_witnesses": "One witness (personally known) OR Two witnesses (proven with IDs).", "expired_id_rule": "Allowed if current or issued within 5 years." }, "biometrics": { "journal_thumbprint": "REQUIRED for deeds, quitclaim deeds, deeds of trust, powers of attorney." }, "certificates": { "acknowledgment_text": "A notary public or other officer completing this certificate verifies only the identity of the individual who signed the document to which this certificate is attached, and not the truthfulness, accuracy, or validity of that document.\n\nState of California\nCounty of _________\n\nOn _________ before me, (here insert name and title of the officer), personally appeared _________, who proved to me on the basis of satisfactory evidence to be the person(s) whose name(s) is/are subscribed to the within instrument and acknowledged to me that he/she/they executed the same in his/her/their authorized capacity(ies), and that by his/her/their signature(s) on the instrument the person(s), or the entity upon behalf of which the person(s) acted, executed the instrument.\n\nI certify under PENALTY OF PERJURY under the laws of the State of California that the foregoing paragraph is true and correct.\n\nWITNESS my hand and official seal.\n\n______________________\nSignature\n(Seal)", "jurat_text": "A notary public or other officer completing this certificate verifies only the identity of the individual who signed the document to which this certificate is attached, and not the truthfulness, accuracy, or validity of that document.\n\nState of California\nCounty of _________\n\nSubscribed and sworn to (or affirmed) before me on this ____ day of _________, 20___, by _________, proved to me on the basis of satisfactory evidence to be the person(s) who appeared before me.\n\n______________________\nSignature\n(Seal)" }, "red_flags": [ "Cannot use title 'notario publico'", "Cannot use seal for non-notarial purposes", "Cannot notarize incomplete documents", "Cannot practice law (UPL)", "Cannot notarize own signature" ] },
-             "TX": { "state": "Texas", "fees": { "acknowledgment": "$6 (first signature) + $1 (each additional)", "jurat": "$6", "oath": "$6", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Texas\nCounty of ______\n\nThis instrument was acknowledged before me on ______ (date) by ______ (name or names of person or persons acknowledging).\n\n(Seal)\n______________________\nNotary Public, State of Texas", "jurat_text": "State of Texas\nCounty of ______\n\nSworn to and subscribed before me on the ______ day of ______, 20__, by ______ (name of signer).\n\n(Seal)\n______________________\nNotary Public, State of Texas" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
-             "FL": { "state": "Florida", "fees": { "acknowledgment": "Maximum $10 per notarial act", "jurat": "Maximum $10", "oath": "Maximum $10", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 witness (personally known) OR 2 witnesses (proven by ID).", "expired_id_rule": "Acceptable if issued within past 5 years with serial number." }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "STATE OF FLORIDA\nCOUNTY OF ______\n\nThe foregoing instrument was acknowledged before me by means of [ ] physical presence or [ ] online notarization this (date) by (name of person acknowledging).\n\n______________________\n(Signature of Notary Public – State of Florida)\n(Print, Type, or Stamp Commissioned Name of Notary Public)\n\nPersonally Known ______ OR Produced Identification ______\nType of Identification Produced: ______", "jurat_text": "STATE OF FLORIDA\nCOUNTY OF ______\n\nSworn to (or affirmed) and subscribed before me by means of [ ] physical presence or [ ] online notarization this (numeric date) day of (month), (year), by (name of person making statement).\n\n______________________\n(Signature of Notary Public – State of Florida)\n(Print, Type, or Stamp Commissioned Name of Notary Public)\n\nPersonally Known ______ OR Produced Identification ______\nType of Identification Produced: ______" }, "red_flags": [ "Cannot notarize own signature.", "Cannot notarize for immediate family (spouse, son, daughter, mother, father).", "Physical presence required unless RON.", "Cannot use 'notario'.", "Cannot notarize incomplete documents." ] },
-             "OH": { "state": "Ohio", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00", "travel": "Reasonable fee" }, "id_requirements": { "credible_witnesses": "Proof of identity may be satisfied by a third person known to the notary who introduces the signer to the notary.", "expired_id_rule": "Not specified" }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of Ohio\nCounty of ______\n\nThe foregoing instrument was acknowledged before me this ______ day of ______, 20__ by ______ (Name of signer).\n\n(Seal)\n______________________\nNotary Public\nMy commission expires: ______", "jurat_text": "State of Ohio\nCounty of ______\n\nSworn to and subscribed in my presence this ______ day of ______, 20__ by ______ (Name of signer).\n\n(Seal)\n______________________\nNotary Public\nMy commission expires: ______" }, "red_flags": [ "Never prepare instruments or give advice", "Cannot notarize if you have an interest", "Cannot notarize outside physical boundaries of the state", "Must administer oath for affidavits", "Cannot charge more than prescribed by law" ] },
-             "NY": { "state": "New York", "fees": { "acknowledgment": "Not specified", "jurat": "Not specified", "oath": "Not specified" }, "id_requirements": { "credible_witnesses": "Not specified", "expired_id_rule": "Not specified" }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of New York\nCounty of ______\n\nOn the ______ day of ______ in the year 20__ before me, the undersigned, personally appeared ______, personally known to me or proved to me on the basis of satisfactory evidence to be the individual(s) whose name(s) is (are) subscribed to the within instrument and acknowledged to me that he/she/they executed the same in his/her/their capacity(ies), and that by his/her/their signature(s) on the instrument, the individual(s), or the person upon behalf of which the individual(s) acted, executed the instrument.\n\n______________________\n(Signature and office of individual taking acknowledgment)", "jurat_text": "Sworn to before me on this ___ day of ___..." }, "red_flags": [ "Name must match signature exactly", "Initials like 'J. Doe' prohibited if commissioned as full name", "Oath of office must be signed in presence of Notary" ] }
+            "AK": { "state": "Alaska", "fees": { "acknowledgment": "null", "jurat": "null", "oath": "null", "travel": "null" }, "id_requirements": { "credible_witnesses": "null", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "null", "jurat_text": "null" }, "red_flags": [ "Applicants may not have been convicted of a felony or incarcerated for a felony conviction within 10 years before commission.", "Sureties/employers have no authority to request that regular notary commissions be revoked." ] },
+            "AZ": { "state": "Arizona", "fees": { "acknowledgment": "$10 per notary public signature", "jurat": "$10 per notary public signature", "oath": "$10 per notarial act", "travel": "Mileage fees can be charged at the rate allowed for Arizona state employees." }, "id_requirements": { "credible_witnesses": "Two types: 1. Personal Knowledge. 2. Stranger with valid ID who knows signer.", "expired_id_rule": "Generally requires unexpired ID; exceptions for real estate conveyance/financing." }, "biometrics": { "journal_thumbprint": "Optional; not required under law but helpful." }, "certificates": { "acknowledgment_text": "State of Arizona\nCounty of ______\n\nOn this ___ day of ______, 20__, before me personally appeared [Name of Signer], whose identity was proven to me on the basis of satisfactory evidence to be the person who he or she claims to be, and acknowledged that he or she signed the above/attached document.\n\n(seal)\n\n______________________\nNotary Public Signature\nMy Commission Expires: ______", "jurat_text": "State of Arizona\nCounty of [Name of County]\n\nSubscribed and sworn (or affirmed) before me this ___ day of ______, 20__ by [Name of Signer].\n\n(seal)\n\n______________________\nNotary Public Signature\nMy Commission Expires: ______" }, "red_flags": [ "Cannot use the term 'notario' or 'notario publico' unless an attorney.", "Cannot perform act if officer or spouse is a party or has direct beneficial interest.", "Cannot withhold access to original record provided by person seeking act.", "Charging higher fees is a class 5 felony." ] },
+            "AR": { "state": "Arkansas", "fees": { "acknowledgment": "Not required to charge; if charged, must be reasonable and agreed upon.", "jurat": "null", "oath": "null", "travel": "null" }, "id_requirements": { "credible_witnesses": "For RON, individual personally known to notary or identified via remote ID.", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "State of Arkansas\nCounty of ______\n\nOn this the ___ day of ______, 20__, before me, (name of notary), the undersigned notary, personally appeared (name(s) of signer(s)) known to me (or satisfactorily proven) to be the person whose name(s) is/are subscribed to the within instrument and acknowledged that he/she/they executed the same for the purposes therein contained.\n\nIn witness whereof I hereunto set my hand and official seal.\n\n______________________\nSignature of Notary Public\nMy Commission expires: ______", "jurat_text": "State of Arkansas\nCounty of ______\n\nSubscribed and sworn to before me on this ___ day of ______, 20__.\n\n______________________\nSignature of Notary Public\n[Seal of Office]" }, "red_flags": [ "Cannot notarize own signature.", "Cannot notarize document with direct/indirect financial benefit.", "Cannot perform acts for corporation if personally involved or acting as representative." ] },
+            "CA": { "state": "California", "fees": { "acknowledgment": "$15 per sig", "jurat": "$15", "oath": "$15", "travel": "null" }, "id_requirements": { "credible_witnesses": "One witness (personally known) OR Two witnesses (proven with IDs).", "expired_id_rule": "Allowed if current or issued within 5 years." }, "biometrics": { "journal_thumbprint": "REQUIRED for deeds, quitclaim deeds, deeds of trust, powers of attorney." }, "certificates": { "acknowledgment_text": "A notary public or other officer completing this certificate verifies only the identity of the individual who signed the document to which this certificate is attached, and not the truthfulness, accuracy, or validity of that document.\n\nState of California\nCounty of _________\n\nOn _________ before me, (here insert name and title of the officer), personally appeared _________, who proved to me on the basis of satisfactory evidence to be the person(s) whose name(s) is/are subscribed to the within instrument and acknowledged to me that he/she/they executed the same in his/her/their authorized capacity(ies), and that by his/her/their signature(s) on the instrument the person(s), or the entity upon behalf of which the person(s) acted, executed the instrument.\n\nI certify under PENALTY OF PERJURY under the laws of the State of California that the foregoing paragraph is true and correct.\n\nWITNESS my hand and official seal.\n\n______________________\nSignature\n(Seal)", "jurat_text": "A notary public or other officer completing this certificate verifies only the identity of the individual who signed the document to which this certificate is attached, and not the truthfulness, accuracy, or validity of that document.\n\nState of California\nCounty of _________\n\nSubscribed and sworn to (or affirmed) before me on this ____ day of _________, 20___, by _________, proved to me on the basis of satisfactory evidence to be the person(s) who appeared before me.\n\n______________________\nSignature\n(Seal)" }, "red_flags": [ "Cannot use title 'notario publico'", "Cannot use seal for non-notarial purposes", "Cannot notarize incomplete documents", "Cannot practice law (UPL)", "Cannot notarize own signature" ] },
+            "CO": { "state": "Colorado", "fees": { "acknowledgment": "$15 ($25 for electronic)", "jurat": "$15 ($25 for electronic)", "oath": "$15 ($25 for electronic)", "travel": "No set fee, must be agreed upon." }, "id_requirements": { "credible_witnesses": "Individual personally known to the notary.", "expired_id_rule": "Allowed if expired not more than one year." }, "biometrics": { "journal_thumbprint": "Optional" }, "certificates": { "acknowledgment_text": "State of Colorado\nCounty of ________\n\nThis record was acknowledged before me on ________, 20__ by (name(s) of individual(s)).\n\n______________________\n(Notary's official signature)\n(Title of office)\n(Commission Expiration)", "jurat_text": "State of Colorado\nCounty of ________\n\nSigned and sworn to [or affirmed] before me on ________, 20__ by (name(s) of individual(s) making statement).\n\n______________________\n(Notary's official signature)\n(Title of office)\n(Commission Expiration)" }, "red_flags": [ "Use of 'notario' prohibited", "Cannot notarize blank documents", "PROHIBITED from using a seal embosser", "Disqualified if party or relative named in record", "Cannot withhold original record" ] },
+            "CT": { "state": "Connecticut", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00", "travel": "$0.35 per mile" }, "id_requirements": { "credible_witnesses": "Personally known by notary AND personally knows signer.", "expired_id_rule": "In-person ID should be current." }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "State of Connecticut\nCounty of ________ ss. (Town/City)\n\nOn this the ________ day of ________, 20__, before me, (name of notary), the undersigned officer, personally appeared (name of individual or individuals), known to me (or satisfactorily proven) to be the person whose name is subscribed to the within instrument and acknowledged that (he, she or they) executed the same for the purposes therein contained.\n\nIn witness whereof I hereunto set my hand.\n\n______________________\nNotary Public\nMy Commission Expires: ______", "jurat_text": "Subscribed and sworn to before me this ________ day of ________, 20__.\n\n______________________\nNotary Public\nMy Commission Expires: ______" }, "red_flags": [ "Disqualified if signatory of document", "Cannot acknowledge own signature", "Cannot use foreign terms like 'notario publico'", "Cannot certify vital records", "Cannot use signature stamp" ] },
+            "DE": { "state": "Delaware", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00", "travel": "Reasonable fee agreed upon in advance" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Delaware\nCounty of ______\n\nThis instrument was acknowledged before me on ______ (date) by ______ (name(s) of person(s)).\n\n(Seal, if any)\n______________________\n(Signature of notarial officer)\n(Title and Rank)", "jurat_text": "State of Delaware\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on ______ (date) by ______ (name(s) of person(s)).\n\n(Seal, if any)\n______________________\n(Signature of notarial officer)\n(Title and Rank)" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "FL": { "state": "Florida", "fees": { "acknowledgment": "Maximum $10 per notarial act", "jurat": "Maximum $10", "oath": "Maximum $10", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 witness (personally known) OR 2 witnesses (proven by ID).", "expired_id_rule": "Acceptable if issued within past 5 years with serial number." }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "STATE OF FLORIDA\nCOUNTY OF ______\n\nThe foregoing instrument was acknowledged before me by means of [ ] physical presence or [ ] online notarization this (date) by (name of person acknowledging).\n\n______________________\n(Signature of Notary Public – State of Florida)\n(Print, Type, or Stamp Commissioned Name of Notary Public)\n\nPersonally Known ______ OR Produced Identification ______\nType of Identification Produced: ______", "jurat_text": "STATE OF FLORIDA\nCOUNTY OF ______\n\nSworn to (or affirmed) and subscribed before me by means of [ ] physical presence or [ ] online notarization this (numeric date) day of (month), (year), by (name of person making statement).\n\n______________________\n(Signature of Notary Public – State of Florida)\n(Print, Type, or Stamp Commissioned Name of Notary Public)\n\nPersonally Known ______ OR Produced Identification ______\nType of Identification Produced: ______" }, "red_flags": [ "Cannot notarize own signature.", "Cannot notarize for immediate family (spouse, son, daughter, mother, father).", "Physical presence required unless RON.", "Cannot use 'notario'.", "Cannot notarize incomplete documents." ] },
+            "GA": { "state": "Georgia", "fees": { "acknowledgment": "$2.00 per notarial act", "jurat": "$2.00 per notarial act", "oath": "$2.00 per notarial act", "travel": "null" }, "id_requirements": { "credible_witnesses": "null", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "null", "jurat_text": "null" }, "red_flags": [ "Disqualified if signer of document.", "Disqualified if party to document/transaction.", "Cannot execute certificate known to be false.", "Cannot issue attachments or garnishments." ] },
+            "HI": { "state": "Hawaii", "fees": { "acknowledgment": "$5.00 (original+1 copy); $2.50 per addt'l copy", "jurat": "$5.00 (original+4 copies)", "oath": "$5.00", "travel": "null" }, "id_requirements": { "credible_witnesses": "Oath/affirmation of credible witness personally known to notary.", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "STATE OF HAWAII\nCOUNTY OF ______ SS.\n\nOn this ______ day of ______, 20__, before me personally appeared John Doe, to me known to be the person described in and who executed the foregoing instrument and acknowledged that he executed the same as his free act and deed.\n\n______________________\n(Signature of Notary Public)\n(Print name of Notary Public)\nMy commission expires: (exp. date)\n(SEAL)", "jurat_text": "Subscribed and sworn to before me this ______ day of ______, 20__.\n\n______________________\n(Signature of Notary Public)\n(Print name of Notary Public)\nMy commission expires: (expiration date)\n(SEAL)" }, "red_flags": [ "Never notarize own signature.", "No personal or financial interest.", "Unlawful to notarize if party to instrument.", "Must be satisfied that info certified is true." ] },
+            "ID": { "state": "Idaho", "fees": { "acknowledgment": "Max $5.00", "jurat": "Max $5.00", "oath": "Max $5.00", "travel": "Actual and reasonable expenses" }, "id_requirements": { "credible_witnesses": "Credible witness personally known to notary OR proven by ID.", "expired_id_rule": "Current or expired less than 3 years." }, "biometrics": { "journal_thumbprint": "Optional" }, "certificates": { "acknowledgment_text": "State of Idaho\nCounty of ______\n\nThis record was acknowledged before me on ______ by ______.\n\n______________________\n(Signature of notary public)\n(Stamp)\nMy commission expires: ______", "jurat_text": "State of Idaho\nCounty of ______\n\nThis record was signed and sworn before me on ______ by ______.\n\n______________________\n(Signature of notary public)\n(Stamp)\nMy commission expires: ______" }, "red_flags": [ "DO NOT notarize own signature.", "DO NOT notarize if named in document.", "DO NOT notarize if spouse is a party.", "DO NOT sign as representative and then notarize.", "DO NOT engage in UPL." ] },
+            "IL": { "state": "Illinois", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00", "travel": "null" }, "id_requirements": { "credible_witnesses": "Credible witness personally known to notary.", "expired_id_rule": "Must be unexpired government ID." }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "State of ______\nCounty of ______\n\nThis instrument was acknowledged before me on ______ (date) by ______ (name/s of person/s).\n\n______________________\n(Signature of Notary Public)\n(Seal)", "jurat_text": "State of ______\nCounty of ______\n\nSigned and sworn to (or affirmed) to before me on ______ (date) by ______ (name/s of person/s making statement).\n\n______________________\n(Signature of Notary Public)\n(Seal)" }, "red_flags": [ "Cannot notarize own signature.", "Cannot acknowledge if named as party.", "Cannot use 'notario'.", "Cannot prepare legal instruments unless attorney.", "Cannot notarize incomplete documents." ] },
+            "IN": { "state": "Indiana", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Federal mileage rate" }, "id_requirements": { "credible_witnesses": "Credible witness personally known to notary or identified by ID.", "expired_id_rule": "Current or expired no more than 3 years." }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "State of Indiana\nCounty of: ______\n\nThis record was acknowledged before me on ______ by ______.\n\n(Official Seal)\n______________________\n(Signature of Notary Public)\nCommissioned in ______ county.\nMy Commission Expires ______.", "jurat_text": "State of Indiana\nCounty of: ______\n\nSigned and sworn to (or affirmed) before me on ______ by ______.\n\n(Official Seal)\n______________________\n(Signature of Notary Public)\nCommissioned in ______ county.\nMy Commission Expires ______." }, "red_flags": [ "Never notarize own signature.", "Cannot notarize spouse's signature.", "Cannot notarize if direct benefit to notary or spouse.", "Cannot use 'notario'.", "No legal advice." ] },
+            "IA": { "state": "Iowa", "fees": { "acknowledgment": "Reasonable fee", "jurat": "Reasonable fee", "oath": "Reasonable fee", "travel": "Actual/Reasonable expenses" }, "id_requirements": { "credible_witnesses": "Credible witness known to notary or identified by ID.", "expired_id_rule": "Current or expired not more than 3 years." }, "biometrics": { "journal_thumbprint": "Optional" }, "certificates": { "acknowledgment_text": "State of ______\nCounty of ______\n\nThis record was acknowledged before me on ______ (Date) by ______ (Name(s) of individual(s)).\n\n______________________\n(Signature of notarial officer)\n(Stamp)\n(Title of office)\nMy commission expires: ______", "jurat_text": "State of ______\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on ______ (Date) by ______ (Name(s) of individual(s)) making statement.\n\n______________________\n(Signature of notarial officer)\n(Stamp)\n(Title of office)\nMy commission expires: ______" }, "red_flags": [ "No authority to prepare legal docs.", "Signer must personally appear (or valid RON).", "No financial interest.", "Cannot add certificate wording for signer." ] },
+            "KS": { "state": "Kansas", "fees": { "acknowledgment": "Reasonable fee", "jurat": "null", "oath": "null", "travel": "null" }, "id_requirements": { "credible_witnesses": "Credible witness personally appearing and known to notary or identified by ID.", "expired_id_rule": "Current or expired not more than 3 years." }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "State of Kansas\nCounty of ______\n\nThis record was acknowledged before me on ______ (Date) by ______ (Name/s of person/s).\n\n______________________\n(Signature of notarial officer)\n(Official Stamp)\n(Title of office)\nMy commission expires: ______", "jurat_text": "State of Kansas\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on ______ (Date) by ______ (Name/s of person/s making statement).\n\n______________________\n(Signature of notarial officer)\n(Official Stamp)\n(Title of office)\nMy commission expires: ______" }, "red_flags": [ "Cannot perform if notary or spouse is party/has interest.", "Cannot use 'notario'.", "Cannot notarize blank documents.", "Cannot withhold original records." ] },
+            "KY": { "state": "Kentucky", "fees": { "acknowledgment": "No set limit", "jurat": "No set limit", "oath": "No set limit", "travel": "No set limit" }, "id_requirements": { "credible_witnesses": "1 credible witness (must be personally known to notary)", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Kentucky\nCounty of ______\n\nThe foregoing instrument was acknowledged before me this ______ day of ______, 20__, by ______.\n\n______________________\nNotary Public\nMy commission expires: ______", "jurat_text": "State of Kentucky\nCounty of ______\n\nSubscribed and sworn to before me this ______ day of ______, 20__, by ______.\n\n______________________\nNotary Public\nMy commission expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "LA": { "state": "Louisiana", "fees": { "acknowledgment": "No set limit", "jurat": "No set limit", "oath": "No set limit", "travel": "No set limit" }, "id_requirements": { "credible_witnesses": "null", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "ME": { "state": "Maine", "fees": { "acknowledgment": "Reasonable fee", "jurat": "Reasonable fee", "oath": "Reasonable fee", "travel": "Reasonable fee" }, "id_requirements": { "credible_witnesses": "1 credible witness", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Maine\nCounty of ______\n\nThe foregoing instrument was acknowledged before me this ______ day of ______, 20__, by ______.\n\n______________________\nNotary Public\nPrint Name: ______\nMy commission expires: ______", "jurat_text": "State of Maine\nCounty of ______\n\nSworn to and subscribed before me this ______ day of ______, 20__, by ______.\n\n______________________\nNotary Public\nPrint Name: ______\nMy commission expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "MD": { "state": "Maryland", "fees": { "acknowledgment": "$8", "jurat": "$8", "oath": "$8", "travel": "IRS rate + max $5" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR ID)", "expired_id_rule": "Must be valid (current)" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Maryland\nCounty of ______\n\nThis instrument was acknowledged before me on ______ (date) by ______ (name(s) of person(s)).\n\n(Seal)\n______________________\nSignature of Notary Public", "jurat_text": "State of Maryland\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on ______ (date) by ______ (name(s) of person(s) making statement).\n\n(Seal)\n______________________\nSignature of Notary Public" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "MA": { "state": "Massachusetts", "fees": { "acknowledgment": "No set limit", "jurat": "No set limit", "oath": "No set limit", "travel": "No set limit" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Not accepted (must be current)" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Commonwealth of Massachusetts\nCounty of ______\n\nOn this ______ day of ______, 20__, before me, the undersigned notary public, personally appeared ______ (name of document signer), proved to me through satisfactory evidence of identification, which were ______, to be the person whose name is signed on the preceding or attached document, and acknowledged to me that (he) (she) signed it voluntarily for its stated purpose.\n\n(official signature and seal of notary)", "jurat_text": "Commonwealth of Massachusetts\nCounty of ______\n\nOn this ______ day of ______, 20__, before me, the undersigned notary public, personally appeared ______ (name of document signer), proved to me through satisfactory evidence of identification, which were ______, to be the person who signed the preceding or attached document in my presence, and who swore or affirmed to me that the contents of the document are truthful and accurate to the best of (his) (her) knowledge and belief.\n\n(official signature and seal of notary)" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "MI": { "state": "Michigan", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Michigan\nCounty of ______\n\nThe foregoing instrument was acknowledged before me this ______ (date) by ______ (name of person acknowledged).\n\n______________________\n(Signature of Notary Public)\nNotary Public, State of Michigan, County of ______\nMy commission expires ______\nActing in the County of ______", "jurat_text": "State of Michigan\nCounty of ______\n\nSubscribed and sworn to before me this ______ (date) by ______ (name of signer).\n\n______________________\n(Signature of Notary Public)\nNotary Public, State of Michigan, County of ______\nMy commission expires ______\nActing in the County of ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "MN": { "state": "Minnesota", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Signer ID must be current; Witness ID accepted if expired <= 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Minnesota\nCounty of ______\n\nThis instrument was acknowledged before me on ______ (date) by ______ (name(s) of person(s)).\n\n______________________\n(Signature of notarial officer)\n(Title)\n(My commission expires: ______)", "jurat_text": "State of Minnesota\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on ______ (date) by ______ (name(s) of person(s) making statement).\n\n______________________\n(Signature of notarial officer)\n(Title)\n(My commission expires: ______)" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "MS": { "state": "Mississippi", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Allowed if expired within 5 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Mississippi\nCounty of ______\n\nPersonally appeared before me, the undersigned authority in and for the said county and state, on this ______ day of ______, 20__, within my jurisdiction, the within named ______, who acknowledged that (he)(she)(they) executed the above and foregoing instrument.\n\n______________________\n(Notary Public)\nMy commission expires: ______", "jurat_text": "State of Mississippi\nCounty of ______\n\nSworn to and subscribed before me on this the ______ day of ______, 20__.\n\n______________________\n(Notary Public)\nMy commission expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "MO": { "state": "Missouri", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Must be current (unexpired)" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Missouri\nCounty of ______\n\nOn this ______ day of ______, 20__, before me personally appeared ______, to me known to be the person described in and who executed the foregoing instrument, and acknowledged that he/she executed the same as his/her free act and deed.\n\nIN TESTIMONY WHEREOF, I have hereunto set my hand and affixed my official seal in the County and State aforesaid, the day and year first above written.\n\n______________________\nNotary Public\nMy commission expires: ______", "jurat_text": "State of Missouri\nCounty of ______\n\nSubscribed and sworn to before me this ______ day of ______, 20__.\n\n______________________\nNotary Public\nMy commission expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "MT": { "state": "Montana", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "IRS mileage rate" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Montana\nCounty of ______\n\nThis instrument was acknowledged before me on ______ (date) by ______ (name(s) of person(s)).\n\n______________________\n(Signature of notarial officer)\n(Title)\n[Seal]", "jurat_text": "State of Montana\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on ______ (date) by ______ (name(s) of person(s)).\n\n______________________\n(Signature of notarial officer)\n(Title)\n[Seal]" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "NE": { "state": "Nebraska", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$2", "travel": "Mileage at state rate" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Nebraska\nCounty of ______\n\nThe foregoing instrument was acknowledged before me this ______ (date) by ______ (name of person acknowledged).\n\n(Seal)\n______________________\n(Signature of Notary Public)\nMy commission expires: ______", "jurat_text": "State of Nebraska\nCounty of ______\n\nSubscribed and sworn to before me this ______ (date) by ______ (name of person).\n\n(Seal)\n______________________\n(Signature of Notary Public)\nMy commission expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "NV": { "state": "Nevada", "fees": { "acknowledgment": "$15", "jurat": "$15", "oath": "$7.50", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Notary discretion" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Nevada\nCounty of ______\n\nThis instrument was acknowledged before me on ______ (date) by ______ (name(s) of person(s)).\n\n______________________\n(Signature of notarial officer)\n(Seal)", "jurat_text": "State of Nevada\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on ______ (date) by ______ (name(s) of person(s) making statement).\n\n______________________\n(Signature of notarial officer)\n(Seal)" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "NH": { "state": "New Hampshire", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "$0.20/mile" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of New Hampshire\nCounty of ______\n\nThe foregoing instrument was acknowledged before me this ______ (date) by ______ (name of person acknowledged).\n\n______________________\n(Signature of Notary Public or Justice of the Peace)\n(Seal, if any)", "jurat_text": "State of New Hampshire\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on the ______ (date) by ______ (name of person making statement).\n\n______________________\n(Signature of Notary Public or Justice of the Peace)\n(Seal, if any)" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "NJ": { "state": "New Jersey", "fees": { "acknowledgment": "$2.50", "jurat": "$2.50", "oath": "$2.50", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of New Jersey\nCounty of ______\n\nBe it Remembered, that on this ______ day of ______, 20__, before me, the subscriber, personally appeared ______ who I am satisfied is the person named in and who executed the within instrument, and thereupon acknowledged that he/she signed, sealed and delivered the same as his/her act and deed, for the purposes therein expressed.\n\n______________________\n(Notary's Signature)", "jurat_text": "State of New Jersey\nCounty of ______\n\nSubscribed and sworn to before me this ______ day of ______, 20__.\n\n______________________\n(Notary's Signature)" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "NM": { "state": "New Mexico", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Allowed if expired within 1 year" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of New Mexico\nCounty of ______\n\nThis instrument was acknowledged before me on ______ (date) by ______ (name(s) of person(s)).\n\n(Seal)\n______________________\n(Signature of notarial officer)\n(Title of officer)\nMy commission expires: ______", "jurat_text": "State of New Mexico\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on ______ (date) by ______ (name(s) of person(s) making statement).\n\n(Seal)\n______________________\n(Signature of notarial officer)\n(Title of officer)\nMy commission expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "NC": { "state": "North Carolina", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (must be personally known to the notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of North Carolina\nCounty of ______\n\nI, ______ (name of official), a ______ (official title), do hereby certify that ______ (name of individual(s)) personally appeared before me this day and acknowledged the due execution of the foregoing instrument.\n\nWitness my hand and official seal this the ______ day of ______, 20__.\n\n(Official Seal)\n______________________\n(Official Signature of Notary)\nMy commission expires: ______", "jurat_text": "State of North Carolina\nCounty of ______\n\nSigned and sworn to (or affirmed) before me this day by ______ (name of principal).\n\nDate: ______\n(Official Seal)\n______________________\n(Official Signature of Notary)\nMy commission expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "ND": { "state": "North Dakota", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Must be valid" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of North Dakota\nCounty of ______\n\nThis instrument was acknowledged before me on ______ (date) by ______ (name(s) of individual(s)).\n\n(Seal)\n______________________\n(Signature of notarial officer)\n(Title of office)\n(Commission expiration)", "jurat_text": "State of North Dakota\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on ______ (date) by ______ (name(s) of individual(s) making statement).\n\n(Seal)\n______________________\n(Signature of notarial officer)\n(Title of office)\n(Commission expiration)" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "NY": { "state": "New York", "fees": { "acknowledgment": "Not specified", "jurat": "Not specified", "oath": "Not specified" }, "id_requirements": { "credible_witnesses": "Not specified", "expired_id_rule": "Not specified" }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of New York\nCounty of ______\n\nOn the ______ day of ______ in the year 20__ before me, the undersigned, personally appeared ______, personally known to me or proved to me on the basis of satisfactory evidence to be the individual(s) whose name(s) is (are) subscribed to the within instrument and acknowledged to me that he/she/they executed the same in his/her/their capacity(ies), and that by his/her/their signature(s) on the instrument, the individual(s), or the person upon behalf of which the individual(s) acted, executed the instrument.\n\n______________________\n(Signature and office of individual taking acknowledgment)", "jurat_text": "Sworn to before me on this ___ day of ___..." }, "red_flags": [ "Name must match signature exactly", "Initials like 'J. Doe' prohibited if commissioned as full name", "Oath of office must be signed in presence of Notary" ] },
+            "OH": { "state": "Ohio", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00", "travel": "Reasonable fee" }, "id_requirements": { "credible_witnesses": "Proof of identity may be satisfied by a third person known to the notary who introduces the signer to the notary.", "expired_id_rule": "Not specified" }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of Ohio\nCounty of ______\n\nThe foregoing instrument was acknowledged before me this ______ day of ______, 20__ by ______ (Name of signer).\n\n(Seal)\n______________________\nNotary Public\nMy commission expires: ______", "jurat_text": "State of Ohio\nCounty of ______\n\nSworn to and subscribed in my presence this ______ day of ______, 20__ by ______ (Name of signer).\n\n(Seal)\n______________________\nNotary Public\nMy commission expires: ______" }, "red_flags": [ "Never prepare instruments or give advice", "Cannot notarize if you have an interest", "Cannot notarize outside physical boundaries of the state", "Must administer oath for affidavits", "Cannot charge more than prescribed by law" ] },
+            "OK": { "state": "Oklahoma", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (must be personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Oklahoma\nCounty of ______\n\nThis instrument was acknowledged before me on ______ (date) by ______ (name(s) of person(s)).\n\n(Seal)\n______________________\n(Signature of notarial officer)\n(Title and Rank)\n(My commission expires: ______)", "jurat_text": "State of Oklahoma\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on ______ (date) by ______ (name(s) of person(s) making statement).\n\n(Seal)\n______________________\n(Signature of notarial officer)\n(Title and Rank)\n(My commission expires: ______)" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "OR": { "state": "Oregon", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Oregon\nCounty of ______\n\nThis instrument was acknowledged before me on ______ (date) by ______ (name(s) of person(s)).\n\n(Seal)\n______________________\nSignature of notarial officer\nTitle of office\nMy commission expires: ______", "jurat_text": "State of Oregon\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on ______ (date) by ______ (name(s) of person(s) making statement).\n\n(Seal)\n______________________\nSignature of notarial officer\nTitle of office\nMy commission expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "PA": { "state": "Pennsylvania", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Commonwealth of Pennsylvania\nCounty of ______\n\nThis record was acknowledged before me on ______ (date) by ______ (name(s) of individual(s)).\n\n(Stamp)\n______________________\nSignature of notarial officer", "jurat_text": "Commonwealth of Pennsylvania\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on ______ (date) by ______ (name(s) of individual(s) making statement).\n\n(Stamp)\n______________________\nSignature of notarial officer" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "RI": { "state": "Rhode Island", "fees": { "acknowledgment": "$25", "jurat": "$25", "oath": "$25", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Rhode Island\nCounty of ______\n\nIn ______, in said County on the ______ day of ______, 20__, before me personally appeared ______ the signer(s) of the foregoing instrument, and acknowledged the same to be his/her/their free act and deed.\n\n______________________\nNotary Public\nMy Commission Expires: ______", "jurat_text": "State of Rhode Island\nCounty of ______\n\nSubscribed and sworn to before me in ______ (city/town), in said County on the ______ day of ______, 20__.\n\n______________________\nNotary Public\nMy Commission Expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "SC": { "state": "South Carolina", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of South Carolina\nCounty of ______\n\nI, ______ (Notary's Name), a Notary Public for the State of South Carolina, do hereby certify that ______ (Name of Signer) personally appeared before me this day and acknowledged the due execution of the foregoing instrument.\n\nWitness my hand and seal this the ______ day of ______, 20__.\n\n(Seal)\n______________________\nNotary Public for South Carolina\nMy Commission Expires: ______", "jurat_text": "State of South Carolina\nCounty of ______\n\nSworn to and subscribed before me this ______ day of ______, 20__.\n\n(Seal)\n______________________\nNotary Public for South Carolina\nMy Commission Expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "SD": { "state": "South Dakota", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of South Dakota\nCounty of ______\n\nOn this the ______ day of ______, 20__, before me, the undersigned officer, personally appeared ______, known to me or satisfactorily proven to be the person whose name is subscribed to the within instrument and acknowledged that he/she executed the same for the purposes therein contained.\n\nIn witness whereof I hereunto set my hand and official seal.\n\n(Seal)\n______________________\nTitle of Officer", "jurat_text": "State of South Dakota\nCounty of ______\n\nSubscribed and sworn to before me this ______ day of ______, 20__.\n\n(Seal)\n______________________\nTitle of Officer" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "TN": { "state": "Tennessee", "fees": { "acknowledgment": "$0", "jurat": "$0", "oath": "$0", "travel": "Reasonable fee" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Tennessee\nCounty of ______\n\nPersonally appeared before me, ______ (name of notary), a Notary Public of this county, the within named ______, with whom I am personally acquainted (or proved to me on the basis of satisfactory evidence), and who acknowledged that he executed the within instrument for the purposes therein contained.\n\nWitness my hand, at office, this ______ day of ______, 20__.\n\n______________________\nNotary Public\nMy Commission Expires: ______", "jurat_text": "State of Tennessee\nCounty of ______\n\nSworn to and subscribed before me this ______ day of ______, 20__.\n\n______________________\nNotary Public\nMy Commission Expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "TX": { "state": "Texas", "fees": { "acknowledgment": "$6 (+$1 add'l)", "jurat": "$6", "oath": "$6", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Texas\nCounty of ______\n\nThis instrument was acknowledged before me on ______ (date) by ______ (name or names of person or persons acknowledging).\n\n(Seal)\n______________________\nNotary Public, State of Texas", "jurat_text": "State of Texas\nCounty of ______\n\nSworn to and subscribed before me on the ______ day of ______, 20__, by ______ (name of signer).\n\n(Seal)\n______________________\nNotary Public, State of Texas" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "UT": { "state": "Utah", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Must be valid" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Utah\nCounty of ______\n\nOn this ______ day of ______, in the year 20__, before me, ______ (notary name), a notary public, personally appeared ______ (name of document signer), proved on the basis of satisfactory evidence to be the person(s) whose name(s) (is/are) subscribed to this instrument, and acknowledged (he/she/they) executed the same.\n\nWitness my hand and official seal.\n\n(Seal)\n______________________\n(Notary Signature)", "jurat_text": "State of Utah\nCounty of ______\n\nSubscribed and sworn to (or affirmed) before me on this ______ day of ______, 20__, by ______ (name of document signer).\n\n(Seal)\n______________________\n(Notary Signature)" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "VT": { "state": "Vermont", "fees": { "acknowledgment": "No set limit", "jurat": "No set limit", "oath": "No set limit", "travel": "No set limit" }, "id_requirements": { "credible_witnesses": "1 credible witness", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Vermont\nCounty of ______\n\nAt ______ (City/Town), in said County, this ______ day of ______, 20__, personally appeared ______ (name of signer), and he/she acknowledged this instrument, by him/her sealed and subscribed, to be his/her free act and deed.\n\nBefore me,\n______________________\nNotary Public\nMy commission expires: ______", "jurat_text": "State of Vermont\nCounty of ______\n\nSworn to and subscribed before me this ______ day of ______, 20__.\n\n______________________\nNotary Public\nMy commission expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "VA": { "state": "Virginia", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "2 credible witnesses (with valid ID) if signer lacks ID", "expired_id_rule": "Must be current (Exception: 5 years for healthcare/assisted living)" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Commonwealth of Virginia\nCity/County of ______\n\nThe foregoing instrument was acknowledged before me this ______ day of ______, 20__, by ______ (Name of signer).\n\n(Seal)\n______________________\nNotary Public\nRegistration Number: ______\nMy commission expires: ______", "jurat_text": "Commonwealth of Virginia\nCity/County of ______\n\nSubscribed and sworn to before me this ______ day of ______, 20__, by ______ (Name of signer).\n\n(Seal)\n______________________\nNotary Public\nRegistration Number: ______\nMy commission expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "WA": { "state": "Washington", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Washington\nCounty of ______\n\nI certify that I know or have satisfactory evidence that ______ (name of person) is the person who appeared before me, and said person acknowledged that (he/she) signed this instrument and acknowledged it to be (his/her) free and voluntary act for the uses and purposes mentioned in the instrument.\n\nDated: ______\n\n(Seal or Stamp)\n______________________\n(Signature)\nNotary Public\nMy appointment expires: ______", "jurat_text": "State of Washington\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on ______ (date) by ______ (name of person making statement).\n\n(Seal or Stamp)\n______________________\n(Signature)\nNotary Public\nMy appointment expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "DC": { "state": "Washington DC", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "District of Columbia:\n\nThis instrument was acknowledged before me on ______ (date) by ______ (name(s) of person(s)).\n\n(Seal)\n______________________\n(Signature of notarial officer)\n(Title)\nMy commission expires: ______", "jurat_text": "District of Columbia:\n\nSigned and sworn to (or affirmed) before me on ______ (date) by ______ (name(s) of person(s) making statement).\n\n(Seal)\n______________________\n(Signature of notarial officer)\n(Title)\nMy commission expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "WI": { "state": "Wisconsin", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Wisconsin\nCounty of ______\n\nThis instrument was acknowledged before me on ______ (date) by ______ (name(s) of person(s)).\n\n(Seal/Stamp)\n______________________\n(Signature of notarial officer)\n(Title)\nMy commission expires: ______", "jurat_text": "State of Wisconsin\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on ______ (date) by ______ (name(s) of person(s) making statement).\n\n(Seal/Stamp)\n______________________\n(Signature of notarial officer)\n(Title)\nMy commission expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "WY": { "state": "Wyoming", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Wyoming\nCounty of ______\n\nThe foregoing instrument was acknowledged before me by ______ (name of person) this ______ day of ______, 20__.\n\nWitness my hand and official seal.\n\n(Seal)\n______________________\n(Notary Public)\nMy commission expires: ______", "jurat_text": "State of Wyoming\nCounty of ______\n\nSubscribed and sworn to before me this ______ day of ______, 20__, by ______ (name of signer).\n\nWitness my hand and official seal.\n\n(Seal)\n______________________\n(Notary Public)\nMy commission expires: ______" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "WV": { "state": "West Virginia", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00", "travel": "Not specified" }, "id_requirements": { "credible_witnesses": "Personal knowledge OR oath of a credible witness.", "expired_id_rule": "Allowed if expired less than 3 years." }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of West Virginia\nCounty of ______\n\nThis record was acknowledged before me on ______ (Date) by ______ (Name(s) of individual(s) making statement).\n\n______________________\n(Signature of notarial officer)\n(Stamp)\n(Title of office)\nMy commission expires: ______", "jurat_text": "State of West Virginia\nCounty of ______\n\nSigned and sworn to (or affirmed) before me on ______ (Date) by ______ (Name(s) of individual(s) making statement).\n\n______________________\n(Signature of notarial officer)\n(Stamp)\n(Title of office)\nMy commission expires: ______" }, "red_flags": [ "Do not draft legal records or practice law", "Do not act as immigration consultant", "Do not charge >$10.00", "No direct/indirect financial interest", "No immediate family notarizations if beneficial interest exists" ] }
         };
-        // Note: Full state list from previous iterations is assumed here or can be re-pasted. 
-        // For this specific update, I ensure the top requested states are present.
 
         const COURSE_MODULES = [
             { id: 1, title: "Authority & Qualifications", topic: "Commissioning authority (SOS/Governor), term length, jurisdiction boundaries, and bonding/insurance requirements." },
@@ -119,57 +165,85 @@
 
         // --- COMPONENTS ---
 
-        const Sidebar = ({ currentView, setView }) => {
+        const Sidebar = ({ currentView, setView, isOpen, onClose }) => {
             const menuItems = [
-                { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard' },
-                { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule' },
-                { id: 'journal', icon: 'fa-book', label: 'Journal' },
-                { id: 'finances', icon: 'fa-wallet', label: 'Finances' },
-                { id: 'credentials', icon: 'fa-id-card', label: 'Credentials' },
-                { id: 'trainer', icon: 'fa-robot', label: 'AI Trainer' },
+                { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', color: 'text-blue-400' },
+                { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule', color: 'text-green-400' },
+                { id: 'journal', icon: 'fa-book', label: 'Journal', color: 'text-purple-400' },
+                { id: 'finances', icon: 'fa-wallet', label: 'Finances', color: 'text-emerald-400' },
+                { id: 'credentials', icon: 'fa-id-card', label: 'Credentials', color: 'text-orange-400' },
+                { id: 'trainer', icon: 'fa-robot', label: 'AI Trainer', color: 'text-indigo-400' },
             ];
 
             return (
-                <div className="hidden md:flex flex-col w-64 bg-slate-900 text-white h-screen fixed left-0 top-0 overflow-y-auto z-20">
-                    <div className="p-6 border-b border-slate-700 flex items-center gap-3">
-                        <div className="bg-blue-600 p-2 rounded-lg"><i className="fas fa-stamp"></i></div>
-                        <h1 className="font-bold text-xl tracking-tight">NotaryOS</h1>
-                    </div>
-                    <nav className="flex-1 p-4 space-y-2">
-                        {menuItems.map(item => (
-                            <button 
-                                key={item.id}
-                                onClick={() => setView(item.id)}
-                                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${currentView === item.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
-                            >
-                                <i className={`fas ${item.icon} w-5 text-center`}></i>
-                                <span className="font-medium text-sm">{item.label}</span>
+                <>
+                    {/* Mobile Overlay */}
+                    <div className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 lg:hidden ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
+                    
+                    {/* Sidebar Content */}
+                    <div className={`fixed inset-y-0 left-0 bg-slate-900 text-white z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:flex lg:flex-col w-64 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+                        <div className="p-6 border-b border-slate-700 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-blue-600 p-2 rounded-lg"><i className="fas fa-stamp"></i></div>
+                                <h1 className="font-bold text-xl tracking-tight">NotaryOS</h1>
+                            </div>
+                            <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-white">
+                                <i className="fas fa-times text-xl"></i>
                             </button>
-                        ))}
-                    </nav>
-                </div>
+                        </div>
+                        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+                            {menuItems.map(item => (
+                                <button 
+                                    key={item.id}
+                                    onClick={() => { setView(item.id); onClose(); }}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${currentView === item.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'}`}
+                                >
+                                    <i className={`fas ${item.icon} w-5 text-center ${item.color}`}></i>
+                                    <span className="font-medium text-sm">{item.label}</span>
+                                </button>
+                            ))}
+                        </nav>
+                        <div className="p-4 border-t border-slate-700">
+                            <div className="flex items-center gap-3 px-4 py-2">
+                                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-blue-300">JD</div>
+                                <div className="flex-1">
+                                    <p className="text-xs font-bold">Jane Doe</p>
+                                    <p className="text-[10px] text-slate-400">Pro Plan</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </>
             );
         };
 
-        const MobileNav = ({ currentView, setView }) => {
+        const MobileNav = ({ currentView, setView, onOpenMenu }) => {
             const menuItems = [
-                { id: 'dashboard', icon: 'fa-chart-pie', label: 'Home' },
-                { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule' },
-                { id: 'journal', icon: 'fa-book', label: 'Journal' },
-                { id: 'credentials', icon: 'fa-id-card', label: 'Creds' },
-                { id: 'trainer', icon: 'fa-robot', label: 'Trainer' },
+                { id: 'dashboard', icon: 'fa-chart-pie', label: 'Home', color: 'text-blue-500' },
+                { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule', color: 'text-green-500' },
+                { id: 'add', icon: 'fa-plus-circle', label: 'Add', special: true },
+                { id: 'trainer', icon: 'fa-robot', label: 'Trainer', color: 'text-indigo-500' },
+                { id: 'menu', icon: 'fa-bars', label: 'Menu', action: onOpenMenu },
             ];
 
             return (
-                <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around items-center px-2 py-2 z-50 shadow-[0_-2px_10px_rgba(0,0,0,0.05)]">
+                <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around items-center px-2 py-2 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] safe-area-pb">
                     {menuItems.map(item => (
                         <button 
                             key={item.id}
-                            onClick={() => setView(item.id)}
-                            className={`flex flex-col items-center justify-center w-full py-1`}
+                            onClick={() => item.special ? setView('add_appointment') : (item.action ? item.action() : setView(item.id))}
+                            className={`flex flex-col items-center justify-center w-full py-1 ${item.special ? '-mt-6' : ''}`}
                         >
-                            <i className={`fas ${item.icon} text-lg mb-1 ${currentView === item.id ? 'text-blue-600' : 'text-gray-400'}`}></i>
-                            <span className={`text-[10px] font-medium ${currentView === item.id ? 'text-blue-600' : 'text-gray-400'}`}>{item.label}</span>
+                            {item.special ? (
+                                <div className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
+                                    <i className={`fas ${item.icon} text-2xl`}></i>
+                                </div>
+                            ) : (
+                                <>
+                                    <i className={`fas ${item.icon} text-lg mb-1 ${currentView === item.id ? 'text-blue-600' : 'text-gray-400'} ${item.color}`}></i>
+                                    <span className={`text-[10px] font-medium ${currentView === item.id ? 'text-blue-600' : 'text-gray-400'}`}>{item.label}</span>
+                                </>
+                            )}
                         </button>
                     ))}
                 </div>
@@ -177,8 +251,14 @@
         };
 
         const Header = ({ title }) => (
-            <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-30">
+            <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-20">
                 <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+                <div className="flex items-center gap-4">
+                    <button className="relative text-gray-400 hover:text-blue-600 transition-colors">
+                        <i className="fas fa-bell text-xl"></i>
+                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+                    </button>
+                </div>
             </div>
         );
 
@@ -201,21 +281,32 @@
             return (
                 <div className="p-6 space-y-6 pb-24">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                            <div className="text-gray-500 text-xs font-bold uppercase">Monthly Income</div>
-                            <div className="text-2xl font-bold text-gray-800">${monthlyIncome.toFixed(2)}</div>
-                        </div>
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                            <div className="text-gray-500 text-xs font-bold uppercase">Today's Jobs</div>
-                            <div className="text-2xl font-bold text-gray-800">{todaysJobs.length}</div>
-                        </div>
-                        <div onClick={() => setView('credentials')} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50">
-                            <div className="text-gray-500 text-xs font-bold uppercase">Compliance Alerts</div>
-                            <div className={`text-2xl font-bold ${expiringCreds.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                                {expiringCreds.length}
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                            <div className="absolute right-0 top-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4"></div>
+                            <div className="relative">
+                                <div className="text-gray-500 text-xs font-bold uppercase mb-1">Monthly Income</div>
+                                <div className="text-2xl font-bold text-gray-800">${monthlyIncome.toFixed(2)}</div>
+                                <div className="text-xs text-green-500 mt-1 font-medium"><i className="fas fa-arrow-up"></i> Updated just now</div>
                             </div>
-                            <div className="text-xs text-gray-400 mt-1">
-                                {expiringCreds.length > 0 ? `${expiringCreds.length} items expiring soon` : "All credentials active"}
+                        </div>
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                            <div className="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4"></div>
+                            <div className="relative">
+                                <div className="text-gray-500 text-xs font-bold uppercase mb-1">Today's Jobs</div>
+                                <div className="text-2xl font-bold text-gray-800">{todaysJobs.length}</div>
+                                <div className="text-xs text-blue-500 mt-1 font-medium"><i className="fas fa-calendar-day"></i> Check schedule</div>
+                            </div>
+                        </div>
+                        <div onClick={() => setView('credentials')} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50 relative overflow-hidden">
+                            <div className={`absolute right-0 top-0 w-24 h-24 rounded-bl-full -mr-4 -mt-4 ${expiringCreds.length > 0 ? 'bg-red-50' : 'bg-gray-50'}`}></div>
+                            <div className="relative">
+                                <div className="text-gray-500 text-xs font-bold uppercase mb-1">Compliance Alerts</div>
+                                <div className={`text-2xl font-bold ${expiringCreds.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                    {expiringCreds.length}
+                                </div>
+                                <div className="text-xs text-gray-400 mt-1 font-medium">
+                                    {expiringCreds.length > 0 ? `${expiringCreds.length} items expiring soon` : "All credentials active"}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -223,15 +314,29 @@
                         <h3 className="text-lg font-bold text-gray-800 mb-4">Today's Agenda</h3>
                         {todaysJobs.length === 0 ? (
                             <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
-                                <p className="text-gray-500 text-sm">No appointments today.</p>
-                                <button onClick={() => setView('schedule')} className="mt-2 text-blue-600 text-sm font-semibold hover:underline">Manage Schedule</button>
+                                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400">
+                                    <i className="fas fa-coffee"></i>
+                                </div>
+                                <p className="text-gray-500 text-sm">No appointments scheduled for today.</p>
+                                <button onClick={() => setView('schedule')} className="mt-4 text-blue-600 text-sm font-semibold hover:underline">Add one now</button>
                             </div>
                         ) : (
                             <div className="space-y-3">
                                 {todaysJobs.map(job => (
                                     <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center">
-                                        <div><h4 className="font-bold text-gray-800">{job.clientName}</h4><p className="text-xs text-gray-500">{job.time} @ {job.location}</p></div>
-                                        <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase status-${job.status.toLowerCase()}`}>{job.status}</span>
+                                        <div className="flex gap-4 items-center">
+                                            <div className="bg-blue-50 text-blue-600 w-12 h-12 rounded-lg flex flex-col items-center justify-center text-xs font-bold leading-none">
+                                                <span>{job.time.split(':')[0]}</span>
+                                                <span className="text-[10px] opacity-70">{job.time.split(':')[1]}</span>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-gray-800">{job.clientName}</h4>
+                                                <p className="text-xs text-gray-500"><i className="fas fa-map-marker-alt mr-1"></i>{job.location}</p>
+                                            </div>
+                                        </div>
+                                        <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wide status-${job.status.toLowerCase()}`}>
+                                            {job.status}
+                                        </span>
                                     </div>
                                 ))}
                             </div>
@@ -268,24 +373,31 @@
                 <div className="p-6 pb-24">
                      <div className="flex justify-between items-center mb-6">
                         <h3 className="text-lg font-bold text-gray-800">My Credentials</h3>
-                        <button onClick={() => setShowForm(true)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Add</button>
+                        <button onClick={() => setShowForm(true)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-md"><i className="fas fa-plus mr-2"></i>Add</button>
                     </div>
 
                     {showForm && (
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 animate-fade-in">
                             <form onSubmit={handleSave} className="space-y-4">
-                                <input required name="name" type="text" placeholder="Credential Name (e.g. Commission, Bond)" className="w-full p-3 bg-gray-50 border rounded-xl" />
-                                <input required name="expiry" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input required name="name" type="text" placeholder="Credential Name (e.g. Commission, Bond)" className="w-full p-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" />
+                                <input required name="expiry" type="date" className="w-full p-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" />
                                 <div className="flex gap-2">
-                                    <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 bg-gray-100 rounded-lg">Cancel</button>
-                                    <button type="submit" className="flex-1 py-2 bg-indigo-600 text-white rounded-lg">Save</button>
+                                    <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 bg-gray-100 rounded-lg font-medium">Cancel</button>
+                                    <button type="submit" className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700">Save</button>
                                 </div>
                             </form>
                         </div>
                     )}
 
                     <div className="space-y-3">
-                        {creds.length === 0 ? <p className="text-center text-gray-400 py-10">No credentials tracked.</p> : creds.sort((a,b) => new Date(a.expiry) - new Date(b.expiry)).map(c => {
+                        {creds.length === 0 ? (
+                            <div className="text-center py-12">
+                                <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-300">
+                                    <i className="fas fa-id-card text-2xl"></i>
+                                </div>
+                                <p className="text-gray-400">No credentials tracked yet.</p>
+                            </div>
+                        ) : creds.sort((a,b) => new Date(a.expiry) - new Date(b.expiry)).map(c => {
                             const daysLeft = Math.ceil((new Date(c.expiry) - new Date()) / (1000 * 60 * 60 * 24));
                             const statusColor = daysLeft < 0 ? 'bg-red-100 text-red-700' : (daysLeft < 60 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-700');
                             
@@ -293,13 +405,13 @@
                                 <div key={c.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center">
                                     <div>
                                         <h4 className="font-bold text-gray-800">{c.name}</h4>
-                                        <p className="text-xs text-gray-500">Expires: {c.expiry}</p>
+                                        <p className="text-xs text-gray-500 mt-1"><i className="far fa-calendar-alt mr-1"></i> Expires: {c.expiry}</p>
                                     </div>
                                     <div className="flex items-center gap-3">
-                                        <span className={`text-xs px-3 py-1 rounded-full font-bold ${statusColor}`}>
+                                        <span className={`text-xs px-3 py-1 rounded-full font-bold uppercase ${statusColor}`}>
                                             {daysLeft < 0 ? 'EXPIRED' : `${daysLeft} days`}
                                         </span>
-                                        <button onClick={() => handleDelete(c.id)} className="text-gray-300 hover:text-red-500"><i className="fas fa-trash"></i></button>
+                                        <button onClick={() => handleDelete(c.id)} className="text-gray-300 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 transition-colors"><i className="fas fa-trash"></i></button>
                                     </div>
                                 </div>
                             );
@@ -321,35 +433,27 @@
             };
 
             if (showForm) {
-                 const initial = editingData || { clientName: '', date: new Date().toISOString().split('T')[0], time: '12:00', location: '', type: 'General', fee: '', status: 'Scheduled' };
+                 const initial = editingData || { clientName: '', date: new Date().toISOString().split('T')[0], time: '12:00', location: '', type: 'General Notarization', fee: '', status: 'Scheduled' };
                  return (
-                    <div className="p-6 max-w-2xl mx-auto">
+                    <div className="p-6 max-w-2xl mx-auto pb-24">
                         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
                             <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><i className="fas fa-calendar-plus text-blue-600"></i> {editingData ? 'Edit' : 'New'} Appointment</h3>
                             <form onSubmit={(e) => { e.preventDefault(); handleSave(initial); }} className="space-y-4">
                                 <input required type="text" placeholder="Client Name" className="w-full p-3 bg-gray-50 border rounded-xl" value={initial.clientName} onChange={e => Object.assign(initial, {clientName: e.target.value})} /> 
                                 <div className="grid grid-cols-2 gap-4">
-                                    <input required type="date" className="w-full p-3 bg-gray-50 border rounded-xl" defaultValue={initial.date} id="apt_date" />
-                                    <input required type="time" className="w-full p-3 bg-gray-50 border rounded-xl" defaultValue={initial.time} id="apt_time" />
+                                    <input required type="date" className="w-full p-3 bg-gray-50 border rounded-xl" defaultValue={initial.date} id="apt_date" onChange={e => initial.date = e.target.value} />
+                                    <input required type="time" className="w-full p-3 bg-gray-50 border rounded-xl" defaultValue={initial.time} id="apt_time" onChange={e => initial.time = e.target.value} />
                                 </div>
-                                <input required type="text" placeholder="Location" className="w-full p-3 bg-gray-50 border rounded-xl" defaultValue={initial.location} id="apt_loc" />
+                                <input required type="text" placeholder="Location" className="w-full p-3 bg-gray-50 border rounded-xl" defaultValue={initial.location} id="apt_loc" onChange={e => initial.location = e.target.value} />
                                 <div className="grid grid-cols-2 gap-4">
-                                    <input required type="number" placeholder="Fee ($)" className="w-full p-3 bg-gray-50 border rounded-xl" defaultValue={initial.fee} id="apt_fee" />
-                                    <select className="w-full p-3 bg-gray-50 border rounded-xl" defaultValue={initial.status} id="apt_status">
+                                    <input required type="number" placeholder="Fee ($)" className="w-full p-3 bg-gray-50 border rounded-xl" defaultValue={initial.fee} id="apt_fee" onChange={e => initial.fee = e.target.value} />
+                                    <select className="w-full p-3 bg-gray-50 border rounded-xl" defaultValue={initial.status} id="apt_status" onChange={e => initial.status = e.target.value}>
                                         <option>Scheduled</option><option>Completed</option><option>Paid</option><option>Cancelled</option>
                                     </select>
                                 </div>
                                 <div className="flex gap-3 pt-4">
-                                    <button type="button" onClick={() => { setShowForm(false); setEditingData(null); }} className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl">Cancel</button>
-                                    <button type="button" onClick={() => handleSave({
-                                        clientName: document.querySelector('input[placeholder="Client Name"]').value,
-                                        date: document.getElementById('apt_date').value,
-                                        time: document.getElementById('apt_time').value,
-                                        location: document.getElementById('apt_loc').value,
-                                        fee: document.getElementById('apt_fee').value,
-                                        status: document.getElementById('apt_status').value,
-                                        type: 'General'
-                                    })} className="flex-1 py-3 bg-blue-600 text-white rounded-xl">Save</button>
+                                    <button type="button" onClick={() => { setShowForm(false); setEditingData(null); }} className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl font-medium">Cancel</button>
+                                    <button type="button" onClick={() => handleSave(initial)} className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium hover:bg-blue-700">Save</button>
                                 </div>
                             </form>
                         </div>
@@ -361,18 +465,18 @@
                 <div className="p-6 pb-24">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-lg font-bold text-gray-800">All Appointments</h3>
-                        <button onClick={() => setShowForm(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>New</button>
+                        <button onClick={() => setShowForm(true)} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md"><i className="fas fa-plus mr-2"></i>New</button>
                     </div>
                     <div className="space-y-3">
                         {appointments.length === 0 ? <p className="text-center text-gray-400 py-10">Schedule empty.</p> : appointments.sort((a,b) => new Date(a.date) - new Date(b.date)).map(job => (
-                            <div key={job.id} onClick={() => { setEditingData(job); setShowForm(true); }} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm cursor-pointer">
+                            <div key={job.id} onClick={() => { setEditingData(job); setShowForm(true); }} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm cursor-pointer hover:shadow-md transition-shadow">
                                 <div className="flex justify-between items-start mb-2">
-                                    <div><span className="text-xs font-bold text-gray-400 uppercase">{job.type}</span><h4 className="font-bold text-gray-800 text-lg">{job.clientName}</h4></div>
+                                    <div><span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{job.type}</span><h4 className="font-bold text-gray-800 text-lg">{job.clientName}</h4></div>
                                     <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase status-${job.status.toLowerCase()}`}>{job.status}</span>
                                 </div>
-                                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mt-2">
-                                    <div><i className="far fa-calendar text-blue-400"></i> {job.date} {job.time}</div>
-                                    <div className="text-right font-bold">${job.fee}</div>
+                                <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mt-3 pt-3 border-t border-gray-50">
+                                    <div className="flex items-center gap-2"><i className="far fa-calendar-alt text-blue-400"></i> {job.date} {job.time}</div>
+                                    <div className="text-right font-bold text-gray-800">${job.fee}</div>
                                 </div>
                             </div>
                         ))}
@@ -406,7 +510,7 @@
                 <div className="p-6 pb-24">
                      <div className="flex justify-between items-center mb-6">
                         <h3 className="text-lg font-bold text-gray-800">Notary Journal</h3>
-                        <button onClick={() => setShowForm(true)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Log Entry</button>
+                        <button onClick={() => setShowForm(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors shadow-md"><i className="fas fa-plus mr-2"></i>Log Entry</button>
                     </div>
 
                     {showForm && (
@@ -424,7 +528,7 @@
                                 <input name="fee" type="number" placeholder="Fee Charged ($)" className="w-full p-3 bg-gray-50 border rounded-xl" />
                                 <div className="flex gap-2">
                                     <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 bg-gray-100 rounded-lg">Cancel</button>
-                                    <button type="submit" className="flex-1 py-2 bg-indigo-600 text-white rounded-lg">Save Entry</button>
+                                    <button type="submit" className="flex-1 py-2 bg-purple-600 text-white rounded-lg">Save Entry</button>
                                 </div>
                             </form>
                         </div>
@@ -433,14 +537,16 @@
                     <div className="space-y-3">
                         {entries.length === 0 ? <p className="text-center text-gray-400 py-10">No journal entries yet.</p> : entries.sort((a,b) => new Date(b.date) - new Date(a.date)).map(entry => (
                             <div key={entry.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                                <div className="flex justify-between">
-                                    <h4 className="font-bold text-gray-800">{entry.signer}</h4>
-                                    <span className="text-xs text-gray-500">{entry.date}</span>
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h4 className="font-bold text-gray-800">{entry.signer}</h4>
+                                        <p className="text-xs text-gray-500 mt-1"><i className="far fa-file-alt mr-1"></i> {entry.docType}</p>
+                                    </div>
+                                    <span className="text-xs text-gray-400 font-mono">{entry.date}</span>
                                 </div>
-                                <div className="text-sm text-gray-600 mt-1">{entry.docType} &bull; ID: {entry.idType}</div>
-                                <div className="text-xs text-gray-400 mt-2 flex justify-between">
-                                    <span>{entry.time}</span>
-                                    <span className="font-mono">${entry.fee}</span>
+                                <div className="mt-3 pt-3 border-t border-gray-50 flex justify-between items-center text-xs text-gray-500">
+                                    <span>ID: {entry.idType}</span>
+                                    <span className="font-bold text-purple-600">${entry.fee}</span>
                                 </div>
                             </div>
                         ))}
@@ -485,17 +591,17 @@
 
             return (
                 <div className="p-6 pb-24">
-                    <div className="bg-white p-1 rounded-xl flex mb-6 border border-gray-200">
-                        <button onClick={() => setActiveTab('expenses')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'expenses' ? 'bg-emerald-100 text-emerald-700' : 'text-gray-500'}`}>Expenses</button>
-                        <button onClick={() => setActiveTab('mileage')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'mileage' ? 'bg-blue-100 text-blue-700' : 'text-gray-500'}`}>Mileage</button>
+                    <div className="bg-white p-1 rounded-xl flex mb-6 border border-gray-200 shadow-sm">
+                        <button onClick={() => setActiveTab('expenses')} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'expenses' ? 'bg-emerald-50 text-emerald-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>Expenses</button>
+                        <button onClick={() => setActiveTab('mileage')} className={`flex-1 py-2 text-sm font-bold rounded-lg transition-all ${activeTab === 'mileage' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>Mileage</button>
                     </div>
 
-                    <div className="flex justify-between items-center mb-4">
+                    <div className="flex justify-between items-center mb-6">
                         <div>
-                            <p className="text-xs text-gray-500 uppercase font-bold">{activeTab === 'expenses' ? 'Total Spent' : 'Total Miles'}</p>
+                            <p className="text-xs text-gray-500 uppercase font-bold tracking-wide">{activeTab === 'expenses' ? 'Total Expenses' : 'Total Mileage'}</p>
                             <p className="text-2xl font-bold text-gray-800">{activeTab === 'expenses' ? `$${totalExp.toFixed(2)}` : `${totalMiles} mi`}</p>
                         </div>
-                        <button onClick={() => setShowForm(true)} className="bg-gray-800 text-white w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-plus"></i></button>
+                        <button onClick={() => setShowForm(true)} className="bg-gray-900 text-white w-10 h-10 rounded-full flex items-center justify-center shadow-lg hover:bg-gray-700 transition-colors"><i className="fas fa-plus"></i></button>
                     </div>
 
                     {showForm && (
@@ -519,7 +625,7 @@
                                 )}
                                 <div className="flex gap-2">
                                     <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 bg-gray-100 rounded-lg">Cancel</button>
-                                    <button type="submit" className="flex-1 py-2 bg-gray-800 text-white rounded-lg">Save</button>
+                                    <button type="submit" className="flex-1 py-2 bg-gray-900 text-white rounded-lg">Save</button>
                                 </div>
                             </form>
                         </div>
@@ -567,12 +673,21 @@
 
             useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
 
+            const handleModeSwitch = (newMode) => {
+                setMode(newMode);
+                let msg = "";
+                if (newMode === 'study') msg = "📚 **Study Mode Active.**\n\nAsk me any factual question about state laws, fees, or ID requirements. I'm here to help!";
+                if (newMode === 'course') msg = "🎓 **Course Mode Active.**\n\nI will guide you through the 7-module curriculum step-by-step. Click 'Start Module 1' below when ready.";
+                if (newMode === 'scenario') msg = "🎭 **Roleplay Mode Active.**\n\nI am now acting as your client. I might try to trick you with an illegal request. Type 'Hi' to start the simulation.";
+                setMessages(prev => [...prev, { role: 'assistant', content: msg }]);
+            };
+
             const startTraining = () => {
                 if(apiKey.trim()) {
                     localStorage.setItem('gemini_api_key', apiKey);
                     setHasKey(true);
                     const stateName = STATE_DATABASE[selectedStateKey].state;
-                    setMessages([{ role: 'assistant', content: `**NotaryPro Mentor Online.**\n\nJurisdiction Locked: **${stateName}**.\n\nSelect a mode below to begin.` }]);
+                    setMessages([{ role: 'assistant', content: `**NotaryPro Mentor Online.**\n\nJurisdiction Locked: **${stateName}**.\n\nPlease select a mode above to begin your session.` }]);
                 }
             };
 
@@ -637,19 +752,19 @@
             );
 
             return (
-                <div className="flex flex-col h-full bg-white relative pb-20 md:pb-0">
-                    <div className="border-b px-4 py-3 flex justify-between items-center bg-gray-50">
-                        <select value={selectedStateKey} onChange={e => { setSelectedStateKey(e.target.value); setMessages([]); }} className="bg-white border text-sm rounded-lg p-2 font-semibold text-gray-700">
+                <div className="flex flex-col h-full bg-white relative">
+                    <div className="border-b px-4 py-3 flex flex-col sm:flex-row justify-between items-center bg-gray-50 gap-3 sm:gap-0">
+                        <select value={selectedStateKey} onChange={e => { setSelectedStateKey(e.target.value); setMessages([]); }} className="bg-white border text-sm rounded-lg p-2 font-semibold text-gray-700 w-full sm:w-auto">
                             {Object.entries(STATE_DATABASE).map(([k,v]) => <option key={k} value={k}>{v.state}</option>)}
                         </select>
-                        <div className="flex gap-2">
-                            <button onClick={() => setMode('study')} className={`px-3 py-1 rounded text-xs font-bold ${mode === 'study' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>Study</button>
-                            <button onClick={() => setMode('course')} className={`px-3 py-1 rounded text-xs font-bold ${mode === 'course' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>Course</button>
-                            <button onClick={() => setMode('scenario')} className={`px-3 py-1 rounded text-xs font-bold ${mode === 'scenario' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>Sim</button>
-                            <button onClick={() => setShowCertModal(true)} className="px-3 py-1 rounded text-xs font-bold bg-yellow-400 text-white ml-2"><i className="fas fa-file-contract"></i></button>
+                        <div className="flex gap-2 w-full sm:w-auto justify-center">
+                            <button onClick={() => handleModeSwitch('study')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex-1 sm:flex-none text-center ${mode === 'study' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-600 border'}`}>Study</button>
+                            <button onClick={() => handleModeSwitch('course')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex-1 sm:flex-none text-center ${mode === 'course' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-600 border'}`}>Course</button>
+                            <button onClick={() => handleModeSwitch('scenario')} className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex-1 sm:flex-none text-center ${mode === 'scenario' ? 'bg-blue-600 text-white shadow-md' : 'bg-white text-gray-600 border'}`}>Sim</button>
+                            <button onClick={() => setShowCertModal(true)} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-yellow-400 text-white shadow-sm hover:bg-yellow-500"><i className="fas fa-file-contract"></i></button>
                         </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4">
                         {messages.map((m, i) => (
                             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[85%] p-4 rounded-2xl text-sm ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'}`}>
@@ -660,12 +775,18 @@
                         {loading && <div className="typing-indicator ml-4"><span></span><span></span><span></span></div>}
                         <div ref={messagesEndRef} />
                     </div>
-                    <div className="p-4 border-t flex gap-2">
+                    
+                    {/* Disclaimer Footer in Chat Area */}
+                    <div className="px-4 pb-2">
+                         <p className="text-[10px] text-gray-400 text-center italic">AI may make mistakes. Always check your official state handbook.</p>
+                    </div>
+
+                    <div className="p-4 border-t bg-white flex gap-2 pb-24 md:pb-4">
                         {mode === 'course' && (
-                            <button onClick={() => { setCurrentModule(p => p+1); sendMessage(`Start Module ${currentModule+1}`); }} className="bg-green-600 text-white px-3 rounded-xl text-xs font-bold">Next</button>
+                            <button onClick={() => { setCurrentModule(p => p+1); sendMessage(`Start Module ${currentModule+1}`); }} className="bg-green-600 text-white px-4 rounded-xl text-xs font-bold shadow-md hover:bg-green-700 transition-colors">Next</button>
                         )}
-                        <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} placeholder="Message AI..." className="flex-1 p-3 border rounded-xl" />
-                        <button onClick={() => sendMessage()} className="bg-blue-600 text-white w-12 rounded-xl"><i className="fas fa-paper-plane"></i></button>
+                        <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} placeholder="Message AI..." className="flex-1 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <button onClick={() => sendMessage()} className="bg-blue-600 text-white w-12 rounded-xl shadow-md hover:bg-blue-700 transition-colors"><i className="fas fa-paper-plane"></i></button>
                     </div>
 
                     {/* CERT MODAL */}
@@ -701,6 +822,9 @@
             
             // Re-fetch credentials to ensure Dashboard alerts update
             const [credentials, setCredentials] = useState(DataManager.get('notary_credentials'));
+            
+            // Mobile Menu State
+            const [showMobileMenu, setShowMobileMenu] = useState(false);
 
             const handleSaveAppt = (appt) => {
                 DataManager.save('notary_appointments', appt);
@@ -729,11 +853,11 @@
 
             return (
                 <div className="flex h-screen overflow-hidden">
-                    <Sidebar currentView={currentView} setView={setCurrentView} />
+                    <Sidebar currentView={currentView} setView={setCurrentView} isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} />
                     <main className="flex-1 flex flex-col h-screen md:ml-64 relative bg-gray-50">
                         <Header title={currentView === 'trainer' ? 'AI Training Center' : currentView.charAt(0).toUpperCase() + currentView.slice(1)} />
                         <div className="flex-1 overflow-y-auto relative">{renderView()}</div>
-                        <MobileNav currentView={currentView} setView={setCurrentView} />
+                        <MobileNav currentView={currentView} setView={setCurrentView} onOpenMenu={() => setShowMobileMenu(true)} />
                     </main>
                 </div>
             );
