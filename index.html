@@ -281,6 +281,13 @@
                 }
             };
 
+            const handleReportIssue = () => {
+                const currentStateData = STATE_DATABASE[selectedStateKey];
+                const subject = `NotaryPro Feedback: ${currentStateData.state}`;
+                const body = `I found an issue with the ${currentStateData.state} module.\n\nContext/Details:\n\n\n\n(Current Data Snapshot: ${JSON.stringify(currentStateData)})`;
+                window.location.href = `mailto:jamdelphiagroup@gmail.com?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+            };
+
             const sendMessage = async (overrideInput = null, moduleIndexOverride = null) => {
                 const textToSend = overrideInput || input;
                 const activeModuleIndex = moduleIndexOverride || currentModule;
@@ -532,10 +539,17 @@
                                 </button>
                                 <button 
                                     onClick={handleScorecard}
-                                    className="px-3 py-2 text-xs text-green-600 hover:text-green-800 font-medium"
+                                    className="px-3 py-2 text-xs text-green-600 hover:text-green-800 font-medium border-r border-gray-300 mr-1"
                                     title="End & Grade"
                                 >
                                     <i className="fas fa-clipboard-check mr-1"></i> Grade
+                                </button>
+                                <button 
+                                    onClick={handleReportIssue}
+                                    className="px-3 py-2 text-xs text-red-500 hover:text-red-700 font-medium"
+                                    title="Report Data Error"
+                                >
+                                    <i className="fas fa-bug"></i>
                                 </button>
                             </div>
                         </div>
