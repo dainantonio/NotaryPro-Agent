@@ -30,415 +30,82 @@
         // STATE DATABASE
         // ---------------------------------------------------------
         const STATE_DATABASE = {
-            "AL": {
-                "state": "Alabama (Civil Law Notaries)",
-                "fees": { "acknowledgment": "null", "jurat": "null", "oath": "null", "travel": "null" },
-                "id_requirements": { "credible_witnesses": "Mentioned as a method for identity proofing for electronic and remote online notarial acts.", "expired_id_rule": "null" },
-                "biometrics": { "journal_thumbprint": "null" },
-                "certificates": { "acknowledgment_text": "Each Authentic Act shall contain: The handwritten signature and original seal... (Check Handbook for full text)", "jurat_text": "null" },
-                "red_flags": [ "Must refrain from representing any party in any matter arising from or related to the notary's authentic act.", "Cannot take official action until signature and seal are properly registered.", "Prohibited from providing advice that does not treat all parties equally, accurately, fully, and impartially." ]
-            },
-            "AK": {
-                "state": "Alaska",
-                "fees": { "acknowledgment": "null", "jurat": "null", "oath": "null", "travel": "null" },
-                "id_requirements": { "credible_witnesses": "null", "expired_id_rule": "null" },
-                "biometrics": { "journal_thumbprint": "null" },
-                "certificates": { "acknowledgment_text": "null", "jurat_text": "null" },
-                "red_flags": [ "Applicants may not have been convicted of a felony or incarcerated for a felony conviction within 10 years before commission.", "Sureties/employers have no authority to request that regular notary commissions be revoked." ]
-            },
-            "AZ": {
-                "state": "Arizona",
-                "fees": { "acknowledgment": "$10 per notary public signature", "jurat": "$10 per notary public signature", "oath": "$10 per notarial act", "travel": "Mileage fees can be charged at the rate allowed for Arizona state employees." },
-                "id_requirements": { "credible_witnesses": "Two types: 1. Personal Knowledge. 2. Stranger with valid ID who knows signer.", "expired_id_rule": "Generally requires unexpired ID; exceptions for real estate conveyance/financing." },
-                "biometrics": { "journal_thumbprint": "Optional; not required under law but helpful." },
-                "certificates": { "acknowledgment_text": "State of Arizona, County of... (Check Handbook for full text)", "jurat_text": "State of Arizona, County of... (Check Handbook for full text)" },
-                "red_flags": [ "Cannot use the term 'notario' or 'notario publico' unless an attorney.", "Cannot perform act if officer or spouse is a party or has direct beneficial interest.", "Cannot withhold access to original record provided by person seeking act.", "Charging higher fees is a class 5 felony." ]
-            },
-            "AR": {
-                "state": "Arkansas",
-                "fees": { "acknowledgment": "Not required to charge; if charged, must be reasonable and agreed upon.", "jurat": "null", "oath": "null", "travel": "null" },
-                "id_requirements": { "credible_witnesses": "For RON, individual personally known to notary or identified via remote ID.", "expired_id_rule": "null" },
-                "biometrics": { "journal_thumbprint": "null" },
-                "certificates": { "acknowledgment_text": "State of Arkansas, County of... (Check Handbook for full text)", "jurat_text": "State of Arkansas, County of... (Check Handbook for full text)" },
-                "red_flags": [ "Cannot notarize own signature.", "Cannot notarize document with direct/indirect financial benefit.", "Cannot perform acts for corporation if personally involved or acting as representative." ]
-            },
-            "CA": {
-                "state": "California",
-                "fees": { "acknowledgment": "$15 for each signature taken", "jurat": "$15 including the seal", "oath": "$15 for administering an oath", "travel": "null" },
-                "id_requirements": { "credible_witnesses": "One witness (personally known to notary) OR Two witnesses (proven with IDs).", "expired_id_rule": "Allowed if current or issued within 5 years." },
-                "biometrics": { "journal_thumbprint": "REQUIRED for deeds, quitclaim deeds, deeds of trust, powers of attorney." },
-                "certificates": { "acknowledgment_text": "A notary public or other officer completing this certificate verifies only the identity of the individual... (See full disclaimer text)", "jurat_text": "Subscribed and sworn to (or affirmed) before me on this ____ day of _________, 20___..." },
-                "red_flags": [ "Cannot use title 'notario publico'", "Cannot use seal for non-notarial purposes", "Cannot notarize incomplete documents", "Cannot practice law (UPL)", "Cannot notarize own signature" ]
-            },
-            "CO": {
-                "state": "Colorado",
-                "fees": { "acknowledgment": "$15 ($25 for electronic)", "jurat": "$15 ($25 for electronic)", "oath": "$15 ($25 for electronic)", "travel": "No set fee, must be agreed upon." },
-                "id_requirements": { "credible_witnesses": "Individual personally known to the notary.", "expired_id_rule": "Allowed if expired not more than one year." },
-                "biometrics": { "journal_thumbprint": "Optional" },
-                "certificates": { "acknowledgment_text": "State of Colorado, County of... (Check Handbook)", "jurat_text": "State of Colorado, County of... (Check Handbook)" },
-                "red_flags": [ "Use of 'notario' prohibited", "Cannot notarize blank documents", "PROHIBITED from using a seal embosser", "Disqualified if party or relative named in record", "Cannot withhold original record" ]
-            },
-            "CT": {
-                "state": "Connecticut",
-                "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00", "travel": "$0.35 per mile" },
-                "id_requirements": { "credible_witnesses": "Personally known by notary AND personally knows signer.", "expired_id_rule": "In-person ID should be current." },
-                "biometrics": { "journal_thumbprint": "null" },
-                "certificates": { "acknowledgment_text": "State of Connecticut, County of... (Check Handbook)", "jurat_text": "Subscribed and sworn to before me..." },
-                "red_flags": [ "Disqualified if signatory of document", "Cannot acknowledge own signature", "Cannot use foreign terms like 'notario publico'", "Cannot certify vital records", "Cannot use signature stamp" ]
-            },
-            "DE": {
-                "state": "Delaware",
-                "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00", "travel": "Reasonable fee agreed upon in advance" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "FL": {
-                "state": "Florida",
-                "fees": { "acknowledgment": "Maximum $10 per notarial act", "jurat": "Maximum $10", "oath": "Maximum $10", "travel": "null" },
-                "id_requirements": { "credible_witnesses": "1 witness (personally known) OR 2 witnesses (proven by ID).", "expired_id_rule": "Acceptable if issued within past 5 years with serial number." },
-                "biometrics": { "journal_thumbprint": "null" },
-                "certificates": { "acknowledgment_text": "STATE OF FLORIDA, COUNTY OF... (Check Handbook)", "jurat_text": "STATE OF FLORIDA, COUNTY OF... (Check Handbook)" },
-                "red_flags": [ "Cannot notarize own signature.", "Cannot notarize for immediate family (spouse, son, daughter, mother, father).", "Physical presence required unless RON.", "Cannot use 'notario'.", "Cannot notarize incomplete documents." ]
-            },
-            "GA": {
-                "state": "Georgia",
-                "fees": { "acknowledgment": "$2.00 per notarial act", "jurat": "$2.00 per notarial act", "oath": "$2.00 per notarial act", "travel": "null" },
-                "id_requirements": { "credible_witnesses": "null", "expired_id_rule": "null" },
-                "biometrics": { "journal_thumbprint": "null" },
-                "certificates": { "acknowledgment_text": "null", "jurat_text": "null" },
-                "red_flags": [ "Disqualified if signer of document.", "Disqualified if party to document/transaction.", "Cannot execute certificate known to be false.", "Cannot issue attachments or garnishments." ]
-            },
-            "HI": {
-                "state": "Hawaii",
-                "fees": { "acknowledgment": "$5.00 (original+1 copy); $2.50 per addt'l copy", "jurat": "$5.00 (original+4 copies)", "oath": "$5.00", "travel": "null" },
-                "id_requirements": { "credible_witnesses": "Oath/affirmation of credible witness personally known to notary.", "expired_id_rule": "null" },
-                "biometrics": { "journal_thumbprint": "null" },
-                "certificates": { "acknowledgment_text": "STATE OF HAWAII, COUNTY OF... (Check Handbook)", "jurat_text": "Subscribed and sworn to before me..." },
-                "red_flags": [ "Never notarize own signature.", "No personal or financial interest.", "Unlawful to notarize if party to instrument.", "Must be satisfied that info certified is true." ]
-            },
-            "ID": {
-                "state": "Idaho",
-                "fees": { "acknowledgment": "Max $5.00", "jurat": "Max $5.00", "oath": "Max $5.00", "travel": "Actual and reasonable expenses" },
-                "id_requirements": { "credible_witnesses": "Credible witness personally known to notary OR proven by ID.", "expired_id_rule": "Current or expired less than 3 years." },
-                "biometrics": { "journal_thumbprint": "Optional" },
-                "certificates": { "acknowledgment_text": "State of Idaho, County of... (Check Handbook)", "jurat_text": "State of Idaho, County of... (Check Handbook)" },
-                "red_flags": [ "DO NOT notarize own signature.", "DO NOT notarize if named in document.", "DO NOT notarize if spouse is a party.", "DO NOT sign as representative and then notarize.", "DO NOT engage in UPL." ]
-            },
-            "IL": {
-                "state": "Illinois",
-                "fees": { "acknowledgment": "$5.00 ($25 Electronic)", "jurat": "$5.00 ($25 Electronic)", "oath": "$5.00 ($25 Electronic)", "travel": "null" },
-                "id_requirements": { "credible_witnesses": "Credible witness personally known to notary.", "expired_id_rule": "Must be unexpired government ID." },
-                "biometrics": { "journal_thumbprint": "null" },
-                "certificates": { "acknowledgment_text": "State of ____, County of... (Check Handbook)", "jurat_text": "State of ____, County of... (Check Handbook)" },
-                "red_flags": [ "Cannot notarize own signature.", "Cannot acknowledge if named as party.", "Cannot use 'notario'.", "Cannot prepare legal instruments unless attorney.", "Cannot notarize incomplete documents." ]
-            },
-            "IN": {
-                "state": "Indiana",
-                "fees": { "acknowledgment": "$10 ($25 Remote)", "jurat": "$10", "oath": "$10", "travel": "Federal mileage rate" },
-                "id_requirements": { "credible_witnesses": "Credible witness personally known to notary or identified by ID.", "expired_id_rule": "Current or expired no more than 3 years." },
-                "biometrics": { "journal_thumbprint": "null" },
-                "certificates": { "acknowledgment_text": "State of Indiana, County of... (Check Handbook)", "jurat_text": "State of Indiana, County of... (Check Handbook)" },
-                "red_flags": [ "Never notarize own signature.", "Cannot notarize spouse's signature.", "Cannot notarize if direct benefit to notary or spouse.", "Cannot use 'notario'.", "No legal advice." ]
-            },
-            "IA": {
-                "state": "Iowa",
-                "fees": { "acknowledgment": "Reasonable fee", "jurat": "Reasonable fee", "oath": "Reasonable fee", "travel": "Actual/Reasonable expenses" },
-                "id_requirements": { "credible_witnesses": "Credible witness known to notary or identified by ID.", "expired_id_rule": "Current or expired not more than 3 years." },
-                "biometrics": { "journal_thumbprint": "Optional" },
-                "certificates": { "acknowledgment_text": "State of ____, County of... (Check Handbook)", "jurat_text": "State of ____, County of... (Check Handbook)" },
-                "red_flags": [ "No authority to prepare legal docs.", "Signer must personally appear (or valid RON).", "No financial interest.", "Cannot add certificate wording for signer." ]
-            },
-            "KS": {
-                "state": "Kansas",
-                "fees": { "acknowledgment": "Reasonable fee (disclosed)", "jurat": "null", "oath": "null", "travel": "null" },
-                "id_requirements": { "credible_witnesses": "Credible witness personally appearing and known to notary or identified by ID.", "expired_id_rule": "Current or expired not more than 3 years." },
-                "biometrics": { "journal_thumbprint": "null" },
-                "certificates": { "acknowledgment_text": "State of Kansas, County of... (Check Handbook)", "jurat_text": "State of Kansas, County of... (Check Handbook)" },
-                "red_flags": [ "Cannot perform if notary or spouse is party/has interest.", "Cannot use 'notario'.", "Cannot notarize blank documents.", "Cannot withhold original records." ]
-            },
-            "KY": {
-                "state": "Kentucky",
-                "fees": { "acknowledgment": "No set limit (must be disclosed)", "jurat": "No set limit (must be disclosed)", "oath": "No set limit (must be disclosed)", "travel": "No set limit (must be disclosed)" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (must be personally known to notary)", "expired_id_rule": "null" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "LA": {
-                "state": "Louisiana",
-                "fees": { "acknowledgment": "No set limit", "jurat": "No set limit", "oath": "No set limit", "travel": "No set limit" },
-                "id_requirements": { "credible_witnesses": "null", "expired_id_rule": "null" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "ME": {
-                "state": "Maine",
-                "fees": { "acknowledgment": "No set limit (Reasonable)", "jurat": "No set limit (Reasonable)", "oath": "No set limit (Reasonable)", "travel": "Reasonable fee (agreed in advance)" },
-                "id_requirements": { "credible_witnesses": "1 credible witness", "expired_id_rule": "null" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "MD": {
-                "state": "Maryland",
-                "fees": { "acknowledgment": "$8 ($4 per addt'l sig)", "jurat": "$8", "oath": "$8", "travel": "IRS rate + max $5" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR ID)", "expired_id_rule": "Must be valid (current)" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "MA": {
-                "state": "Massachusetts",
-                "fees": { "acknowledgment": "No set limit", "jurat": "No set limit", "oath": "No set limit", "travel": "No set limit" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Not accepted (must be current)" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "MI": {
-                "state": "Michigan",
-                "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon prior to travel" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "MN": {
-                "state": "Minnesota",
-                "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "null" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Signer ID must be current; Witness ID accepted if expired <= 3 years" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "MS": {
-                "state": "Mississippi",
-                "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "null" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Allowed if expired within 5 years" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "MO": {
-                "state": "Missouri",
-                "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance (must be separate from notary fee)" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Must be current (unexpired)" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "MT": {
-                "state": "Montana",
-                "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "IRS mileage rate (must be agreed upon in advance)" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Allowed if expired within 3 years" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "NE": {
-                "state": "Nebraska",
-                "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$2", "travel": "Mileage at state rate" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Must be current" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "NV": {
-                "state": "Nevada",
-                "fees": { "acknowledgment": "$15 ($7.50 for each additional signature)", "jurat": "$15", "oath": "$7.50", "travel": "Agreed upon in advance (based on time of day)" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Notary discretion (statute does not explicitly prohibit, but strongly recommends current)" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "NH": {
-                "state": "New Hampshire",
-                "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "$0.20/mile" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "null" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "NJ": {
-                "state": "New Jersey",
-                "fees": { "acknowledgment": "$2.50 ($15 for real estate transfer)", "jurat": "$2.50 ($25 for mortgage financing)", "oath": "$2.50", "travel": "null" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Allowed if expired within 3 years" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "NM": {
-                "state": "New Mexico",
-                "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Allowed if expired within 1 year" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "NC": {
-                "state": "North Carolina",
-                "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon in advance" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (must be personally known to the notary)", "expired_id_rule": "Must be current" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "ND": {
-                "state": "North Dakota",
-                "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Must be valid" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "NY": {
-                "state": "New York",
-                "fees": { "acknowledgment": "Not specified in data (Check Handbook)", "jurat": "Not specified in data", "oath": "Not specified in data" },
-                "id_requirements": { "credible_witnesses": "Not specified", "expired_id_rule": "Not specified" },
-                "biometrics": { "journal_thumbprint": "Not required" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Sworn to before me on this ___ day of ___..." },
-                "red_flags": [ "Name must match signature exactly", "Initials like 'J. Doe' prohibited if commissioned as full name", "Oath of office must be signed in presence of Notary" ]
-            },
-            "OH": {
-                "state": "Ohio",
-                "fees": { "acknowledgment": "$5.00 per act ($25.00 for Online)", "jurat": "$5.00 per act ($25.00 for Online)", "oath": "$5.00 per act", "travel": "Reasonable fee agreed upon in advance" },
-                "id_requirements": { "credible_witnesses": "Proof of identity may be satisfied by a third person known to the notary who introduces the signer to the notary.", "expired_id_rule": "Not specified" },
-                "biometrics": { "journal_thumbprint": "Not required" },
-                "certificates": { "acknowledgment_text": "State of Ohio... (Check Handbook for full text)", "jurat_text": "State of Ohio, County of... (Check Handbook for full text)" },
-                "red_flags": [ "Never prepare instruments or give advice", "Cannot notarize if you have an interest", "Cannot notarize outside physical boundaries of the state", "Must administer oath for affidavits", "Cannot charge more than prescribed by law" ]
-            },
-            "OK": {
-                "state": "Oklahoma",
-                "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (must be personally known to notary)", "expired_id_rule": "Must be current" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "OR": {
-                "state": "Oregon",
-                "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon in advance" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Allowed if expired within 3 years" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-             "PA": {
-                "state": "Pennsylvania",
-                "fees": { "acknowledgment": "$5 ($2 for each additional name)", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance (reasonable)" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Allowed if expired within 3 years" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "RI": {
-                "state": "Rhode Island",
-                "fees": { "acknowledgment": "$25", "jurat": "$25", "oath": "$25", "travel": "null" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Allowed if expired within 3 years" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "SC": {
-                "state": "South Carolina",
-                "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "SD": {
-                "state": "South Dakota",
-                "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon in advance" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "TN": {
-                "state": "Tennessee",
-                "fees": { "acknowledgment": "$0 (Reasonable fees for travel/expenses allowed)", "jurat": "$0 (Reasonable fees for travel/expenses allowed)", "oath": "$0 (Reasonable fees for travel/expenses allowed)", "travel": "Reasonable fee agreed upon in advance" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "TX": {
-                "state": "Texas",
-                "fees": { "acknowledgment": "$6 (first signature) + $1 (each additional)", "jurat": "$6", "oath": "$6", "travel": "null" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "UT": {
-                "state": "Utah",
-                "fees": { "acknowledgment": "$10 per signature", "jurat": "$10 per signature", "oath": "$10 per person", "travel": "Agreed upon in advance + IRS mileage rate" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Must be valid" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "VT": {
-                "state": "Vermont",
-                "fees": { "acknowledgment": "No set limit (must be disclosed in advance)", "jurat": "No set limit", "oath": "No set limit", "travel": "No set limit" },
-                "id_requirements": { "credible_witnesses": "1 credible witness", "expired_id_rule": "Allowed if expired within 3 years" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "VA": {
-                "state": "Virginia",
-                "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon in advance" },
-                "id_requirements": { "credible_witnesses": "2 credible witnesses (with valid ID) if signer lacks ID", "expired_id_rule": "Must be current (Exception: 5 years for healthcare/assisted living)" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "WA": {
-                "state": "Washington",
-                "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon in advance" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Allowed if expired within 3 years" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "DC": {
-                "state": "Washington DC",
-                "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Must be current" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "WI": {
-                "state": "Wisconsin",
-                "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Allowed if expired within 3 years" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "WY": {
-                "state": "Wyoming",
-                "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon in advance" },
-                "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Allowed if expired within 3 years" },
-                "biometrics": { "journal_thumbprint": "Not specified" },
-                "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" },
-                "red_flags": ["Check state handbook for specific prohibited acts"]
-            },
-            "WV": {
-                "state": "West Virginia",
-                "fees": { "acknowledgment": "$10.00 max per signature", "jurat": "$10.00 max", "oath": "$10.00 max", "travel": "Not specified" },
-                "id_requirements": { "credible_witnesses": "Personal knowledge OR oath of a credible witness.", "expired_id_rule": "Allowed if expired less than 3 years." },
-                "biometrics": { "journal_thumbprint": "Not required" },
-                "certificates": { "acknowledgment_text": "State of West Virginia... (Check Handbook)", "jurat_text": "State of West Virginia... (Check Handbook)" },
-                "red_flags": [ "Do not draft legal records or practice law", "Do not act as immigration consultant", "Do not charge >$10.00", "No direct/indirect financial interest", "No immediate family notarizations if beneficial interest exists" ]
-            }
+            "AL": { "state": "Alabama (Civil Law Notaries)", "fees": { "acknowledgment": "null", "jurat": "null", "oath": "null", "travel": "null" }, "id_requirements": { "credible_witnesses": "Mentioned as a method for identity proofing for electronic and remote online notarial acts.", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "Each Authentic Act shall contain: The handwritten signature and original seal... (Check Handbook for full text)", "jurat_text": "null" }, "red_flags": [ "Must refrain from representing any party in any matter arising from or related to the notary's authentic act.", "Cannot take official action until signature and seal are properly registered.", "Prohibited from providing advice that does not treat all parties equally, accurately, fully, and impartially." ] },
+            "AK": { "state": "Alaska", "fees": { "acknowledgment": "null", "jurat": "null", "oath": "null", "travel": "null" }, "id_requirements": { "credible_witnesses": "null", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "null", "jurat_text": "null" }, "red_flags": [ "Applicants may not have been convicted of a felony or incarcerated for a felony conviction within 10 years before commission.", "Sureties/employers have no authority to request that regular notary commissions be revoked." ] },
+            "AZ": { "state": "Arizona", "fees": { "acknowledgment": "$10 per notary public signature", "jurat": "$10 per notary public signature", "oath": "$10 per notarial act", "travel": "Mileage fees can be charged at the rate allowed for Arizona state employees." }, "id_requirements": { "credible_witnesses": "Two types: 1. Personal Knowledge. 2. Stranger with valid ID who knows signer.", "expired_id_rule": "Generally requires unexpired ID; exceptions for real estate conveyance/financing." }, "biometrics": { "journal_thumbprint": "Optional; not required under law but helpful." }, "certificates": { "acknowledgment_text": "State of Arizona, County of... (Check Handbook for full text)", "jurat_text": "State of Arizona, County of... (Check Handbook for full text)" }, "red_flags": [ "Cannot use the term 'notario' or 'notario publico' unless an attorney.", "Cannot perform act if officer or spouse is a party or has direct beneficial interest.", "Cannot withhold access to original record provided by person seeking act.", "Charging higher fees is a class 5 felony." ] },
+            "AR": { "state": "Arkansas", "fees": { "acknowledgment": "Not required to charge; if charged, must be reasonable and agreed upon.", "jurat": "null", "oath": "null", "travel": "null" }, "id_requirements": { "credible_witnesses": "For RON, individual personally known to notary or identified via remote ID.", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "State of Arkansas, County of... (Check Handbook for full text)", "jurat_text": "State of Arkansas, County of... (Check Handbook for full text)" }, "red_flags": [ "Cannot notarize own signature.", "Cannot notarize document with direct/indirect financial benefit.", "Cannot perform acts for corporation if personally involved or acting as representative." ] },
+            "CA": { "state": "California", "fees": { "acknowledgment": "$15 for each signature taken", "jurat": "$15 including the seal", "oath": "$15 for administering an oath", "travel": "null" }, "id_requirements": { "credible_witnesses": "One witness (personally known to notary) OR Two witnesses (proven with IDs).", "expired_id_rule": "Allowed if current or issued within 5 years." }, "biometrics": { "journal_thumbprint": "REQUIRED for deeds, quitclaim deeds, deeds of trust, powers of attorney." }, "certificates": { "acknowledgment_text": "A notary public or other officer completing this certificate verifies only the identity of the individual... (See full disclaimer text)", "jurat_text": "Subscribed and sworn to (or affirmed) before me on this ____ day of _________, 20___..." }, "red_flags": [ "Cannot use title 'notario publico'", "Cannot use seal for non-notarial purposes", "Cannot notarize incomplete documents", "Cannot practice law (UPL)", "Cannot notarize own signature" ] },
+            "CO": { "state": "Colorado", "fees": { "acknowledgment": "$15 ($25 for electronic)", "jurat": "$15 ($25 for electronic)", "oath": "$15 ($25 for electronic)", "travel": "No set fee, must be agreed upon." }, "id_requirements": { "credible_witnesses": "Individual personally known to the notary.", "expired_id_rule": "Allowed if expired not more than one year." }, "biometrics": { "journal_thumbprint": "Optional" }, "certificates": { "acknowledgment_text": "State of Colorado, County of... (Check Handbook)", "jurat_text": "State of Colorado, County of... (Check Handbook)" }, "red_flags": [ "Use of 'notario' prohibited", "Cannot notarize blank documents", "PROHIBITED from using a seal embosser", "Disqualified if party or relative named in record", "Cannot withhold original record" ] },
+            "CT": { "state": "Connecticut", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00", "travel": "$0.35 per mile" }, "id_requirements": { "credible_witnesses": "Personally known by notary AND personally knows signer.", "expired_id_rule": "In-person ID should be current." }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "State of Connecticut, County of... (Check Handbook)", "jurat_text": "Subscribed and sworn to before me..." }, "red_flags": [ "Disqualified if signatory of document", "Cannot acknowledge own signature", "Cannot use foreign terms like 'notario publico'", "Cannot certify vital records", "Cannot use signature stamp" ] },
+            "DE": { "state": "Delaware", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00", "travel": "Reasonable fee agreed upon in advance" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "FL": { "state": "Florida", "fees": { "acknowledgment": "Maximum $10 per notarial act", "jurat": "Maximum $10", "oath": "Maximum $10", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 witness (personally known) OR 2 witnesses (proven by ID).", "expired_id_rule": "Acceptable if issued within past 5 years with serial number." }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "STATE OF FLORIDA, COUNTY OF... (Check Handbook)", "jurat_text": "STATE OF FLORIDA, COUNTY OF... (Check Handbook)" }, "red_flags": [ "Cannot notarize own signature.", "Cannot notarize for immediate family (spouse, son, daughter, mother, father).", "Physical presence required unless RON.", "Cannot use 'notario'.", "Cannot notarize incomplete documents." ] },
+            "GA": { "state": "Georgia", "fees": { "acknowledgment": "$2.00 per notarial act", "jurat": "$2.00 per notarial act", "oath": "$2.00 per notarial act", "travel": "null" }, "id_requirements": { "credible_witnesses": "null", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "null", "jurat_text": "null" }, "red_flags": [ "Disqualified if signer of document.", "Disqualified if party to document/transaction.", "Cannot execute certificate known to be false.", "Cannot issue attachments or garnishments." ] },
+            "HI": { "state": "Hawaii", "fees": { "acknowledgment": "$5.00 (original+1 copy); $2.50 per addt'l copy", "jurat": "$5.00 (original+4 copies)", "oath": "$5.00", "travel": "null" }, "id_requirements": { "credible_witnesses": "Oath/affirmation of credible witness personally known to notary.", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "STATE OF HAWAII, COUNTY OF... (Check Handbook)", "jurat_text": "Subscribed and sworn to before me..." }, "red_flags": [ "Never notarize own signature.", "No personal or financial interest.", "Unlawful to notarize if party to instrument.", "Must be satisfied that info certified is true." ] },
+            "ID": { "state": "Idaho", "fees": { "acknowledgment": "Max $5.00", "jurat": "Max $5.00", "oath": "Max $5.00", "travel": "Actual and reasonable expenses" }, "id_requirements": { "credible_witnesses": "Credible witness personally known to notary OR proven by ID.", "expired_id_rule": "Current or expired less than 3 years." }, "biometrics": { "journal_thumbprint": "Optional" }, "certificates": { "acknowledgment_text": "State of Idaho, County of... (Check Handbook)", "jurat_text": "State of Idaho, County of... (Check Handbook)" }, "red_flags": [ "DO NOT notarize own signature.", "DO NOT notarize if named in document.", "DO NOT notarize if spouse is a party.", "DO NOT sign as representative and then notarize.", "DO NOT engage in UPL." ] },
+            "IL": { "state": "Illinois", "fees": { "acknowledgment": "$5.00 ($25 Electronic)", "jurat": "$5.00 ($25 Electronic)", "oath": "$5.00 ($25 Electronic)", "travel": "null" }, "id_requirements": { "credible_witnesses": "Credible witness personally known to notary.", "expired_id_rule": "Must be unexpired government ID." }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "State of ____, County of... (Check Handbook)", "jurat_text": "State of ____, County of... (Check Handbook)" }, "red_flags": [ "Cannot notarize own signature.", "Cannot acknowledge if named as party.", "Cannot use 'notario'.", "Cannot prepare legal instruments unless attorney.", "Cannot notarize incomplete documents." ] },
+            "IN": { "state": "Indiana", "fees": { "acknowledgment": "$10 ($25 Remote)", "jurat": "$10", "oath": "$10", "travel": "Federal mileage rate" }, "id_requirements": { "credible_witnesses": "Credible witness personally known to notary or identified by ID.", "expired_id_rule": "Current or expired no more than 3 years." }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "State of Indiana, County of... (Check Handbook)", "jurat_text": "State of Indiana, County of... (Check Handbook)" }, "red_flags": [ "Never notarize own signature.", "Cannot notarize spouse's signature.", "Cannot notarize if direct benefit to notary or spouse.", "Cannot use 'notario'.", "No legal advice." ] },
+            "IA": { "state": "Iowa", "fees": { "acknowledgment": "Reasonable fee", "jurat": "Reasonable fee", "oath": "Reasonable fee", "travel": "Actual/Reasonable expenses" }, "id_requirements": { "credible_witnesses": "Credible witness known to notary or identified by ID.", "expired_id_rule": "Current or expired not more than 3 years." }, "biometrics": { "journal_thumbprint": "Optional" }, "certificates": { "acknowledgment_text": "State of ____, County of... (Check Handbook)", "jurat_text": "State of ____, County of... (Check Handbook)" }, "red_flags": [ "No authority to prepare legal docs.", "Signer must personally appear (or valid RON).", "No financial interest.", "Cannot add certificate wording for signer." ] },
+            "KS": { "state": "Kansas", "fees": { "acknowledgment": "Reasonable fee (disclosed)", "jurat": "null", "oath": "null", "travel": "null" }, "id_requirements": { "credible_witnesses": "Credible witness personally appearing and known to notary or identified by ID.", "expired_id_rule": "Current or expired not more than 3 years." }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "State of Kansas, County of... (Check Handbook)", "jurat_text": "State of Kansas, County of... (Check Handbook)" }, "red_flags": [ "Cannot perform if notary or spouse is party/has interest.", "Cannot use 'notario'.", "Cannot notarize blank documents.", "Cannot withhold original records." ] },
+            "KY": { "state": "Kentucky", "fees": { "acknowledgment": "No set limit (must be disclosed)", "jurat": "No set limit (must be disclosed)", "oath": "No set limit (must be disclosed)", "travel": "No set limit (must be disclosed)" }, "id_requirements": { "credible_witnesses": "1 credible witness (must be personally known to notary)", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "LA": { "state": "Louisiana", "fees": { "acknowledgment": "No set limit", "jurat": "No set limit", "oath": "No set limit", "travel": "No set limit" }, "id_requirements": { "credible_witnesses": "null", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "ME": { "state": "Maine", "fees": { "acknowledgment": "No set limit (Reasonable)", "jurat": "No set limit (Reasonable)", "oath": "No set limit (Reasonable)", "travel": "Reasonable fee (agreed in advance)" }, "id_requirements": { "credible_witnesses": "1 credible witness", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "MD": { "state": "Maryland", "fees": { "acknowledgment": "$8 ($4 per addt'l sig)", "jurat": "$8", "oath": "$8", "travel": "IRS rate + max $5" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR ID)", "expired_id_rule": "Must be valid (current)" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "MA": { "state": "Massachusetts", "fees": { "acknowledgment": "No set limit", "jurat": "No set limit", "oath": "No set limit", "travel": "No set limit" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Not accepted (must be current)" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "MI": { "state": "Michigan", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon prior to travel" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "MN": { "state": "Minnesota", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Signer ID must be current; Witness ID accepted if expired <= 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "MS": { "state": "Mississippi", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Allowed if expired within 5 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "MO": { "state": "Missouri", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance (must be separate from notary fee)" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Must be current (unexpired)" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "MT": { "state": "Montana", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "IRS mileage rate (must be agreed upon in advance)" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "NE": { "state": "Nebraska", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$2", "travel": "Mileage at state rate" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "NV": { "state": "Nevada", "fees": { "acknowledgment": "$15 ($7.50 for each additional signature)", "jurat": "$15", "oath": "$7.50", "travel": "Agreed upon in advance (based on time of day)" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Notary discretion (statute does not explicitly prohibit, but strongly recommends current)" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "NH": { "state": "New Hampshire", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "$0.20/mile" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "null" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "NJ": { "state": "New Jersey", "fees": { "acknowledgment": "$2.50 ($15 for real estate transfer)", "jurat": "$2.50 ($25 for mortgage financing)", "oath": "$2.50", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "NM": { "state": "New Mexico", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Allowed if expired within 1 year" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "NC": { "state": "North Carolina", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon in advance" }, "id_requirements": { "credible_witnesses": "1 credible witness (must be personally known to the notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "ND": { "state": "North Dakota", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Must be valid" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "NY": { "state": "New York", "fees": { "acknowledgment": "Not specified in data (Check Handbook)", "jurat": "Not specified in data", "oath": "Not specified in data" }, "id_requirements": { "credible_witnesses": "Not specified", "expired_id_rule": "Not specified" }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Sworn to before me on this ___ day of ___..." }, "red_flags": [ "Name must match signature exactly", "Initials like 'J. Doe' prohibited if commissioned as full name", "Oath of office must be signed in presence of Notary" ] },
+            "OH": { "state": "Ohio", "fees": { "acknowledgment": "$5.00 per act ($25.00 for Online)", "jurat": "$5.00 per act ($25.00 for Online)", "oath": "$5.00 per act", "travel": "Reasonable fee agreed upon in advance" }, "id_requirements": { "credible_witnesses": "Proof of identity may be satisfied by a third person known to the notary who introduces the signer to the notary.", "expired_id_rule": "Not specified" }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of Ohio... (Check Handbook for full text)", "jurat_text": "State of Ohio, County of... (Check Handbook for full text)" }, "red_flags": [ "Never prepare instruments or give advice", "Cannot notarize if you have an interest", "Cannot notarize outside physical boundaries of the state", "Must administer oath for affidavits", "Cannot charge more than prescribed by law" ] },
+            "OK": { "state": "Oklahoma", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance" }, "id_requirements": { "credible_witnesses": "1 credible witness (must be personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "OR": { "state": "Oregon", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon in advance" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "PA": { "state": "Pennsylvania", "fees": { "acknowledgment": "$5 ($2 for each additional name)", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance (reasonable)" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "RI": { "state": "Rhode Island", "fees": { "acknowledgment": "$25", "jurat": "$25", "oath": "$25", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "SC": { "state": "South Carolina", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "SD": { "state": "South Dakota", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon in advance" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "TN": { "state": "Tennessee", "fees": { "acknowledgment": "$0 (Reasonable fees for travel/expenses allowed)", "jurat": "$0 (Reasonable fees for travel/expenses allowed)", "oath": "$0 (Reasonable fees for travel/expenses allowed)", "travel": "Reasonable fee agreed upon in advance" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "TX": { "state": "Texas", "fees": { "acknowledgment": "$6 (first signature) + $1 (each additional)", "jurat": "$6", "oath": "$6", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "UT": { "state": "Utah", "fees": { "acknowledgment": "$10 per signature", "jurat": "$10 per signature", "oath": "$10 per person", "travel": "Agreed upon in advance + IRS mileage rate" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known) OR 2 credible witnesses (with valid ID)", "expired_id_rule": "Must be valid" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "VT": { "state": "Vermont", "fees": { "acknowledgment": "No set limit (must be disclosed in advance)", "jurat": "No set limit", "oath": "No set limit", "travel": "No set limit" }, "id_requirements": { "credible_witnesses": "1 credible witness", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "VA": { "state": "Virginia", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon in advance" }, "id_requirements": { "credible_witnesses": "2 credible witnesses (with valid ID) if signer lacks ID", "expired_id_rule": "Must be current (Exception: 5 years for healthcare/assisted living)" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "WA": { "state": "Washington", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon in advance" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "DC": { "state": "Washington DC", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "WI": { "state": "Wisconsin", "fees": { "acknowledgment": "$5", "jurat": "$5", "oath": "$5", "travel": "Agreed upon in advance" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "WY": { "state": "Wyoming", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "Agreed upon in advance" }, "id_requirements": { "credible_witnesses": "1 credible witness (known to notary OR identified by ID)", "expired_id_rule": "Allowed if expired within 3 years" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "Not specified", "jurat_text": "Not specified" }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+            "WV": { "state": "West Virginia", "fees": { "acknowledgment": "$10.00 max per signature", "jurat": "$10.00 max", "oath": "$10.00 max", "travel": "Not specified" }, "id_requirements": { "credible_witnesses": "Personal knowledge OR oath of a credible witness.", "expired_id_rule": "Allowed if expired less than 3 years." }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of West Virginia... (Check Handbook)", "jurat_text": "State of West Virginia... (Check Handbook)" }, "red_flags": [ "Do not draft legal records or practice law", "Do not act as immigration consultant", "Do not charge >$10.00", "No direct/indirect financial interest", "No immediate family notarizations if beneficial interest exists" ] }
         };
+
+        // NEW: STRICT TRAINER CURRICULUM
+        const COURSE_MODULES = [
+            { id: 1, title: "Authority & Qualifications", topic: "Commissioning authority (SOS/Governor), term length, jurisdiction boundaries, and bonding/insurance requirements." },
+            { id: 2, title: "The Core 5 Steps", topic: "Personal Appearance (The Golden Rule), Document Scanning (blanks), ID Verifying, Willingness/Awareness, Certificate Completion." },
+            { id: 3, title: "Notarial Acts & Certificates", topic: "Acknowledgments vs. Jurats vs. Oaths. State-specific acts (Copy Cert/Protests)." },
+            { id: 4, title: "Identification Standards", topic: "Satisfactory Evidence types, Credible Witnesses rules (1 vs 2), Name discrepancies." },
+            { id: 5, title: "Rules, Fees, & Journals", topic: "Maximum fees allowed by law, Journal requirements (mandatory vs recommended), Seal requirements." },
+            { id: 6, title: "Special Circumstances & RON", topic: "Remote Online Notarization, Signature by Mark/Proxy, Foreign language documents." },
+            { id: 7, title: "Misconduct & Liability", topic: "Prohibited acts (UPL, conflict of interest), Penalties (fines, revocation, criminal charges)." }
+        ];
+
+        // NEW: PERSONA DEFINITION
+        const PERSONA = `
+            ROLE: STRICT STATE-SPECIFIC NOTARY TRAINER.
+            TONE: Professional, authoritative, "tough love", integrity-focused.
+            ZERO TOLERANCE: Do not tolerate "cutting corners". Correct any implication of skipping steps firmly.
+            REALITY CHECK: Frequently remind the user of personal liability (suspension, revocation, jail).
+            
+            INTERACTION RULES:
+            1. Teach One Topic at a time.
+            2. Immediate Quiz: After explanation, give 1-3 multiple-choice questions or a "Trap Question".
+            3. Feedback: Explain why an answer is wrong citing rules.
+        `;
 
         function App() {
             const [apiKey, setApiKey] = React.useState('');
@@ -448,16 +115,40 @@
             const [input, setInput] = React.useState('');
             const [loading, setLoading] = React.useState(false);
             const [mode, setMode] = React.useState('study'); 
+            const [currentModule, setCurrentModule] = React.useState(0); 
 
             React.useEffect(() => {
                 const currentStateName = STATE_DATABASE[selectedStateKey].state;
                 setMessages([
                     { role: 'assistant', content: `Welcome to the ${currentStateName} Notary Training Module. I have loaded the specific laws for ${currentStateName}. Select "Roleplay Sim" to begin a scenario.` }
                 ]);
+                setCurrentModule(0); 
             }, [selectedStateKey]);
 
             const handleStart = () => {
                 if(apiKey.trim().length > 0) setHasKey(true);
+            };
+
+            const switchMode = (newMode) => {
+                setMode(newMode);
+                if (newMode === 'course') {
+                    setCurrentModule(0);
+                    const stateName = STATE_DATABASE[selectedStateKey].state;
+                    setMessages([{ 
+                        role: 'assistant', 
+                        content: `🎓 **NOTARY COURSE: JURISDICTION LOCKED.**\n\nI am your Strict Instructor. I see you have selected **${stateName}** as your jurisdiction.\n\nWe will proceed through 7 Modules covering Authority, The 5 Steps, Acts, ID Standards, Fees/Journals, Special Circumstances, and Misconduct.\n\nI do not tolerate cutting corners. You are a public official with unlimited liability.\n\nClick **'Start Module 1'** below when you are ready to begin.` 
+                    }]);
+                } else {
+                    setMessages([{ role: 'assistant', content: `Switched to ${newMode === 'study' ? 'Study Mode' : 'Roleplay Simulator'}. How can I help?` }]);
+                }
+            };
+
+            const handleNextModule = () => {
+                if (currentModule < COURSE_MODULES.length) {
+                    const nextMod = currentModule + 1;
+                    setCurrentModule(nextMod);
+                    sendMessage(null, nextMod); 
+                }
             };
 
             const handleExport = () => {
@@ -478,23 +169,9 @@
                 const currentStateData = STATE_DATABASE[selectedStateKey];
                 const SCORE_PROMPT = `
                     REVIEW the training session above. 
-                    Generate a "Notary Performance Scorecard" for the user based on their performance in the scenario/questions.
-                    
-                    CRITERIA:
-                    1. Accuracy of State Laws (Did they follow ${currentStateData.state} specific rules?)
-                    2. Fraud Detection (Did they catch red flags?)
-                    3. Professionalism.
-
-                    OUTPUT FORMAT:
-                    ## FINAL GRADE: [0-100]
-                    ### Summary of Performance:
-                    [2 sentences]
-                    ### Key Strengths:
-                    - [Point 1]
-                    - [Point 2]
-                    ### Areas for Improvement:
-                    - [Point 1]
-                    - [Point 2]
+                    Generate a "Notary Performance Scorecard" for the user.
+                    CRITERIA: Accuracy of State Laws, Fraud Detection, Professionalism.
+                    OUTPUT FORMAT: ## FINAL GRADE: [0-100] followed by summary and feedback.
                 `;
 
                 const newMessages = [...messages, { role: 'user', content: "[SYSTEM COMMAND: GENERATE SCORECARD]" }];
@@ -525,19 +202,44 @@
                 }
             };
 
-            const sendMessage = async () => {
-                if (!input.trim()) return;
+            const sendMessage = async (overrideInput = null, moduleIndexOverride = null) => {
+                const textToSend = overrideInput || input;
+                const activeModuleIndex = moduleIndexOverride || currentModule;
+
+                if (!textToSend && !moduleIndexOverride) return;
                 
-                const newMessages = [...messages, { role: 'user', content: input }];
+                const newMessages = [...messages];
+                if (moduleIndexOverride) {
+                    newMessages.push({ role: 'user', content: `[Starting Module ${activeModuleIndex}: ${COURSE_MODULES[activeModuleIndex-1].title}]` });
+                } else {
+                    newMessages.push({ role: 'user', content: textToSend });
+                }
+
                 setMessages(newMessages);
                 setInput('');
                 setLoading(true);
 
                 const currentStateData = STATE_DATABASE[selectedStateKey];
+                
+                // Course Instruction Logic
+                let courseInstruction = "";
+                if (mode === 'course' && activeModuleIndex > 0) {
+                    const mod = COURSE_MODULES[activeModuleIndex - 1];
+                    courseInstruction = `
+                        CURRENT MODULE: ${mod.id}: ${mod.title}
+                        TOPIC: ${mod.topic}
+                        
+                        INSTRUCTION:
+                        1. Explain this topic based on ${currentStateData.state} laws using the persona defined below.
+                        2. IMMEDIATELY follow the explanation with 1-3 MULTIPLE CHOICE questions or a TRAP question to test the user.
+                        3. Do not provide the answer to the quiz yet. Wait for the user to respond.
+                        4. If the conversation history shows you already asked a question, EVALUATE the user's answer. If correct, praise briefly and tell them to click 'Next Module'. If wrong, correct them strictly.
+                    `;
+                }
 
                 // REFINED SYSTEM PROMPT
                 const SYSTEM_PROMPT = `
-                    You are an expert Notary Public Instructor and Roleplay Agent for the state of ${currentStateData.state}.
+                    ${PERSONA}
                     
                     KNOWLEDGE BASE FOR ${currentStateData.state.toUpperCase()}:
                     - Fees: ${JSON.stringify(currentStateData.fees)}
@@ -545,22 +247,22 @@
                     - Red Flags: ${JSON.stringify(currentStateData.red_flags)}
                     - Biometrics: ${JSON.stringify(currentStateData.biometrics)}
                     
+                    ${courseInstruction}
+
                     CRITICAL BEHAVIOR RULES:
                     1. SCENARIO MODE (Strict Enforcement):
                        - You are playing the role of a client (signer).
                        - IF the user proposes an ILLEGAL ACTION (e.g., using a Credible Witness they don't know in a state where that is forbidden, charging too much, ignoring a red flag), DO NOT ASK FOLLOW-UP QUESTIONS.
                        - IMMEDIATELY BREAK CHARACTER AND FAIL THEM. 
                        - Output format: "❌ FAIL: [Reason]. [Explain the specific state rule violated]."
-                       - Do not use markdown (asterisks) for bolding. Use capitalized words for emphasis if needed.
                        - Example for CA: If they say "I'll use a stranger as a credible witness," you say: "❌ FAIL: California law requires 1 credible witness to be personally known to the notary, or 2 witnesses with valid IDs. You cannot use one stranger."
 
                     2. STUDY MODE (Direct & Helpful):
                        - If the user asks a FACTUAL question (e.g., "What is the max fee?"), ANSWER DIRECTLY using the provided JSON data. DO NOT tell them to "check their knowledge base".
-                       - After answering, asking a quick checking question is okay.
                        - If the JSON says "null" or "Not specified", tell them: "That specific detail isn't in my immediate database, so you should check the official ${currentStateData.state} handbook to be safe."
 
                     3. GENERAL:
-                       - Keep responses concise (under 100 words).
+                       - Keep responses concise (under 150 words).
                        - Do not use markdown syntax like **bold** or *italics* as it does not render in the chat window.
                 `;
 
@@ -605,7 +307,7 @@
                         <div className="bg-white p-8 rounded-xl shadow-lg max-w-md w-full">
                             <div className="text-center mb-6">
                                 <i className="fas fa-stamp text-5xl text-blue-600 mb-4"></i>
-                                <h1 className="text-2xl font-bold text-gray-800">NotaryPro Agent</h1>
+                                <h1 className="text-2xl font-bold text-gray-800">NotaryPro AI Agent</h1>
                                 <p className="text-gray-500 text-sm mt-2">Multi-State Training System</p>
                             </div>
                             <div className="space-y-4">
@@ -665,6 +367,7 @@
                                         onChange={(e) => {
                                             setSelectedStateKey(e.target.value);
                                             setMessages([]); 
+                                            setCurrentModule(0);
                                         }}
                                         className="bg-gray-100 border-none text-blue-600 font-bold text-xs rounded p-1 cursor-pointer focus:ring-0"
                                     >
@@ -679,13 +382,19 @@
                         </div>
                         <div className="flex bg-gray-100 p-1 rounded-lg gap-1">
                             <button 
-                                onClick={() => setMode('study')}
+                                onClick={() => switchMode('study')}
                                 className={`px-3 py-2 text-xs rounded-md transition-all ${mode === 'study' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 Study
                             </button>
                             <button 
-                                onClick={() => setMode('scenario')}
+                                onClick={() => switchMode('course')}
+                                className={`px-3 py-2 text-xs rounded-md transition-all ${mode === 'course' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+                            >
+                                Course
+                            </button>
+                            <button 
+                                onClick={() => switchMode('scenario')}
                                 className={`px-3 py-2 text-xs rounded-md transition-all ${mode === 'scenario' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
                             >
                                 Roleplay
@@ -739,16 +448,26 @@
                     {/* Input Area */}
                     <div className="p-4 bg-white border-t">
                         <div className="max-w-4xl mx-auto relative flex items-center gap-2">
+                            {/* NEW: Course Navigation Controls */}
+                            {mode === 'course' && currentModule < COURSE_MODULES.length && (
+                                <button 
+                                    onClick={handleNextModule}
+                                    className="bg-green-600 text-white p-4 rounded-xl hover:bg-green-700 transition-all shadow-md font-semibold text-sm whitespace-nowrap"
+                                >
+                                    {currentModule === 0 ? "Start Module 1" : "Next Module"} <i className="fas fa-arrow-right ml-1"></i>
+                                </button>
+                            )}
+                            
                             <input
                                 type="text"
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={handleKeyDown}
-                                placeholder={`Ask a question about ${STATE_DATABASE[selectedStateKey].state} law...`}
+                                placeholder={mode === 'course' ? "Answer the instructor's question..." : `Ask a question about ${STATE_DATABASE[selectedStateKey].state} law...`}
                                 className="flex-1 bg-gray-100 text-gray-800 p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
                             />
                             <button 
-                                onClick={sendMessage}
+                                onClick={() => sendMessage()}
                                 disabled={loading || !input.trim()}
                                 className="bg-blue-600 text-white p-4 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md"
                             >
@@ -756,7 +475,7 @@
                             </button>
                         </div>
                         <p className="text-center text-xs text-gray-400 mt-3">
-                            AI can make mistakes. Always check your official State Notary Handbook.
+                            {mode === 'course' && currentModule > 0 ? `Current Module: ${currentModule} of ${COURSE_MODULES.length}` : "AI can make mistakes. Always check your official State Notary Handbook."}
                         </p>
                     </div>
                 </div>
