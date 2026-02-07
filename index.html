@@ -104,7 +104,6 @@
             "WV": { "state": "West Virginia", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00", "travel": "Not specified" }, "id_requirements": { "credible_witnesses": "Personal knowledge OR oath of a credible witness.", "expired_id_rule": "Allowed if expired less than 3 years." }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of West Virginia... (Check Handbook)", "jurat_text": "State of West Virginia... (Check Handbook)" }, "red_flags": [ "Do not draft legal records or practice law", "Do not act as immigration consultant", "Do not charge >$10.00", "No direct/indirect financial interest", "No immediate family notarizations if beneficial interest exists" ] }
         };
 
-        // ... existing COURSE_MODULES ...
         const COURSE_MODULES = [
             { id: 1, title: "Authority & Qualifications", topic: "Commissioning authority (SOS/Governor), term length, jurisdiction boundaries, and bonding/insurance requirements." },
             { id: 2, title: "The Core 5 Steps", topic: "Personal Appearance (The Golden Rule), Document Scanning (blanks), ID Verifying, Willingness/Awareness, Certificate Completion." },
@@ -398,12 +397,28 @@
                     {/* Sidebar */}
                     <div className={`fixed inset-y-0 left-0 transform ${showSidebar ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:static lg:flex lg:flex-col w-64 bg-gray-900 text-white transition-transform duration-200 ease-in-out z-30`}>
                         <div className="p-4 border-b border-gray-700 flex justify-between items-center">
-                            <h2 className="font-bold text-lg"><i className="fas fa-history mr-2"></i>History</h2>
+                            <h2 className="font-bold text-lg"><i className="fas fa-bars mr-2"></i>Menu</h2>
                             <button onClick={() => setShowSidebar(false)} className="lg:hidden text-gray-400 hover:text-white">
                                 <i className="fas fa-times"></i>
                             </button>
                         </div>
+                        
+                        {/* UTILITIES MOVED HERE */}
+                        <div className="p-4 border-b border-gray-700 space-y-2">
+                            <h3 className="text-xs text-gray-400 uppercase font-semibold mb-2">Actions</h3>
+                            <button onClick={handleExport} className="w-full text-left p-2 rounded hover:bg-gray-800 flex items-center gap-2">
+                                <i className="fas fa-download text-blue-400 w-5"></i> Export Transcript
+                            </button>
+                            <button onClick={handleScorecard} className="w-full text-left p-2 rounded hover:bg-gray-800 flex items-center gap-2">
+                                <i className="fas fa-clipboard-check text-green-400 w-5"></i> Grade Session
+                            </button>
+                            <button onClick={handleReportIssue} className="w-full text-left p-2 rounded hover:bg-gray-800 flex items-center gap-2">
+                                <i className="fas fa-bug text-red-400 w-5"></i> Report Error
+                            </button>
+                        </div>
+
                         <div className="p-4">
+                            <h3 className="text-xs text-gray-400 uppercase font-semibold mb-2">History</h3>
                             <button onClick={startNewChat} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all">
                                 <i className="fas fa-plus"></i> New Chat
                             </button>
@@ -430,19 +445,20 @@
                     </div>
 
                     {/* Main Content */}
-                    <div className="flex-1 flex flex-col h-screen relative w-full lg:max-w-6xl lg:mx-auto">
+                    <div className="flex-1 flex flex-col h-screen relative w-full lg:max-w-6xl lg:mx-auto bg-gray-50">
                         {/* Header */}
-                        <div className="bg-white border-b px-3 py-3 flex justify-between items-center shadow-sm z-10">
-                            <div className="flex items-center gap-2">
-                                <button onClick={() => setShowSidebar(true)} className="lg:hidden text-gray-600 hover:text-blue-600">
+                        <div className="bg-white border-b px-4 py-3 flex justify-between items-center shadow-sm z-10 sticky top-0">
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setShowSidebar(true)} className="lg:hidden text-gray-600 hover:text-blue-600 p-2">
                                     <i className="fas fa-bars text-xl"></i>
                                 </button>
-                                <div className="bg-blue-600 p-2 rounded-lg text-white">
-                                    <i className="fas fa-stamp text-sm"></i>
-                                </div>
-                                <div className="max-w-[120px] sm:max-w-none">
-                                    <h1 className="font-bold text-lg text-gray-800 hidden sm:block">NotaryPro Agent</h1>
-                                    <div className="text-xs text-gray-500 flex items-center gap-1">
+                                
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-2">
+                                        <i className="fas fa-stamp text-blue-600 text-sm"></i>
+                                        <h1 className="font-bold text-gray-800 leading-tight">NotaryPro</h1>
+                                    </div>
+                                    <div className="relative mt-1">
                                         <select 
                                             value={selectedStateKey}
                                             onChange={(e) => {
@@ -450,7 +466,7 @@
                                                 setMessages([]); 
                                                 setCurrentModule(0);
                                             }}
-                                            className="bg-gray-100 border-none text-blue-600 font-bold text-xs rounded p-1 cursor-pointer focus:ring-0 max-w-full truncate"
+                                            className="bg-gray-100 text-gray-700 text-xs font-semibold rounded py-1 px-2 pr-6 appearance-none border-none focus:ring-0 w-full max-w-[150px] truncate"
                                         >
                                             {Object.entries(STATE_DATABASE)
                                                 .sort((a, b) => a[1].state.localeCompare(b[1].state))
@@ -458,44 +474,39 @@
                                                     <option key={key} value={key}>{data.state}</option>
                                             ))}
                                         </select>
+                                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-500">
+                                            <i className="fas fa-chevron-down text-[10px]"></i>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex bg-gray-100 p-1 rounded-lg gap-1 overflow-x-auto scrollbar-hide max-w-[50%] sm:max-w-none">
-                                <button onClick={() => switchMode('study')} className={`px-2 sm:px-3 py-2 text-xs rounded-md transition-all whitespace-nowrap ${mode === 'study' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}>
-                                    <i className="fas fa-book-open sm:hidden"></i><span className="hidden sm:inline">Study</span>
-                                </button>
-                                <button onClick={() => switchMode('course')} className={`px-2 sm:px-3 py-2 text-xs rounded-md transition-all whitespace-nowrap ${mode === 'course' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}>
-                                    <i className="fas fa-graduation-cap sm:hidden"></i><span className="hidden sm:inline">Course</span>
-                                </button>
-                                <button onClick={() => switchMode('scenario')} className={`px-2 sm:px-3 py-2 text-xs rounded-md transition-all whitespace-nowrap ${mode === 'scenario' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}>
-                                    <i className="fas fa-theater-masks sm:hidden"></i><span className="hidden sm:inline">Roleplay</span>
-                                </button>
-                                <div className="border-l border-gray-300 mx-1"></div>
-                                <button onClick={handleExport} className="px-2 sm:px-3 py-2 text-xs text-gray-500 hover:text-blue-600" title="Export">
-                                    <i className="fas fa-download"></i>
-                                </button>
-                                <button onClick={handleScorecard} className="px-2 sm:px-3 py-2 text-xs text-green-600 hover:text-green-800" title="Grade">
-                                    <i className="fas fa-clipboard-check"></i>
-                                </button>
-                                <button onClick={handleReportIssue} className="px-2 sm:px-3 py-2 text-xs text-red-500 hover:text-red-700" title="Report">
-                                    <i className="fas fa-bug"></i>
-                                </button>
-                            </div>
+                        </div>
+
+                        {/* MODE TABS (Mobile Optimized) */}
+                        <div className="px-4 py-2 bg-white border-b border-gray-100 flex gap-2 overflow-x-auto scrollbar-hide">
+                            <button onClick={() => switchMode('study')} className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all text-center whitespace-nowrap ${mode === 'study' ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>
+                                <i className="fas fa-book-open mr-1"></i> Study
+                            </button>
+                            <button onClick={() => switchMode('course')} className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all text-center whitespace-nowrap ${mode === 'course' ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>
+                                <i className="fas fa-graduation-cap mr-1"></i> Course
+                            </button>
+                            <button onClick={() => switchMode('scenario')} className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all text-center whitespace-nowrap ${mode === 'scenario' ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>
+                                <i className="fas fa-theater-masks mr-1"></i> Roleplay
+                            </button>
                         </div>
 
                         {/* Chat Area */}
-                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/50">
                             {messages.map((msg, index) => (
                                 <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    <div className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-4 sm:px-5 py-3 shadow-sm ${
+                                    <div className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-4 py-3 shadow-sm text-sm sm:text-base ${
                                         msg.role === 'user' 
                                             ? 'bg-blue-600 text-white rounded-br-none user-content' 
                                             : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
                                     }`}>
                                         {msg.role === 'assistant' && (
-                                            <div className="text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">
-                                                {msg.content.includes("SCORE:") ? "Evaluator" : (mode === 'scenario' ? 'Client / Trainer' : 'Instructor')}
+                                            <div className="text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider flex items-center gap-1">
+                                                {msg.content.includes("SCORE:") ? <><i className="fas fa-clipboard-check"></i> Evaluator</> : (mode === 'scenario' ? <><i className="fas fa-user-tie"></i> Client / Trainer</> : <><i className="fas fa-chalkboard-teacher"></i> Instructor</>)}
                                             </div>
                                         )}
                                         <div 
@@ -507,7 +518,7 @@
                             ))}
                             {loading && (
                                 <div className="flex justify-start">
-                                    <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-none px-5 py-4 shadow-sm">
+                                    <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm">
                                         <div className="typing-indicator">
                                             <span></span><span></span><span></span>
                                         </div>
@@ -518,36 +529,38 @@
                         </div>
 
                         {/* Input Area */}
-                        <div className="p-4 bg-white border-t w-full">
-                            <div className="max-w-4xl mx-auto relative flex items-center gap-2">
+                        <div className="p-3 sm:p-4 bg-white border-t w-full">
+                            <div className="max-w-4xl mx-auto relative flex flex-col sm:flex-row items-center gap-2">
                                 {mode === 'course' && currentModule < COURSE_MODULES.length && (
                                     <button 
                                         onClick={handleNextModule}
-                                        className="bg-green-600 text-white p-3 sm:p-4 rounded-xl hover:bg-green-700 transition-all shadow-md font-semibold text-xs sm:text-sm whitespace-nowrap"
+                                        className="w-full sm:w-auto bg-green-600 text-white p-3 rounded-xl hover:bg-green-700 transition-all shadow-md font-semibold text-sm whitespace-nowrap mb-2 sm:mb-0"
                                     >
+                                        <span className="inline sm:hidden">{currentModule === 0 ? "Start Course" : "Next Module"}</span>
                                         <span className="hidden sm:inline">{currentModule === 0 ? "Start Module 1" : "Next Module"}</span>
-                                        <span className="sm:hidden"><i className="fas fa-arrow-right"></i></span>
-                                        <i className="fas fa-arrow-right ml-1 hidden sm:inline"></i>
+                                        <i className="fas fa-arrow-right ml-2"></i>
                                     </button>
                                 )}
                                 
-                                <input
-                                    type="text"
-                                    value={input}
-                                    onChange={(e) => setInput(e.target.value)}
-                                    onKeyDown={handleKeyDown}
-                                    placeholder={mode === 'course' ? "Answer..." : `Ask about ${STATE_DATABASE[selectedStateKey].state} law...`}
-                                    className="flex-1 bg-gray-100 text-gray-800 p-3 sm:p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm sm:text-base"
-                                />
-                                <button 
-                                    onClick={() => sendMessage()}
-                                    disabled={loading || !input.trim()}
-                                    className="bg-blue-600 text-white p-3 sm:p-4 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md"
-                                >
-                                    <i className="fas fa-paper-plane"></i>
-                                </button>
+                                <div className="flex w-full gap-2">
+                                    <input
+                                        type="text"
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        placeholder={mode === 'course' ? "Answer..." : `Ask about ${STATE_DATABASE[selectedStateKey].state} law...`}
+                                        className="flex-1 bg-gray-100 text-gray-800 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm sm:text-base"
+                                    />
+                                    <button 
+                                        onClick={() => sendMessage()}
+                                        disabled={loading || !input.trim()}
+                                        className="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md w-12 flex-shrink-0 flex items-center justify-center"
+                                    >
+                                        <i className="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
                             </div>
-                            <p className="text-center text-xs text-gray-400 mt-2 sm:mt-3 truncate">
+                            <p className="text-center text-[10px] sm:text-xs text-gray-400 mt-2 truncate">
                                 {mode === 'course' && currentModule > 0 ? `Module: ${currentModule}/${COURSE_MODULES.length}` : "AI can make mistakes. Check official Handbook."}
                             </p>
                         </div>
