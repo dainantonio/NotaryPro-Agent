@@ -131,7 +131,8 @@
         `;
 
         function App() {
-            const [apiKey, setApiKey] = React.useState('');
+            // CHANGED: Load API Key from LocalStorage if available
+            const [apiKey, setApiKey] = React.useState(localStorage.getItem('gemini_api_key') || '');
             const [hasKey, setHasKey] = React.useState(false);
             const [selectedStateKey, setSelectedStateKey] = React.useState('OH');
             const [messages, setMessages] = React.useState([]);
@@ -164,7 +165,11 @@
             }, [selectedStateKey]);
 
             const handleStart = () => {
-                if(apiKey.trim().length > 0) setHasKey(true);
+                if(apiKey.trim().length > 0) {
+                    // CHANGED: Save API Key to LocalStorage
+                    localStorage.setItem('gemini_api_key', apiKey);
+                    setHasKey(true);
+                }
             };
 
             const saveSession = () => {
