@@ -5,14 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NotaryPro AI Agent</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📜</text></svg>">
+    
+    <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    
+    <!-- Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script> <!-- Text Formatting Plugin -->
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Utilities for Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
+
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap');
         body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
+        
+        /* Custom Scrollbar for Sidebar */
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
+        
         .typing-indicator span {
             animation: blink 1.4s infinite both;
             height: 6px; width: 6px; background-color: #3b82f6; border-radius: 50%; display: inline-block; margin: 0 2px;
@@ -20,6 +35,14 @@
         .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes blink { 0% { opacity: 0.2; } 20% { opacity: 1; } 100% { opacity: 0.2; } }
+
+        /* Prose overrides for chat bubbles */
+        .prose p { margin-bottom: 0.5em; margin-top: 0.5em; }
+        .prose ul { margin-top: 0.25em; margin-bottom: 0.25em; padding-left: 1.5em; list-style-type: disc;}
+        .prose li { margin-top: 0; margin-bottom: 0; }
+        .prose strong { color: inherit; font-weight: 700; }
+        .user-content .prose { color: white; }
+        .user-content .prose strong { color: white; }
     </style>
 </head>
 <body>
@@ -116,6 +139,8 @@
             const [loading, setLoading] = React.useState(false);
             const [mode, setMode] = React.useState('study'); 
             const [currentModule, setCurrentModule] = React.useState(0); 
+            const [sessions, setSessions] = React.useState([]);
+            const [showSidebar, setShowSidebar] = React.useState(false);
             
             // Auto-scroll logic
             const messagesEndRef = React.useRef(null);
@@ -132,10 +157,55 @@
                     { role: 'assistant', content: `Welcome to the ${currentStateName} Notary Training Module. I have loaded the specific laws for ${currentStateName}. Select "Roleplay Sim" to begin a scenario.` }
                 ]);
                 setCurrentModule(0); 
+                
+                // Load sessions from local storage
+                const saved = localStorage.getItem('notary_sessions');
+                if (saved) setSessions(JSON.parse(saved));
             }, [selectedStateKey]);
 
             const handleStart = () => {
                 if(apiKey.trim().length > 0) setHasKey(true);
+            };
+
+            const saveSession = () => {
+                if (messages.length < 2) return;
+                const newSession = {
+                    id: Date.now(),
+                    date: new Date().toLocaleString(),
+                    state: STATE_DATABASE[selectedStateKey].state,
+                    mode: mode,
+                    messages: messages
+                };
+                const updatedSessions = [newSession, ...sessions];
+                setSessions(updatedSessions);
+                localStorage.setItem('notary_sessions', JSON.stringify(updatedSessions));
+            };
+
+            const loadSession = (session) => {
+                // Determine state key from session state name
+                const stateEntry = Object.entries(STATE_DATABASE).find(([k, v]) => v.state === session.state);
+                if (stateEntry) setSelectedStateKey(stateEntry[0]);
+                
+                setMode(session.mode);
+                setMessages(session.messages);
+                setShowSidebar(false); // Close sidebar on mobile after selection
+            };
+
+            const startNewChat = () => {
+                saveSession(); // Auto-save current before clearing
+                const currentStateName = STATE_DATABASE[selectedStateKey].state;
+                setMessages([
+                    { role: 'assistant', content: `Started new session for ${currentStateName}.` }
+                ]);
+                setCurrentModule(0);
+                setShowSidebar(false);
+            };
+
+            const clearHistory = () => {
+                if(confirm("Are you sure you want to clear all history?")) {
+                    setSessions([]);
+                    localStorage.removeItem('notary_sessions');
+                }
             };
 
             const switchMode = (newMode) => {
@@ -240,8 +310,8 @@
                         
                         TEACHING STRATEGY:
                         - Do NOT cover the entire module in one turn. Break it down into sub-topics.
-                        - Step 1: Explain ONE specific concept within this topic.
-                        - Step 2: Ask a challenging question (Scenario or Multiple Choice) about just that concept.
+                        - Step 1: Explain ONE specific concept within this topic using **Markdown Bold** for key terms.
+                        - Step 2: Ask a challenging question (Scenario or Multiple Choice) about just that concept. **Bold the question itself.**
                         - Step 3: Wait for user response.
                         - Step 4: If correct, move to the NEXT concept within this same module. Repeat.
                         - REQUIREMENT: You must ask at least 3 distinct questions covering different aspects of this module before telling the user "Module Complete. Click Next Module."
@@ -261,20 +331,25 @@
                     ${courseInstruction}
 
                     CRITICAL BEHAVIOR RULES:
-                    1. SCENARIO MODE (Strict Enforcement):
+                    1. FORMATTING:
+                       - USE MARKDOWN.
+                       - **Bold** key terms and **Questions**.
+                       - Use lists for readability.
+                       - Do NOT use code blocks for normal text.
+
+                    2. SCENARIO MODE (Strict Enforcement):
                        - You are playing the role of a client (signer).
                        - IF the user proposes an ILLEGAL ACTION (e.g., using a Credible Witness they don't know in a state where that is forbidden, charging too much, ignoring a red flag), DO NOT ASK FOLLOW-UP QUESTIONS.
                        - IMMEDIATELY BREAK CHARACTER AND FAIL THEM. 
                        - Output format: "❌ FAIL: [Reason]. [Explain the specific state rule violated]."
                        - Example for CA: If they say "I'll use a stranger as a credible witness," you say: "❌ FAIL: California law requires 1 credible witness to be personally known to the notary, or 2 witnesses with valid IDs. You cannot use one stranger."
 
-                    2. STUDY MODE (Direct & Helpful):
+                    3. STUDY MODE (Direct & Helpful):
                        - If the user asks a FACTUAL question (e.g., "What is the max fee?"), ANSWER DIRECTLY using the provided JSON data. DO NOT tell them to "check their knowledge base".
                        - If the JSON says "null" or "Not specified", tell them: "That specific detail isn't in my immediate database, so you should check the official ${currentStateData.state} handbook to be safe."
 
-                    3. GENERAL:
+                    4. GENERAL:
                        - Keep responses concise (under 150 words).
-                       - Do not use markdown syntax like **bold** or *italics* as it does not render in the chat window.
                 `;
 
                 try {
@@ -362,133 +437,176 @@
             }
 
             return (
-                <div className="flex flex-col h-screen bg-white">
-                    {/* Header */}
-                    <div className="bg-white border-b px-6 py-4 flex justify-between items-center shadow-sm z-10">
-                        <div className="flex items-center gap-3">
-                            <div className="bg-blue-600 p-2 rounded-lg text-white">
-                                <i className="fas fa-stamp"></i>
-                            </div>
-                            <div>
-                                <h1 className="font-bold text-lg text-gray-800">NotaryPro Agent</h1>
-                                <div className="text-xs text-gray-500 flex items-center gap-2">
-                                    <span>Training:</span>
-                                    <select 
-                                        value={selectedStateKey}
-                                        onChange={(e) => {
-                                            setSelectedStateKey(e.target.value);
-                                            setMessages([]); 
-                                            setCurrentModule(0);
-                                        }}
-                                        className="bg-gray-100 border-none text-blue-600 font-bold text-xs rounded p-1 cursor-pointer focus:ring-0"
-                                    >
-                                        {Object.entries(STATE_DATABASE)
-                                            .sort((a, b) => a[1].state.localeCompare(b[1].state))
-                                            .map(([key, data]) => (
-                                                <option key={key} value={key}>{data.state}</option>
-                                        ))}
-                                    </select>
+                <div className="flex h-screen bg-white overflow-hidden">
+                    {/* Sidebar - Desktop & Mobile Toggle */}
+                    <div className={`fixed inset-y-0 left-0 transform ${showSidebar ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:static lg:flex lg:flex-col w-64 bg-gray-900 text-white transition-transform duration-200 ease-in-out z-30`}>
+                        <div className="p-4 border-b border-gray-700 flex justify-between items-center">
+                            <h2 className="font-bold text-lg"><i className="fas fa-history mr-2"></i>History</h2>
+                            <button onClick={() => setShowSidebar(false)} className="lg:hidden text-gray-400 hover:text-white">
+                                <i className="fas fa-times"></i>
+                            </button>
+                        </div>
+                        <div className="p-4">
+                            <button onClick={startNewChat} className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg flex items-center justify-center gap-2 transition-all">
+                                <i className="fas fa-plus"></i> New Chat
+                            </button>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-4 space-y-2 scrollbar-hide">
+                            {sessions.length === 0 && <p className="text-gray-500 text-sm text-center">No history yet.</p>}
+                            {sessions.map(session => (
+                                <div key={session.id} onClick={() => loadSession(session)} className="p-3 bg-gray-800 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors group">
+                                    <div className="font-semibold text-sm text-gray-200 truncate">{session.state}</div>
+                                    <div className="text-xs text-gray-500 flex justify-between mt-1">
+                                        <span>{session.mode.toUpperCase()}</span>
+                                        <span>{new Date(session.id).toLocaleDateString()}</span>
+                                    </div>
                                 </div>
+                            ))}
+                        </div>
+                        {sessions.length > 0 && (
+                            <div className="p-4 border-t border-gray-700">
+                                <button onClick={clearHistory} className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1">
+                                    <i className="fas fa-trash"></i> Clear History
+                                </button>
                             </div>
-                        </div>
-                        <div className="flex bg-gray-100 p-1 rounded-lg gap-1">
-                            <button 
-                                onClick={() => switchMode('study')}
-                                className={`px-3 py-2 text-xs rounded-md transition-all ${mode === 'study' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
-                            >
-                                Study
-                            </button>
-                            <button 
-                                onClick={() => switchMode('course')}
-                                className={`px-3 py-2 text-xs rounded-md transition-all ${mode === 'course' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
-                            >
-                                Course
-                            </button>
-                            <button 
-                                onClick={() => switchMode('scenario')}
-                                className={`px-3 py-2 text-xs rounded-md transition-all ${mode === 'scenario' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
-                            >
-                                Roleplay
-                            </button>
-                            <button 
-                                onClick={handleExport}
-                                className="px-3 py-2 text-xs text-gray-500 hover:text-blue-600 border-l border-gray-300 ml-1"
-                                title="Download Transcript"
-                            >
-                                <i className="fas fa-download"></i>
-                            </button>
-                            <button 
-                                onClick={handleScorecard}
-                                className="px-3 py-2 text-xs text-green-600 hover:text-green-800 font-medium"
-                                title="End & Grade"
-                            >
-                                <i className="fas fa-clipboard-check mr-1"></i> Grade
-                            </button>
-                        </div>
+                        )}
                     </div>
 
-                    {/* Chat Area */}
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
-                        {messages.map((msg, index) => (
-                            <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[80%] rounded-2xl px-5 py-3 shadow-sm ${
-                                    msg.role === 'user' 
-                                        ? 'bg-blue-600 text-white rounded-br-none' 
-                                        : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
-                                }`}>
-                                    {msg.role === 'assistant' && (
-                                        <div className="text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">
-                                            {msg.content.includes("SCORE:") ? "Evaluator" : (mode === 'scenario' ? 'Client / Trainer' : 'Instructor')}
-                                        </div>
-                                    )}
-                                    <div className="leading-relaxed whitespace-pre-wrap">{msg.content}</div>
+                    {/* Main Content */}
+                    <div className="flex-1 flex flex-col h-screen relative">
+                        {/* Header */}
+                        <div className="bg-white border-b px-6 py-4 flex justify-between items-center shadow-sm z-10">
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setShowSidebar(true)} className="lg:hidden text-gray-600 hover:text-blue-600">
+                                    <i className="fas fa-bars text-xl"></i>
+                                </button>
+                                <div className="bg-blue-600 p-2 rounded-lg text-white">
+                                    <i className="fas fa-stamp"></i>
                                 </div>
-                            </div>
-                        ))}
-                        {loading && (
-                            <div className="flex justify-start">
-                                <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-none px-5 py-4 shadow-sm">
-                                    <div className="typing-indicator">
-                                        <span></span><span></span><span></span>
+                                <div>
+                                    <h1 className="font-bold text-lg text-gray-800 hidden sm:block">NotaryPro Agent</h1>
+                                    <div className="text-xs text-gray-500 flex items-center gap-2">
+                                        <select 
+                                            value={selectedStateKey}
+                                            onChange={(e) => {
+                                                setSelectedStateKey(e.target.value);
+                                                setMessages([]); 
+                                                setCurrentModule(0);
+                                            }}
+                                            className="bg-gray-100 border-none text-blue-600 font-bold text-xs rounded p-1 cursor-pointer focus:ring-0"
+                                        >
+                                            {Object.entries(STATE_DATABASE)
+                                                .sort((a, b) => a[1].state.localeCompare(b[1].state))
+                                                .map(([key, data]) => (
+                                                    <option key={key} value={key}>{data.state}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </div>
                             </div>
-                        )}
-                        <div ref={messagesEndRef} />
-                    </div>
-
-                    {/* Input Area */}
-                    <div className="p-4 bg-white border-t">
-                        <div className="max-w-4xl mx-auto relative flex items-center gap-2">
-                            {/* NEW: Course Navigation Controls */}
-                            {mode === 'course' && currentModule < COURSE_MODULES.length && (
+                            <div className="flex bg-gray-100 p-1 rounded-lg gap-1">
                                 <button 
-                                    onClick={handleNextModule}
-                                    className="bg-green-600 text-white p-4 rounded-xl hover:bg-green-700 transition-all shadow-md font-semibold text-sm whitespace-nowrap"
+                                    onClick={() => switchMode('study')}
+                                    className={`px-3 py-2 text-xs rounded-md transition-all ${mode === 'study' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
                                 >
-                                    {currentModule === 0 ? "Start Module 1" : "Next Module"} <i className="fas fa-arrow-right ml-1"></i>
+                                    Study
                                 </button>
-                            )}
-                            
-                            <input
-                                type="text"
-                                value={input}
-                                onChange={(e) => setInput(e.target.value)}
-                                onKeyDown={handleKeyDown}
-                                placeholder={mode === 'course' ? "Answer the instructor's question..." : `Ask a question about ${STATE_DATABASE[selectedStateKey].state} law...`}
-                                className="flex-1 bg-gray-100 text-gray-800 p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
-                            />
-                            <button 
-                                onClick={() => sendMessage()}
-                                disabled={loading || !input.trim()}
-                                className="bg-blue-600 text-white p-4 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md"
-                            >
-                                <i className="fas fa-paper-plane"></i>
-                            </button>
+                                <button 
+                                    onClick={() => switchMode('course')}
+                                    className={`px-3 py-2 text-xs rounded-md transition-all ${mode === 'course' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    Course
+                                </button>
+                                <button 
+                                    onClick={() => switchMode('scenario')}
+                                    className={`px-3 py-2 text-xs rounded-md transition-all ${mode === 'scenario' ? 'bg-white shadow text-blue-600 font-medium' : 'text-gray-500 hover:text-gray-700'}`}
+                                >
+                                    Roleplay
+                                </button>
+                                <button 
+                                    onClick={handleExport}
+                                    className="px-3 py-2 text-xs text-gray-500 hover:text-blue-600 border-l border-gray-300 ml-1"
+                                    title="Download Transcript"
+                                >
+                                    <i className="fas fa-download"></i>
+                                </button>
+                                <button 
+                                    onClick={handleScorecard}
+                                    className="px-3 py-2 text-xs text-green-600 hover:text-green-800 font-medium"
+                                    title="End & Grade"
+                                >
+                                    <i className="fas fa-clipboard-check mr-1"></i> Grade
+                                </button>
+                            </div>
                         </div>
-                        <p className="text-center text-xs text-gray-400 mt-3">
-                            {mode === 'course' && currentModule > 0 ? `Current Module: ${currentModule} of ${COURSE_MODULES.length}` : "AI can make mistakes. Always check your official State Notary Handbook."}
-                        </p>
+
+                        {/* Chat Area */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                            {messages.map((msg, index) => (
+                                <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[85%] rounded-2xl px-5 py-3 shadow-sm ${
+                                        msg.role === 'user' 
+                                            ? 'bg-blue-600 text-white rounded-br-none user-content' 
+                                            : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
+                                    }`}>
+                                        {msg.role === 'assistant' && (
+                                            <div className="text-xs font-bold text-gray-400 mb-1 uppercase tracking-wider">
+                                                {msg.content.includes("SCORE:") ? "Evaluator" : (mode === 'scenario' ? 'Client / Trainer' : 'Instructor')}
+                                            </div>
+                                        )}
+                                        {/* Render Markdown content safely */}
+                                        <div 
+                                            className="prose prose-sm max-w-none leading-relaxed" 
+                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content)) }} 
+                                        />
+                                    </div>
+                                </div>
+                            ))}
+                            {loading && (
+                                <div className="flex justify-start">
+                                    <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-none px-5 py-4 shadow-sm">
+                                        <div className="typing-indicator">
+                                            <span></span><span></span><span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+
+                        {/* Input Area */}
+                        <div className="p-4 bg-white border-t">
+                            <div className="max-w-4xl mx-auto relative flex items-center gap-2">
+                                {/* NEW: Course Navigation Controls */}
+                                {mode === 'course' && currentModule < COURSE_MODULES.length && (
+                                    <button 
+                                        onClick={handleNextModule}
+                                        className="bg-green-600 text-white p-4 rounded-xl hover:bg-green-700 transition-all shadow-md font-semibold text-sm whitespace-nowrap"
+                                    >
+                                        {currentModule === 0 ? "Start Module 1" : "Next Module"} <i className="fas fa-arrow-right ml-1"></i>
+                                    </button>
+                                )}
+                                
+                                <input
+                                    type="text"
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyDown={handleKeyDown}
+                                    placeholder={mode === 'course' ? "Answer the instructor's question..." : `Ask a question about ${STATE_DATABASE[selectedStateKey].state} law...`}
+                                    className="flex-1 bg-gray-100 text-gray-800 p-4 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                                />
+                                <button 
+                                    onClick={() => sendMessage()}
+                                    disabled={loading || !input.trim()}
+                                    className="bg-blue-600 text-white p-4 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md"
+                                >
+                                    <i className="fas fa-paper-plane"></i>
+                                </button>
+                            </div>
+                            <p className="text-center text-xs text-gray-400 mt-3">
+                                {mode === 'course' && currentModule > 0 ? `Current Module: ${currentModule} of ${COURSE_MODULES.length}` : "AI can make mistakes. Always check your official State Notary Handbook."}
+                            </p>
+                        </div>
                     </div>
                 </div>
             );
