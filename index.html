@@ -35,7 +35,7 @@
         .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
         @keyframes blink { 0% { opacity: 0.2; } 20% { opacity: 1; } 100% { opacity: 0.2; } }
 
-        /* Prose overrides for better readability */
+        /* Prose overrides */
         .prose p { margin-bottom: 0.75em; margin-top: 0.75em; line-height: 1.6; }
         .prose ul { margin-top: 0.5em; margin-bottom: 0.5em; padding-left: 1.2em; list-style-type: disc;}
         .prose li { margin-top: 0.2em; margin-bottom: 0.2em; }
@@ -43,7 +43,6 @@
         .user-content .prose { color: white; }
         .user-content .prose strong { color: white; }
         
-        /* Smooth fade in */
         .fade-in { animation: fadeIn 0.3s ease-in-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
@@ -314,7 +313,7 @@
                     ${courseInstruction}
 
                     CRITICAL BEHAVIOR RULES:
-                    1. FORMATTING: USE MARKDOWN. **Bold** key terms and **Questions**. Use lists for readability.
+                    1. FORMATTING: **USE MARKDOWN**. You MUST use **bold** for keywords and questions. Use bullet points for readability. Do not use plain text blocks.
                     2. SCENARIO MODE (Strict Enforcement): You are playing the role of a client (signer). IF the user proposes an ILLEGAL ACTION (e.g., using a Credible Witness they don't know in a state where that is forbidden, charging too much, ignoring a red flag), DO NOT ASK FOLLOW-UP QUESTIONS. IMMEDIATELY BREAK CHARACTER AND FAIL THEM. Output format: "❌ FAIL: [Reason]. [Explain the specific state rule violated]." Example for CA: If they say "I'll use a stranger as a credible witness," you say: "❌ FAIL: California law requires 1 credible witness to be personally known to the notary, or 2 witnesses with valid IDs. You cannot use one stranger."
                     3. STUDY MODE (Direct & Helpful): If the user asks a FACTUAL question (e.g., "What is the max fee?"), ANSWER DIRECTLY using the provided JSON data. DO NOT tell them to "check their knowledge base". If the JSON says "null" or "Not specified", tell them: "That specific detail isn't in my immediate database, so you should check the official ${currentStateData.state} handbook to be safe."
                     4. GENERAL: Keep responses concise (under 150 words).
@@ -408,7 +407,6 @@
                             </button>
                         </div>
                         
-                        {/* UTILITIES MOVED HERE */}
                         <div className="p-4 border-b border-gray-700 space-y-2">
                             <h3 className="text-xs text-gray-400 uppercase font-semibold mb-2">Actions</h3>
                             <button onClick={handleExport} className="w-full text-left p-2 rounded hover:bg-gray-800 flex items-center gap-2">
@@ -449,136 +447,126 @@
                         )}
                     </div>
 
-                    {/* Main Content (Centered Spine) */}
-                    <div className="flex-1 flex flex-col h-screen relative w-full bg-gray-50 items-center">
-                        
-                        {/* Header Container */}
-                        <div className="w-full bg-white border-b shadow-sm z-10 sticky top-0 flex justify-center">
-                            <div className="w-full max-w-4xl px-4 py-3 flex justify-between items-center">
-                                <div className="flex items-center gap-3">
-                                    <button onClick={() => setShowSidebar(true)} className="lg:hidden text-gray-600 hover:text-blue-600 p-1">
-                                        <i className="fas fa-bars text-xl"></i>
-                                    </button>
-                                    
-                                    <div className="flex flex-col">
-                                        <div className="flex items-center gap-2">
-                                            <div className="bg-blue-600 text-white p-1 rounded">
-                                                <i className="fas fa-stamp text-sm"></i>
-                                            </div>
-                                            <h1 className="font-bold text-gray-800 leading-tight">NotaryPro</h1>
-                                        </div>
-                                        <div className="relative mt-1">
-                                            <select 
-                                                value={selectedStateKey}
-                                                onChange={(e) => {
-                                                    setSelectedStateKey(e.target.value);
-                                                    setMessages([]); 
-                                                    setCurrentModule(0);
-                                                }}
-                                                className="bg-gray-100 text-gray-700 text-xs font-semibold rounded py-1 px-2 pr-6 appearance-none border-none focus:ring-0 w-full max-w-[200px] truncate"
-                                            >
-                                                {Object.entries(STATE_DATABASE)
-                                                    .sort((a, b) => a[1].state.localeCompare(b[1].state))
-                                                    .map(([key, data]) => (
-                                                        <option key={key} value={key}>{data.state}</option>
-                                                ))}
-                                            </select>
-                                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-1 text-gray-500">
-                                                <i className="fas fa-chevron-down text-[10px]"></i>
-                                            </div>
-                                        </div>
+                    {/* Main Content */}
+                    <div className="flex-1 flex flex-col h-screen relative w-full lg:max-w-6xl lg:mx-auto bg-gray-50">
+                        {/* Header */}
+                        <div className="bg-white border-b px-4 py-3 flex justify-between items-center shadow-sm z-10 sticky top-0">
+                            {/* Left: Menu & Brand */}
+                            <div className="flex items-center gap-3">
+                                <button onClick={() => setShowSidebar(true)} className="lg:hidden text-gray-600 hover:text-blue-600 p-2">
+                                    <i className="fas fa-bars text-xl"></i>
+                                </button>
+                                <div className="flex items-center gap-2">
+                                    <i className="fas fa-stamp text-blue-600 text-xl"></i>
+                                    <h1 className="font-bold text-gray-800 text-lg sm:block">NotaryPro</h1>
+                                </div>
+                            </div>
+
+                            {/* Right: State Selector */}
+                            <div className="flex items-center">
+                                <div className="relative">
+                                    <select 
+                                        value={selectedStateKey}
+                                        onChange={(e) => {
+                                            setSelectedStateKey(e.target.value);
+                                            setMessages([]); 
+                                            setCurrentModule(0);
+                                        }}
+                                        className="bg-gray-100 text-gray-800 text-sm font-semibold rounded-lg py-2 px-3 pr-8 appearance-none border-none focus:ring-2 focus:ring-blue-500 cursor-pointer shadow-sm min-w-[120px] sm:min-w-[140px]"
+                                    >
+                                        {Object.entries(STATE_DATABASE)
+                                            .sort((a, b) => a[1].state.localeCompare(b[1].state))
+                                            .map(([key, data]) => (
+                                                <option key={key} value={key}>{data.state}</option>
+                                        ))}
+                                    </select>
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                                        <i className="fas fa-chevron-down text-xs"></i>
                                     </div>
                                 </div>
                             </div>
                         </div>
 
-                        {/* TABS (Centered) */}
-                        <div className="w-full bg-white border-b border-gray-100 flex justify-center">
-                            <div className="w-full max-w-4xl px-4 py-2 flex gap-2 overflow-x-auto scrollbar-hide">
-                                <button onClick={() => switchMode('study')} className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all text-center whitespace-nowrap ${mode === 'study' ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>
-                                    <i className="fas fa-book-open mr-1"></i> Study
-                                </button>
-                                <button onClick={() => switchMode('course')} className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all text-center whitespace-nowrap ${mode === 'course' ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>
-                                    <i className="fas fa-graduation-cap mr-1"></i> Course
-                                </button>
-                                <button onClick={() => switchMode('scenario')} className={`flex-1 py-2 px-3 rounded-lg text-sm font-medium transition-all text-center whitespace-nowrap ${mode === 'scenario' ? 'bg-blue-50 text-blue-600 border border-blue-100 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>
-                                    <i className="fas fa-theater-masks mr-1"></i> Roleplay
-                                </button>
-                            </div>
+                        {/* MODE TABS */}
+                        <div className="px-4 py-3 bg-white border-b border-gray-100 flex gap-2 justify-center shadow-sm">
+                            <button onClick={() => switchMode('study')} className={`flex-1 max-w-[120px] py-2 px-3 rounded-lg text-sm font-medium transition-all text-center whitespace-nowrap ${mode === 'study' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 bg-gray-50 hover:bg-gray-100'}`}>
+                                <i className="fas fa-book-open mr-1"></i> Study
+                            </button>
+                            <button onClick={() => switchMode('course')} className={`flex-1 max-w-[120px] py-2 px-3 rounded-lg text-sm font-medium transition-all text-center whitespace-nowrap ${mode === 'course' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 bg-gray-50 hover:bg-gray-100'}`}>
+                                <i className="fas fa-graduation-cap mr-1"></i> Course
+                            </button>
+                            <button onClick={() => switchMode('scenario')} className={`flex-1 max-w-[120px] py-2 px-3 rounded-lg text-sm font-medium transition-all text-center whitespace-nowrap ${mode === 'scenario' ? 'bg-blue-600 text-white shadow-md' : 'text-gray-500 bg-gray-50 hover:bg-gray-100'}`}>
+                                <i className="fas fa-theater-masks mr-1"></i> Roleplay
+                            </button>
                         </div>
 
-                        {/* Chat Area (Centered Spine) */}
-                        <div className="flex-1 w-full overflow-y-auto bg-gray-50/50">
-                            <div className="w-full max-w-4xl mx-auto px-4 py-4 space-y-6">
-                                {messages.map((msg, index) => (
-                                    <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} fade-in`}>
-                                        <div className={`max-w-[90%] sm:max-w-[85%] rounded-2xl px-5 py-4 shadow-sm text-sm sm:text-base leading-relaxed ${
-                                            msg.role === 'user' 
-                                                ? 'bg-blue-600 text-white rounded-br-none user-content' 
-                                                : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'
-                                        }`}>
-                                            {msg.role === 'assistant' && (
-                                                <div className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider flex items-center gap-1 border-b border-gray-100 pb-1">
-                                                    {msg.content.includes("SCORE:") ? <><i className="fas fa-clipboard-check"></i> Evaluator</> : (mode === 'scenario' ? <><i className="fas fa-user-tie"></i> Client / Trainer</> : <><i className="fas fa-chalkboard-teacher"></i> Instructor</>)}
-                                                </div>
-                                            )}
-                                            <div 
-                                                className="prose prose-sm max-w-none" 
-                                                dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content)) }} 
-                                            />
-                                        </div>
-                                    </div>
-                                ))}
-                                {loading && (
-                                    <div className="flex justify-start fade-in">
-                                        <div className="bg-white border border-gray-100 rounded-2xl rounded-bl-none px-4 py-3 shadow-sm">
-                                            <div className="typing-indicator">
-                                                <span></span><span></span><span></span>
+                        {/* Chat Area */}
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                            {messages.map((msg, index) => (
+                                <div key={index} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} w-full`}>
+                                    <div className={`max-w-[95%] sm:max-w-[80%] rounded-2xl px-5 py-4 shadow-sm text-sm sm:text-base leading-relaxed ${
+                                        msg.role === 'user' 
+                                            ? 'bg-blue-600 text-white user-content' 
+                                            : 'bg-white text-gray-800 border border-gray-100'
+                                    }`}>
+                                        {msg.role === 'assistant' && (
+                                            <div className="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider flex items-center gap-1 border-b border-gray-100 pb-1">
+                                                {msg.content.includes("SCORE:") ? <><i className="fas fa-clipboard-check"></i> Evaluator</> : (mode === 'scenario' ? <><i className="fas fa-user-tie"></i> Client / Trainer</> : <><i className="fas fa-chalkboard-teacher"></i> Instructor</>)}
                                             </div>
-                                        </div>
-                                    </div>
-                                )}
-                                <div ref={messagesEndRef} />
-                            </div>
-                        </div>
-
-                        {/* Input Area (Centered Spine) */}
-                        <div className="w-full bg-white border-t p-4 flex justify-center">
-                            <div className="w-full max-w-4xl flex flex-col items-center">
-                                <div className="w-full flex flex-col sm:flex-row items-center gap-2">
-                                    {mode === 'course' && currentModule < COURSE_MODULES.length && (
-                                        <button 
-                                            onClick={handleNextModule}
-                                            className="w-full sm:w-auto bg-green-600 text-white p-3 rounded-xl hover:bg-green-700 transition-all shadow-md font-semibold text-sm whitespace-nowrap mb-2 sm:mb-0"
-                                        >
-                                            <span className="inline sm:hidden">{currentModule === 0 ? "Start Course" : "Next"}</span>
-                                            <span className="hidden sm:inline">{currentModule === 0 ? "Start Module 1" : "Next Module"}</span>
-                                            <i className="fas fa-arrow-right ml-2"></i>
-                                        </button>
-                                    )}
-                                    
-                                    <div className="flex w-full gap-2">
-                                        <input
-                                            type="text"
-                                            value={input}
-                                            onChange={(e) => setInput(e.target.value)}
-                                            onKeyDown={handleKeyDown}
-                                            placeholder={mode === 'course' ? "Answer..." : `Ask about ${STATE_DATABASE[selectedStateKey].state} law...`}
-                                            className="flex-1 bg-gray-100 text-gray-800 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm sm:text-base"
+                                        )}
+                                        <div 
+                                            className="prose prose-sm max-w-none" 
+                                            dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(msg.content)) }} 
                                         />
-                                        <button 
-                                            onClick={() => sendMessage()}
-                                            disabled={loading || !input.trim()}
-                                            className="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md w-12 flex-shrink-0 flex items-center justify-center"
-                                        >
-                                            <i className="fas fa-paper-plane"></i>
-                                        </button>
                                     </div>
                                 </div>
-                                <p className="text-center text-[10px] sm:text-xs text-gray-400 mt-2 truncate w-full">
-                                    {mode === 'course' && currentModule > 0 ? `Module: ${currentModule}/${COURSE_MODULES.length}` : "AI can make mistakes. Check official Handbook."}
-                                </p>
+                            ))}
+                            {loading && (
+                                <div className="flex justify-start">
+                                    <div className="bg-white border border-gray-100 rounded-2xl px-4 py-3 shadow-sm">
+                                        <div className="typing-indicator">
+                                            <span></span><span></span><span></span>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                            <div ref={messagesEndRef} />
+                        </div>
+
+                        {/* Input Area */}
+                        <div className="p-3 sm:p-4 bg-white border-t w-full shadow-[0_-1px_3px_rgba(0,0,0,0.05)]">
+                            <div className="max-w-4xl mx-auto relative flex flex-col sm:flex-row items-center gap-2">
+                                {mode === 'course' && currentModule < COURSE_MODULES.length && (
+                                    <button 
+                                        onClick={handleNextModule}
+                                        className="w-full sm:w-auto bg-green-600 text-white p-3 rounded-xl hover:bg-green-700 transition-all shadow-md font-semibold text-sm whitespace-nowrap mb-2 sm:mb-0 flex items-center justify-center gap-2"
+                                    >
+                                        <span>{currentModule === 0 ? "Start Module 1" : "Next Module"}</span>
+                                        <i className="fas fa-arrow-right"></i>
+                                    </button>
+                                )}
+                                
+                                <div className="flex w-full gap-2">
+                                    <input
+                                        type="text"
+                                        value={input}
+                                        onChange={(e) => setInput(e.target.value)}
+                                        onKeyDown={handleKeyDown}
+                                        placeholder={mode === 'course' ? "Answer..." : `Ask about ${STATE_DATABASE[selectedStateKey].state} law...`}
+                                        className="flex-1 bg-gray-100 text-gray-800 p-3 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-sm sm:text-base border border-transparent focus:border-blue-200"
+                                    />
+                                    <button 
+                                        onClick={() => sendMessage()}
+                                        disabled={loading || !input.trim()}
+                                        className="bg-blue-600 text-white p-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md w-12 flex-shrink-0 flex items-center justify-center"
+                                    >
+                                        <i className="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
                             </div>
+                            <p className="text-center text-[10px] sm:text-xs text-gray-400 mt-2 truncate w-full">
+                                {mode === 'course' && currentModule > 0 ? `Module: ${currentModule}/${COURSE_MODULES.length}` : "AI can make mistakes. Check official Handbook."}
+                            </p>
                         </div>
                     </div>
                 </div>
