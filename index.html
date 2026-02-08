@@ -42,7 +42,7 @@
 
         // Initialize
         try {
-            if (!firebase.apps.length) {
+            if (typeof firebase !== 'undefined' && !firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
                 console.log("Firebase Connected");
             }
@@ -103,7 +103,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- HYBRID DATA MANAGER (Cloud + Local Fallback) ---
+        // --- HYBRID DATA MANAGER ---
         const DataManager = {
             isCloud: () => typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser !== null,
             get: async (collectionName) => {
@@ -188,15 +188,60 @@
             }
         };
 
-        // --- KNOWLEDGE BASE ---
+        // --- FULL 50-STATE KNOWLEDGE BASE ---
         const STATE_DATABASE = {
-             "CA": { "state": "California", "fees": { "acknowledgment": "$15 per sig", "jurat": "$15", "oath": "$15", "travel": "null" }, "id_requirements": { "credible_witnesses": "One witness (personally known) OR Two witnesses (proven with IDs).", "expired_id_rule": "Allowed if current or issued within 5 years." }, "biometrics": { "journal_thumbprint": "REQUIRED for deeds, quitclaim deeds, deeds of trust, powers of attorney." }, "certificates": { "acknowledgment_text": "A notary public or other officer completing this certificate verifies only the identity of the individual...", "jurat_text": "Subscribed and sworn to (or affirmed) before me on this ____ day of _________, 20___..." }, "red_flags": [ "Cannot use title 'notario publico'", "Cannot use seal for non-notarial purposes" ] },
-             "TX": { "state": "Texas", "fees": { "acknowledgment": "$6 (first signature) + $1 (each additional)", "jurat": "$6", "oath": "$6", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Texas\nCounty of ______\n\nThis instrument was acknowledged before me...", "jurat_text": "State of Texas\nCounty of ______\n\nSworn to and subscribed before me..." }, "red_flags": ["Check state handbook for specific prohibited acts"] },
-             "FL": { "state": "Florida", "fees": { "acknowledgment": "Maximum $10 per notarial act", "jurat": "Maximum $10", "oath": "Maximum $10", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 witness (personally known) OR 2 witnesses (proven by ID).", "expired_id_rule": "Acceptable if issued within past 5 years." }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "STATE OF FLORIDA\nCOUNTY OF ______...", "jurat_text": "STATE OF FLORIDA\nCOUNTY OF ______..." }, "red_flags": [ "Cannot notarize own signature.", "Physical presence required unless RON." ] },
-             "OH": { "state": "Ohio", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00", "travel": "Reasonable fee" }, "id_requirements": { "credible_witnesses": "Proof of identity by third person known to notary", "expired_id_rule": "Not specified" }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of Ohio\nCounty of ______...", "jurat_text": "State of Ohio\nCounty of ______..." }, "red_flags": [ "Never prepare instruments or give advice", "Cannot notarize if you have an interest" ] },
-             "NY": { "state": "New York", "fees": { "acknowledgment": "$2.00", "jurat": "$2.00", "oath": "$2.00" }, "id_requirements": { "credible_witnesses": "Not specified", "expired_id_rule": "Not specified" }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of New York\nCounty of ______...", "jurat_text": "Sworn to before me on this ___ day of ___..." }, "red_flags": [ "Name must match signature exactly", "No initials if commissioned name is full" ] }
+             "AL": { "state": "Alabama", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Not specified" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "AK": { "state": "Alaska", "fees": { "acknowledgment": "$25.00", "jurat": "$25.00", "oath": "$25.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Not specified" }, "red_flags": ["Conflict of Interest"], "specialized": { "loan_signing": "Allowed", "apostille": "Lt. Governor", "marriage": "No" }},
+             "AZ": { "state": "Arizona", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "1 or 2 allowed", "expired_id_rule": "Not allowed" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "AR": { "state": "Arkansas", "fees": { "acknowledgment": "Reasonable", "jurat": "Reasonable", "oath": "Reasonable" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Not specified" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "CA": { "state": "California", "fees": { "acknowledgment": "$15.00", "jurat": "$15.00", "oath": "$15.00" }, "id_requirements": { "credible_witnesses": "1 known OR 2 with ID", "expired_id_rule": "5 years" }, "red_flags": ["Thumbprint mandatory for Deeds/POA"], "specialized": { "loan_signing": "Background Check Required", "apostille": "Secretary of State", "marriage": "No" }},
+             "CO": { "state": "Colorado", "fees": { "acknowledgment": "$15.00", "jurat": "$15.00", "oath": "$15.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "1 year" }, "red_flags": ["No Seal Embosser"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "CT": { "state": "Connecticut", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["Attorney State (Restriction)"], "specialized": { "loan_signing": "ATTORNEY STATE (Witness Only)", "apostille": "Secretary of State", "marriage": "No" }},
+             "DE": { "state": "Delaware", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["Attorney State"], "specialized": { "loan_signing": "ATTORNEY STATE", "apostille": "Secretary of State", "marriage": "No" }},
+             "DC": { "state": "District of Columbia", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Office of Notary", "marriage": "No" }},
+             "FL": { "state": "Florida", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "1 known OR 2 with ID", "expired_id_rule": "5 years" }, "red_flags": ["No Family"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "YES ($30 Fee)" }},
+             "GA": { "state": "Georgia", "fees": { "acknowledgment": "$2.00", "jurat": "$2.00", "oath": "$2.00" }, "id_requirements": { "credible_witnesses": "Not specified", "expired_id_rule": "Not specified" }, "red_flags": ["Attorney State"], "specialized": { "loan_signing": "ATTORNEY STATE", "apostille": "GSCCCA", "marriage": "No" }},
+             "HI": { "state": "Hawaii", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Lt. Governor", "marriage": "No" }},
+             "ID": { "state": "Idaho", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "IL": { "state": "Illinois", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["Cook County Record"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "IN": { "state": "Indiana", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["Title Producer License for LSA"], "specialized": { "loan_signing": "REQUIRES TPL LICENSE", "apostille": "Secretary of State", "marriage": "No" }},
+             "IA": { "state": "Iowa", "fees": { "acknowledgment": "Reasonable", "jurat": "Reasonable", "oath": "Reasonable" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "KS": { "state": "Kansas", "fees": { "acknowledgment": "Reasonable", "jurat": "Reasonable", "oath": "Reasonable" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "KY": { "state": "Kentucky", "fees": { "acknowledgment": "Not set", "jurat": "Not set", "oath": "Not set" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "LA": { "state": "Louisiana", "fees": { "acknowledgment": "Not set", "jurat": "Not set", "oath": "Not set" }, "id_requirements": { "credible_witnesses": "2 witnesses", "expired_id_rule": "Current" }, "red_flags": ["Civil Law Notary"], "specialized": { "loan_signing": "Civil Law Notary Exam Required", "apostille": "Secretary of State", "marriage": "No" }},
+             "ME": { "state": "Maine", "fees": { "acknowledgment": "Reasonable", "jurat": "Reasonable", "oath": "Reasonable" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "YES" }},
+             "MD": { "state": "Maryland", "fees": { "acknowledgment": "$4.00", "jurat": "$4.00", "oath": "$4.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["TIP License Required"], "specialized": { "loan_signing": "REQUIRES TIP LICENSE", "apostille": "Secretary of State", "marriage": "No" }},
+             "MA": { "state": "Massachusetts", "fees": { "acknowledgment": "Not set", "jurat": "Not set", "oath": "Not set" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["Attorney State"], "specialized": { "loan_signing": "ATTORNEY STATE", "apostille": "Secretary of the Commonwealth", "marriage": "No" }},
+             "MI": { "state": "Michigan", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "MN": { "state": "Minnesota", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["Closing Agent License"], "specialized": { "loan_signing": "REQUIRES CLOSING LICENSE", "apostille": "Secretary of State", "marriage": "No" }},
+             "MS": { "state": "Mississippi", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "5 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "MO": { "state": "Missouri", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "MT": { "state": "Montana", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "YES" }},
+             "NE": { "state": "Nebraska", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$2.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "NV": { "state": "Nevada", "fees": { "acknowledgment": "$15.00", "jurat": "$15.00", "oath": "$7.50" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Notary Discretion" }, "red_flags": ["Escrow License for LSA"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "YES (Specific Cert Required)" }},
+             "NH": { "state": "New Hampshire", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Not specified" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "NJ": { "state": "New Jersey", "fees": { "acknowledgment": "$2.50", "jurat": "$2.50", "oath": "$2.50" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Treasury Division", "marriage": "No" }},
+             "NM": { "state": "New Mexico", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "1 year" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "NY": { "state": "New York", "fees": { "acknowledgment": "$2.00", "jurat": "$2.00", "oath": "$2.00" }, "id_requirements": { "credible_witnesses": "Not specified", "expired_id_rule": "Not specified" }, "red_flags": ["No Initials in Name"], "specialized": { "loan_signing": "Allowed", "apostille": "Dept of State", "marriage": "No" }},
+             "NC": { "state": "North Carolina", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "ND": { "state": "North Dakota", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Valid" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "OH": { "state": "Ohio", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Not specified" }, "red_flags": ["Conflict of Interest"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "OK": { "state": "Oklahoma", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "OR": { "state": "Oregon", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "PA": { "state": "Pennsylvania", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of the Commonwealth", "marriage": "No" }},
+             "RI": { "state": "Rhode Island", "fees": { "acknowledgment": "$25.00", "jurat": "$25.00", "oath": "$25.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "SC": { "state": "South Carolina", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["Attorney Supervision"], "specialized": { "loan_signing": "ATTORNEY STATE", "apostille": "Secretary of State", "marriage": "YES" }},
+             "SD": { "state": "South Dakota", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "TN": { "state": "Tennessee", "fees": { "acknowledgment": "$0", "jurat": "$0", "oath": "$0" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["Reasonable Fees"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "YES" }},
+             "TX": { "state": "Texas", "fees": { "acknowledgment": "$6.00", "jurat": "$6.00", "oath": "$6.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "UT": { "state": "Utah", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Valid" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Lt. Governor", "marriage": "No" }},
+             "VT": { "state": "Vermont", "fees": { "acknowledgment": "No limit", "jurat": "No limit", "oath": "No limit" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["Attorney Supervision"], "specialized": { "loan_signing": "ATTORNEY STATE", "apostille": "Secretary of State", "marriage": "No" }},
+             "VA": { "state": "Virginia", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of the Commonwealth", "marriage": "No" }},
+             "WA": { "state": "Washington", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "WV": { "state": "West Virginia", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["Attorney State"], "specialized": { "loan_signing": "ATTORNEY STATE", "apostille": "Secretary of State", "marriage": "No" }},
+             "WI": { "state": "Wisconsin", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "WY": { "state": "Wyoming", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }}
         };
-        // NOTE: In production, include all 50 states here. Using top 5 for file stability.
 
         const COURSE_MODULES = [
             { id: 1, title: "Authority & Qualifications", topic: "Commissioning authority, term length, and jurisdiction." },
@@ -205,95 +250,24 @@
             { id: 4, title: "Identification Standards", topic: "Satisfactory Evidence, Credible Witnesses." },
             { id: 5, title: "Rules, Fees, & Journals", topic: "Maximum fees, Journal requirements, Seal rules." },
             { id: 6, title: "Special Circumstances", topic: "RON, Signature by Mark/Proxy, Foreign language." },
-            { id: 7, title: "Misconduct & Liability", topic: "Prohibited acts (UPL), Penalties, Liability." }
+            { id: 7, title: "Misconduct & Liability", topic: "Prohibited acts (UPL), Penalties, Liability." },
+            { id: 8, title: "Loan Signing Agent (LSA)", topic: "Handling loan packages (Deed of Trust, Note, CD), borrower interactions, and avoiding UPL in real estate." },
+            { id: 9, title: "Apostilles & Authentication", topic: "The apostille process, Secretary of State authentication, and chain of signature requirements for international documents." },
+            { id: 10, title: "Specialized Services", topic: "Field Inspections, I-9 Verification, and Marriage/Wedding solemnization rules (State Specific)." }
         ];
 
         const PERSONA = `
-            ROLE: SUPPORTIVE NOTARY MENTOR.
-            TONE: Encouraging, professional, clear.
-            APPROACH: Guide the user. Explain the "Why" behind laws.
-            RULES: Teach One Topic -> Quiz -> Feedback.
+            ROLE: SUPPORTIVE NOTARY MENTOR & GUIDE.
+            TONE: Encouraging, professional, clear, and helpful.
+            APPROACH: Guide the user to the right answer. Explain the "Why" behind the laws softly but firmly regarding compliance.
+            
+            INTERACTION RULES:
+            1. Teach One Topic at a time.
+            2. Immediate Quiz: After explanation, give 1-3 multiple-choice questions or a "Trap Question".
+            3. Feedback: Explain why an answer is wrong citing rules.
         `;
 
         // --- COMPONENTS ---
-
-        // 1. Landing Page
-        const LandingPage = ({ onNavigate }) => {
-            return (
-                <div className="min-h-screen bg-white font-inter flex flex-col">
-                    <div className="bg-slate-900 text-white relative overflow-hidden flex-1 flex flex-col justify-center min-h-[60vh]">
-                        <div className="absolute inset-0 bg-blue-600/10 z-0"></div>
-                        
-                        {/* Header Nav inside Landing */}
-                        <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-20">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-blue-600 p-1.5 rounded-lg"><i className="fas fa-stamp text-xl"></i></div>
-                                <h1 className="text-xl font-bold">NotaryOS</h1>
-                            </div>
-                            <button onClick={onNavigate} className="text-gray-300 hover:text-white font-medium">Log In</button>
-                        </div>
-
-                        <div className="max-w-6xl mx-auto px-6 py-20 relative z-10">
-                            <div className="max-w-3xl">
-                                <h1 className="text-5xl md:text-7xl font-extrabold mb-8 leading-tight tracking-tight">
-                                    The Operating System for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Modern Notaries</span>.
-                                </h1>
-                                <p className="text-xl md:text-2xl text-gray-400 mb-10 leading-relaxed max-w-2xl">
-                                    Manage appointments, track compliance, generate invoices, and train with an AI expert. All in one place.
-                                </p>
-                                <div className="flex flex-col sm:flex-row gap-4">
-                                    <button onClick={onNavigate} className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-blue-500/30 transition-all transform hover:-translate-y-1">
-                                        Start Free Trial
-                                    </button>
-                                    <button className="bg-gray-800 hover:bg-gray-700 text-white px-10 py-4 rounded-xl font-bold text-lg border border-gray-700 transition-all">
-                                        View Demo
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        {/* Background Shapes */}
-                        <div className="absolute top-20 right-0 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl -mr-20 animate-pulse"></div>
-                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl -ml-20"></div>
-                    </div>
-
-                    <div className="py-24 bg-gray-50">
-                        <div className="max-w-6xl mx-auto px-6">
-                            <div className="text-center mb-16">
-                                <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything you need to run your business</h2>
-                                <p className="text-gray-500 max-w-2xl mx-auto text-lg">Stop using spreadsheets and sticky notes. NotaryOS brings your entire workflow into one secure, compliant dashboard.</p>
-                            </div>
-                            
-                            <div className="grid md:grid-cols-3 gap-8">
-                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1">
-                                    <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-2xl mb-6"><i className="fas fa-calendar-check"></i></div>
-                                    <h3 className="text-xl font-bold text-gray-900 mb-3">Smart Scheduling</h3>
-                                    <p className="text-gray-500 leading-relaxed">Track appointments, set reminders, and generate PDF invoices instantly. Never miss a signing.</p>
-                                </div>
-                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1">
-                                    <div className="w-14 h-14 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-2xl mb-6"><i className="fas fa-robot"></i></div>
-                                    <h3 className="text-xl font-bold text-gray-900 mb-3">AI Compliance Coach</h3>
-                                    <p className="text-gray-500 leading-relaxed">A strict AI mentor trained on 50-state laws. Ask questions, roleplay scenarios, and stay compliant.</p>
-                                </div>
-                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1">
-                                    <div className="w-14 h-14 bg-green-100 text-green-600 rounded-xl flex items-center justify-center text-2xl mb-6"><i className="fas fa-cloud"></i></div>
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <h3 className="text-xl font-bold text-gray-900">Cloud Sync</h3>
-                                        <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">Live</span>
-                                    </div>
-                                    <p className="text-gray-500 leading-relaxed">Start on your laptop, finish on your phone. Your data is encrypted and synced in real-time.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <footer className="bg-white border-t border-gray-200 py-12">
-                         <div className="max-w-6xl mx-auto px-6 text-center text-gray-400 text-sm">
-                            &copy; 2024 NotaryOS Inc.
-                         </div>
-                    </footer>
-                </div>
-            );
-        };
 
         const TermsModal = ({ onAccept }) => {
             return (
@@ -348,6 +322,76 @@
             </div>
         );
 
+        // 2. Auth & Landing
+        const LandingPage = ({ onNavigate }) => {
+            return (
+                <div className="min-h-screen bg-white font-inter flex flex-col">
+                    <div className="bg-slate-900 text-white relative overflow-hidden flex-1 flex flex-col justify-center min-h-[60vh]">
+                        <div className="absolute inset-0 bg-blue-600/10 z-0"></div>
+                        <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-20">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-blue-600 p-1.5 rounded-lg"><i className="fas fa-stamp text-xl"></i></div>
+                                <h1 className="text-xl font-bold">NotaryOS</h1>
+                            </div>
+                            <button onClick={onNavigate} className="text-gray-300 hover:text-white font-medium">Log In</button>
+                        </div>
+                        <div className="max-w-6xl mx-auto px-6 py-20 relative z-10">
+                            <div className="max-w-3xl">
+                                <h1 className="text-5xl md:text-7xl font-extrabold mb-8 leading-tight tracking-tight">
+                                    The Operating System for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Modern Notaries</span>.
+                                </h1>
+                                <p className="text-xl md:text-2xl text-gray-400 mb-10 leading-relaxed max-w-2xl">
+                                    Manage appointments, track compliance, generate invoices, and train with an AI expert. All in one place.
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <button onClick={onNavigate} className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-blue-500/30 transition-all transform hover:-translate-y-1">
+                                        Start Free Trial
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="absolute top-20 right-0 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl -mr-20 animate-pulse"></div>
+                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl -ml-20"></div>
+                    </div>
+
+                    <div className="py-24 bg-gray-50">
+                        <div className="max-w-6xl mx-auto px-6">
+                            <div className="text-center mb-16">
+                                <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything you need to run your business</h2>
+                                <p className="text-gray-500 max-w-2xl mx-auto text-lg">Stop using spreadsheets and sticky notes. NotaryOS brings your entire workflow into one secure, compliant dashboard.</p>
+                            </div>
+                            <div className="grid md:grid-cols-3 gap-8">
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1">
+                                    <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-2xl mb-6"><i className="fas fa-calendar-check"></i></div>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-3">Smart Scheduling</h3>
+                                    <p className="text-gray-500 leading-relaxed">Track appointments, set reminders, and generate PDF invoices instantly. Never miss a signing.</p>
+                                </div>
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1">
+                                    <div className="w-14 h-14 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-2xl mb-6"><i className="fas fa-robot"></i></div>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-3">AI Compliance Coach</h3>
+                                    <p className="text-gray-500 leading-relaxed">A strict AI mentor trained on 50-state laws. Ask questions, roleplay scenarios, and stay compliant.</p>
+                                </div>
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1">
+                                    <div className="w-14 h-14 bg-green-100 text-green-600 rounded-xl flex items-center justify-center text-2xl mb-6"><i className="fas fa-cloud"></i></div>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <h3 className="text-xl font-bold text-gray-900">Cloud Sync</h3>
+                                        <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">Live</span>
+                                    </div>
+                                    <p className="text-gray-500 leading-relaxed">Start on your laptop, finish on your phone. Your data is encrypted and synced in real-time.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <footer className="bg-white border-t border-gray-200 py-12">
+                         <div className="max-w-6xl mx-auto px-6 text-center text-gray-400 text-sm">
+                            &copy; 2024 NotaryOS Inc.
+                         </div>
+                    </footer>
+                </div>
+            );
+        };
+
         const AuthScreen = ({ onAuth, onBack }) => {
             const [isLogin, setIsLogin] = useState(true);
             const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -357,7 +401,7 @@
             const handleAuth = (e) => {
                 e.preventDefault();
                 setError('');
-                setShowTerms(true); // Trigger Terms Modal
+                setShowTerms(true); 
             };
 
             const completeAuth = async () => {
@@ -405,63 +449,64 @@
             };
 
             return (
-                <div className="min-h-screen flex flex-col md:flex-row bg-white">
+                <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
                     {showTerms && <TermsModal onAccept={completeAuth} />}
                     
-                    {/* Left Side: Brand (Full Height on Desktop) */}
-                    <div className="bg-slate-900 text-white p-12 md:w-1/2 flex flex-col justify-center relative overflow-hidden h-64 md:h-screen">
-                         <button onClick={onBack} className="absolute top-8 left-8 text-white/50 hover:text-white z-20 flex items-center gap-2 font-medium transition-colors"><i className="fas fa-arrow-left"></i> Back</button>
-                         <div className="absolute top-0 right-0 -mr-24 -mt-24 w-96 h-96 bg-blue-600 rounded-full opacity-20 blur-3xl"></div>
-                         <div className="absolute bottom-0 left-0 -ml-24 -mb-24 w-80 h-80 bg-purple-600 rounded-full opacity-20 blur-3xl"></div>
-                        <div className="relative z-10 mt-8 md:mt-0">
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="bg-blue-600 p-2.5 rounded-xl shadow-lg shadow-blue-500/20"><i className="fas fa-stamp text-3xl"></i></div>
-                                <h1 className="text-4xl font-bold tracking-tight">NotaryOS</h1>
+                    <div className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-4xl w-full flex flex-col md:flex-row auth-fade-in">
+                        {/* Brand Side */}
+                        <div className="bg-slate-900 text-white p-8 md:w-1/2 flex flex-col justify-center relative overflow-hidden">
+                             <button onClick={onBack} className="absolute top-6 left-6 text-white/50 hover:text-white z-20 flex items-center gap-2"><i className="fas fa-arrow-left"></i> Back</button>
+                             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-blue-600 rounded-full opacity-20"></div>
+                             <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 bg-purple-600 rounded-full opacity-20"></div>
+                            <div className="mb-8 relative z-10">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="bg-blue-600 p-2 rounded-lg"><i className="fas fa-stamp text-2xl"></i></div>
+                                    <h1 className="text-4xl font-bold">NotaryOS</h1>
+                                </div>
+                                <p className="text-blue-200 text-lg">The Operating System for Modern Notaries.</p>
                             </div>
-                            <p className="text-blue-200 text-xl font-light leading-relaxed max-w-md">Your complete operating system for appointments, compliance, and AI-powered training.</p>
+                            <ul className="space-y-4 text-gray-300 relative z-10">
+                                <li className="flex items-center gap-3"><i className="fas fa-check-circle text-green-400"></i> Business Management Suite</li>
+                                <li className="flex items-center gap-3"><i className="fas fa-check-circle text-green-400"></i> AI-Powered Compliance Coach</li>
+                                <li className="flex items-center gap-3"><i className="fas fa-check-circle text-green-400"></i> 50-State Law Database</li>
+                            </ul>
                         </div>
-                    </div>
-                    
-                    {/* Right Side: Form (Full Height) */}
-                    <div className="flex-1 flex flex-col justify-center items-center p-8 bg-white h-full md:h-screen">
-                        <div className="w-full max-w-md space-y-8">
-                            <div className="text-center md:text-left">
-                                <h2 className="text-3xl font-bold text-gray-900 tracking-tight">{isLogin ? 'Welcome Back' : 'Get Started'}</h2>
-                                <p className="text-gray-500 mt-2">{isLogin ? 'Enter your details to access your account.' : 'Start your free 14-day trial today.'}</p>
-                            </div>
+                        
+                        {/* Form Side */}
+                        <div className="p-8 md:w-1/2 flex flex-col justify-center bg-white">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-6">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
+                            {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-xs">{error}</div>}
                             
-                            {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl text-sm border border-red-100 flex items-center gap-2"><i className="fas fa-exclamation-circle"></i> {error}</div>}
-                            
-                            <form onSubmit={handleAuth} className="space-y-5">
+                            <form onSubmit={handleAuth} className="space-y-4">
                                 {!isLogin && (
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Full Name</label>
-                                        <input required type="text" className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Jane Doe" />
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Full Name</label>
+                                        <input required type="text" className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Jane Doe" />
                                     </div>
                                 )}
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Email Address</label>
-                                    <input required type="email" className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="notary@example.com" />
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email Address</label>
+                                    <input required type="email" className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="notary@example.com" />
                                 </div>
                                 <div>
-                                    <label className="block text-sm font-semibold text-gray-700 mb-2">Password</label>
-                                    <input required type="password" className="w-full p-4 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="••••••••" />
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Password</label>
+                                    <input required type="password" className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="••••••••" />
                                 </div>
-                                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-blue-500/30 transform active:scale-95">
-                                    {isLogin ? 'Sign In' : 'Create Account'}
+                                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all shadow-md transform active:scale-95">
+                                    {isLogin ? 'Sign In' : 'Start Free Trial'}
                                 </button>
                                 
                                 <div className="relative flex py-2 items-center">
                                     <div className="flex-grow border-t border-gray-200"></div>
-                                    <span className="flex-shrink-0 mx-4 text-gray-400 text-xs font-medium uppercase">Or continue with</span>
+                                    <span className="flex-shrink-0 mx-4 text-gray-400 text-xs">OR</span>
                                     <div className="flex-grow border-t border-gray-200"></div>
                                 </div>
 
-                                <button type="button" onClick={handleGoogleAuth} className="w-full bg-white border border-gray-200 text-gray-700 font-bold py-3.5 rounded-xl transition-all hover:bg-gray-50 flex items-center justify-center gap-3">
-                                    <i className="fab fa-google text-red-500 text-lg"></i> Google
+                                <button type="button" onClick={handleGoogleAuth} className="w-full bg-white border border-gray-300 text-gray-700 font-bold py-3 rounded-lg transition-all shadow-sm hover:bg-gray-50 flex items-center justify-center gap-2">
+                                    <i className="fab fa-google text-red-500"></i> Continue with Google
                                 </button>
                             </form>
-                            <div className="text-center text-sm">
+                            <div className="mt-6 text-center text-sm">
                                 <span className="text-gray-500">{isLogin ? "New to NotaryOS?" : "Already have an account?"}</span>
                                 <button onClick={() => setIsLogin(!isLogin)} className="ml-2 text-blue-600 font-bold hover:text-blue-700 transition-colors">
                                     {isLogin ? 'Create Account' : 'Log In'}
@@ -685,35 +730,25 @@
         };
 
         const Credentials = ({ onUpdate }) => {
-            const [creds, setCreds] = useState([]);
+            const [creds, setCreds] = useState(DataManager.get('notary_credentials'));
             const [showForm, setShowForm] = useState(false);
-            
-            useEffect(() => {
-                const load = async () => {
-                    const data = await DataManager.get('notary_credentials');
-                    setCreds(data);
-                };
-                load();
-            }, []);
 
-            const handleSave = async (e) => {
+            const handleSave = (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                await DataManager.save('notary_credentials', {
+                DataManager.save('notary_credentials', {
                     id: Date.now().toString(),
                     name: formData.get('name'),
                     expiry: formData.get('expiry')
                 });
-                const updated = await DataManager.get('notary_credentials');
-                setCreds(updated);
+                setCreds(DataManager.get('notary_credentials'));
                 onUpdate();
                 setShowForm(false);
             };
 
-            const handleDelete = async (id) => {
-                await DataManager.delete('notary_credentials', id);
-                const updated = await DataManager.get('notary_credentials');
-                setCreds(updated);
+            const handleDelete = (id) => {
+                DataManager.delete('notary_credentials', id);
+                setCreds(DataManager.get('notary_credentials'));
                 onUpdate();
             };
 
@@ -977,7 +1012,7 @@
                 setMode(newMode);
                 let msg = "";
                 if (newMode === 'study') msg = "📚 **Study Mode Active.**\n\nAsk me any factual question about state laws, fees, or ID requirements. I'm here to help!";
-                if (newMode === 'course') msg = "🎓 **Course Mode Active.**\n\nI will guide you through the 7-module curriculum step-by-step. Click 'Start Module 1' below when ready.";
+                if (newMode === 'course') msg = "🎓 **Course Mode Active.**\n\nI will guide you through the 10-module curriculum step-by-step. Click 'Start Module 1' below when ready.";
                 if (newMode === 'scenario') msg = "🎭 **Roleplay Mode Active.**\n\nI am now acting as your client. I might try to trick you with an illegal request. Type 'Hi' to start the simulation.";
                 setMessages(prev => [...prev, { role: 'assistant', content: msg }]);
             };
@@ -1131,6 +1166,7 @@
             );
         };
 
+        // ... existing AdminPanel ...
         const AdminPanel = ({ stateDB, onUpdateStateDB, courseMods, onUpdateCourseMods }) => {
             const [activeTab, setActiveTab] = useState('states');
             const [selectedState, setSelectedState] = useState(Object.keys(stateDB)[0]);
@@ -1164,6 +1200,7 @@
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
                              <div className="mb-4"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Select Jurisdiction</label><select value={selectedState} onChange={e => setSelectedState(e.target.value)} className="w-full p-2 border rounded-lg">{Object.keys(stateDB).map(key => <option key={key} value={key}>{stateDB[key].state}</option>)}</select></div>
                              <div className="space-y-4">
+                                <div><label className="text-xs font-bold text-gray-500 block mb-1">Specialized Services (Loan/Apostille/Marriage)</label><textarea value={JSON.stringify(editStateData.specialized || {}, null, 2)} onChange={e => { try { const parsed = JSON.parse(e.target.value); setEditStateData({...editStateData, specialized: parsed}); } catch(e){} }} className="w-full p-2 border rounded text-sm h-32 font-mono" placeholder='{"loan_signing": "..."}'></textarea></div>
                                 <div className="grid grid-cols-3 gap-2">
                                     <div><label className="text-xs text-gray-400 block">Ack Fee</label><input type="text" value={editStateData.fees.acknowledgment} onChange={e => setEditStateData({...editStateData, fees: {...editStateData.fees, acknowledgment: e.target.value}})} className="w-full p-2 border rounded" /></div>
                                     <div><label className="text-xs text-gray-400 block">Jurat Fee</label><input type="text" value={editStateData.fees.jurat} onChange={e => setEditStateData({...editStateData, fees: {...editStateData.fees, jurat: e.target.value}})} className="w-full p-2 border rounded" /></div>
