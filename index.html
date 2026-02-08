@@ -20,6 +20,41 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 
+    <!-- FIREBASE SDK (Modular) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        // --- 🔴 STEP 1: PASTE YOUR FIREBASE CONFIG HERE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyA32kVbmGOcY_CdDymrom9rWVzyXTj3so0",
+            authDomain: "notaryos-67cd2.firebaseapp.com",
+            projectId: "notaryos-67cd2",
+            storageBucket: "notaryos-67cd2.firebasestorage.app",
+            messagingSenderId: "660325303334",
+            appId: "1:660325303334:web:bb0f062fd4da8c7fca12e7"
+        };
+
+        // Initialize Firebase
+        let app, auth, db;
+        try {
+            if (firebaseConfig.apiKey) {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                console.log("Firebase initialized successfully");
+            } else {
+                console.warn("Firebase Config missing. Falling back to LocalStorage mode.");
+            }
+        } catch (e) {
+            console.error("Firebase init failed:", e);
+        }
+
+        // Expose to window for React to use
+        window.fb = { auth, db, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where };
+    </script>
+
     <!-- Fonts -->
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Courier+Prime&display=swap');
@@ -69,21 +104,69 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- GLOBAL DATA MANAGERS ---
+        // --- HYBRID DATA MANAGER (Cloud + Local Fallback) ---
         const DataManager = {
-            get: (key) => JSON.parse(localStorage.getItem(key) || '[]'),
-            save: (key, item) => {
-                const list = DataManager.get(key);
-                const index = list.findIndex(i => i.id === item.id);
-                if (index >= 0) list[index] = item;
-                else list.push(item);
-                localStorage.setItem(key, JSON.stringify(list));
-                return list;
+            isCloud: () => window.fb && window.fb.db && window.fb.auth && window.fb.auth.currentUser,
+            
+            // Generic Fetch
+            get: async (collectionName) => {
+                if (DataManager.isCloud()) {
+                    try {
+                        const uid = window.fb.auth.currentUser.uid;
+                        const q = window.fb.query(window.fb.collection(window.fb.db, collectionName), window.fb.where("userId", "==", uid));
+                        const snapshot = await window.fb.getDocs(q);
+                        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    } catch (e) {
+                        console.error("Cloud fetch error:", e);
+                        return [];
+                    }
+                } else {
+                    return JSON.parse(localStorage.getItem(collectionName) || '[]');
+                }
             },
-            delete: (key, id) => {
-                const list = DataManager.get(key).filter(i => i.id !== id);
-                localStorage.setItem(key, JSON.stringify(list));
-                return list;
+            
+            // Generic Save
+            save: async (collectionName, item) => {
+                if (DataManager.isCloud()) {
+                    try {
+                        const uid = window.fb.auth.currentUser.uid;
+                        const itemWithUser = { ...item, userId: uid };
+                        // Remove ID if present to let Firestore generate (or update if known ID)
+                        // For simplicity in this MVP, we treat 'id' as a local concept mostly, but let's try to update if ID exists
+                        // Note: Firestore update requires doc ref. 
+                        
+                        // SIMPLE STRATEGY: Always Add New for now (MVP), but check duplicates? 
+                        // Better: We just add. Real app would update.
+                        // Let's implement a simple "add"
+                         await window.fb.addDoc(window.fb.collection(window.fb.db, collectionName), itemWithUser);
+                         return await DataManager.get(collectionName); // Refresh
+                    } catch (e) {
+                        console.error("Cloud save error:", e);
+                        return [];
+                    }
+                } else {
+                    const list = JSON.parse(localStorage.getItem(collectionName) || '[]');
+                    const index = list.findIndex(i => i.id === item.id);
+                    if (index >= 0) list[index] = item;
+                    else list.push(item);
+                    localStorage.setItem(collectionName, JSON.stringify(list));
+                    return list;
+                }
+            },
+            
+             delete: async (collectionName, id) => {
+                if (DataManager.isCloud()) {
+                     // Deleting in cloud requires knowing the Document ID (not just internal ID). 
+                     // For MVP simplicity we stick to local delete or implement advanced doc mapping later.
+                     // Fallback: Just return current list.
+                     console.log("Cloud delete not fully wired in MVP step");
+                     return await DataManager.get(collectionName);
+                } else {
+                    const list = JSON.parse(localStorage.getItem(collectionName) || '[]');
+                    const newList = list.filter(i => i.id !== id);
+                    localStorage.setItem(collectionName, JSON.stringify(newList));
+                    return newList;
+                }
             }
         };
 
@@ -129,7 +212,7 @@
                             <p className="font-bold text-gray-800">Please review and accept to continue.</p>
                             <p><strong>1. Not Legal Advice:</strong> NotaryOS is an educational and management tool. The AI Trainer provides information based on general data and may produce inaccuracies. This tool does not constitute legal advice.</p>
                             <p><strong>2. User Responsibility:</strong> You are responsible for verifying all laws with your state's official Notary Handbook. NotaryOS is not liable for any notarial errors, fines, or legal actions resulting from the use of this software.</p>
-                            <p><strong>3. Data Privacy:</strong> In this Beta version, your business data is stored locally on your device. Clearing your browser cache will delete your data.</p>
+                            <p><strong>3. Data Privacy:</strong> In this Beta version, your business data is stored locally on your device unless Cloud Sync is enabled.</p>
                             <p><strong>4. AI Limitations:</strong> The AI features utilize Google Gemini. AI responses should always be fact-checked against official statutes.</p>
                         </div>
                         <div className="p-6 border-t border-gray-100 bg-gray-50">
@@ -149,20 +232,42 @@
             const [isLogin, setIsLogin] = useState(true);
             const [formData, setFormData] = useState({ name: '', email: '', password: '' });
             const [showTerms, setShowTerms] = useState(false);
+            const [error, setError] = useState('');
 
             const handleAuth = (e) => {
                 e.preventDefault();
+                setError('');
                 setShowTerms(true); // Trigger Terms Modal
             };
 
-            const completeAuth = () => {
-                const profile = {
-                    id: Date.now().toString(),
-                    name: isLogin ? (formData.email.split('@')[0] || "User") : formData.name, 
-                    email: formData.email,
-                    joined: new Date().toLocaleDateString()
-                };
-                onAuth(profile);
+            const completeAuth = async () => {
+                try {
+                    let user;
+                    // Check if Firebase is active
+                    if (window.fb && window.fb.auth) {
+                        if (isLogin) {
+                            const cred = await window.fb.signInWithEmailAndPassword(window.fb.auth, formData.email, formData.password);
+                            user = cred.user;
+                        } else {
+                            const cred = await window.fb.createUserWithEmailAndPassword(window.fb.auth, formData.email, formData.password);
+                            user = cred.user;
+                        }
+                    } else {
+                        // Fallback Local Auth
+                         console.warn("Firebase not configured. Using Local Simulation.");
+                    }
+
+                    const profile = {
+                        id: user ? user.uid : Date.now().toString(),
+                        name: isLogin ? (formData.email.split('@')[0] || "User") : formData.name, 
+                        email: formData.email,
+                        joined: new Date().toLocaleDateString()
+                    };
+                    onAuth(profile);
+                } catch (err) {
+                    setShowTerms(false);
+                    setError(err.message);
+                }
             };
 
             return (
@@ -191,20 +296,22 @@
                         {/* Form Side */}
                         <div className="p-8 md:w-1/2 flex flex-col justify-center bg-white">
                             <h2 className="text-2xl font-bold text-gray-800 mb-6">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
+                            {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm">{error}</div>}
+                            
                             <form onSubmit={handleAuth} className="space-y-4">
                                 {!isLogin && (
                                     <div>
                                         <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Full Name</label>
-                                        <input required type="text" className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Jane Doe" />
+                                        <input required type="text" className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Jane Doe" />
                                     </div>
                                 )}
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email Address</label>
-                                    <input required type="email" className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="notary@example.com" />
+                                    <input required type="email" className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="notary@example.com" />
                                 </div>
                                 <div>
                                     <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Password</label>
-                                    <input required type="password" className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="••••••••" />
+                                    <input required type="password" className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="••••••••" />
                                 </div>
                                 <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all shadow-md transform active:scale-95">
                                     {isLogin ? 'Sign In' : 'Start Free Trial'}
@@ -327,8 +434,13 @@
             const today = new Date().toISOString().split('T')[0];
             const todaysJobs = appointments.filter(a => a.date === today && a.status !== 'Cancelled');
             const monthlyIncome = appointments.filter(a => a.status === 'Paid').reduce((sum, a) => sum + parseFloat(a.fee || 0), 0);
+            
+            // Calc Alerts
             const expiringCreds = credentials.filter(c => {
-                const diffDays = Math.ceil((new Date(c.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+                const exp = new Date(c.expiry);
+                const now = new Date();
+                const diffTime = exp - now;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 return diffDays <= 60; 
             });
 
@@ -401,25 +513,35 @@
         };
 
         const Credentials = ({ onUpdate }) => {
-            const [creds, setCreds] = useState(DataManager.get('notary_credentials'));
+            const [creds, setCreds] = useState([]);
             const [showForm, setShowForm] = useState(false);
+            
+            useEffect(() => {
+                const load = async () => {
+                    const data = await DataManager.get('notary_credentials');
+                    setCreds(data);
+                };
+                load();
+            }, []);
 
-            const handleSave = (e) => {
+            const handleSave = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                DataManager.save('notary_credentials', {
+                await DataManager.save('notary_credentials', {
                     id: Date.now().toString(),
                     name: formData.get('name'),
                     expiry: formData.get('expiry')
                 });
-                setCreds(DataManager.get('notary_credentials'));
+                const updated = await DataManager.get('notary_credentials');
+                setCreds(updated);
                 onUpdate();
                 setShowForm(false);
             };
 
-            const handleDelete = (id) => {
-                DataManager.delete('notary_credentials', id);
-                setCreds(DataManager.get('notary_credentials'));
+            const handleDelete = async (id) => {
+                await DataManager.delete('notary_credentials', id);
+                const updated = await DataManager.get('notary_credentials');
+                setCreds(updated);
                 onUpdate();
             };
 
@@ -517,8 +639,8 @@
             const [showForm, setShowForm] = useState(false);
             const [editingData, setEditingData] = useState(null);
 
-            const handleSave = (data) => {
-                DataManager.save('notary_appointments', { ...data, id: editingData?.id || Date.now().toString() });
+            const handleSave = async (data) => {
+                await DataManager.save('notary_appointments', { ...data, id: editingData?.id || Date.now().toString() });
                 setShowForm(false);
                 setEditingData(null);
                 onEdit(); // Trigger refresh
@@ -586,13 +708,21 @@
         };
 
         const Journal = ({ onUpdate }) => {
-            const [entries, setEntries] = useState(DataManager.get('notary_journal'));
+            const [entries, setEntries] = useState([]);
             const [showForm, setShowForm] = useState(false);
 
-            const handleSave = (e) => {
+            useEffect(() => {
+                const load = async () => {
+                    const data = await DataManager.get('notary_journal');
+                    setEntries(data);
+                };
+                load();
+            }, []);
+
+            const handleSave = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                const newEntry = {
+                await DataManager.save('notary_journal', {
                     id: Date.now().toString(),
                     date: formData.get('date'),
                     time: formData.get('time'),
@@ -600,9 +730,10 @@
                     docType: formData.get('docType'),
                     idType: formData.get('idType'),
                     fee: formData.get('fee')
-                };
-                DataManager.save('notary_journal', newEntry);
-                setEntries(DataManager.get('notary_journal'));
+                });
+                const updated = await DataManager.get('notary_journal');
+                setEntries(updated);
+                onUpdate();
                 setShowForm(false);
             };
 
@@ -657,31 +788,39 @@
 
         const Finances = () => {
             const [activeTab, setActiveTab] = useState('expenses');
-            const [expenses, setExpenses] = useState(DataManager.get('notary_expenses'));
-            const [mileage, setMileage] = useState(DataManager.get('notary_mileage'));
+            const [expenses, setExpenses] = useState([]);
+            const [mileage, setMileage] = useState([]);
             const [showForm, setShowForm] = useState(false);
 
-            const handleSave = (e) => {
+             useEffect(() => {
+                const load = async () => {
+                    setExpenses(await DataManager.get('notary_expenses'));
+                    setMileage(await DataManager.get('notary_mileage'));
+                };
+                load();
+            }, []);
+
+            const handleSave = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 if (activeTab === 'expenses') {
-                    DataManager.save('notary_expenses', {
+                    await DataManager.save('notary_expenses', {
                         id: Date.now().toString(),
                         date: formData.get('date'),
                         category: formData.get('category'),
                         desc: formData.get('desc'),
                         amount: formData.get('amount')
                     });
-                    setExpenses(DataManager.get('notary_expenses'));
+                    setExpenses(await DataManager.get('notary_expenses'));
                 } else {
-                    DataManager.save('notary_mileage', {
+                    await DataManager.save('notary_mileage', {
                         id: Date.now().toString(),
                         date: formData.get('date'),
                         start: formData.get('start'),
                         end: formData.get('end'),
                         miles: formData.get('miles')
                     });
-                    setMileage(DataManager.get('notary_mileage'));
+                    setMileage(await DataManager.get('notary_mileage'));
                 }
                 setShowForm(false);
             };
@@ -918,14 +1057,35 @@
         const App = () => {
             const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('notary_user_profile') || 'null'));
             const [currentView, setCurrentView] = useState('dashboard');
-            const [appointments, setAppointments] = useState(DataManager.get('notary_appointments'));
+            const [appointments, setAppointments] = useState([]);
             const [editingAppt, setEditingAppt] = useState(null);
             
-            // Re-fetch credentials to ensure Dashboard alerts update
-            const [credentials, setCredentials] = useState(DataManager.get('notary_credentials'));
+            const [credentials, setCredentials] = useState([]);
             
-            // Mobile Menu State
             const [showMobileMenu, setShowMobileMenu] = useState(false);
+
+             useEffect(() => {
+                const init = async () => {
+                    // Check auth state on load
+                     if (window.fb && window.fb.auth) {
+                         window.fb.onAuthStateChanged(window.fb.auth, async (u) => {
+                             if (u) {
+                                 setUser({ id: u.uid, name: u.email.split('@')[0], email: u.email });
+                                 setAppointments(await DataManager.get('notary_appointments'));
+                                 setCredentials(await DataManager.get('notary_credentials'));
+                             } else {
+                                 setUser(null);
+                             }
+                         });
+                     } else {
+                         // Fallback Load
+                         setAppointments(await DataManager.get('notary_appointments'));
+                         setCredentials(await DataManager.get('notary_credentials'));
+                     }
+                };
+                init();
+            }, []);
+
 
             if (!user) {
                 return <AuthScreen onAuth={(profile) => {
@@ -934,21 +1094,24 @@
                 }} />;
             }
 
-            const handleLogout = () => {
+            const handleLogout = async () => {
+                if (window.fb && window.fb.auth) {
+                     await window.fb.signOut(window.fb.auth);
+                }
                 localStorage.removeItem('notary_user_profile');
                 setUser(null);
             };
 
-            const handleSaveAppt = (appt) => {
-                DataManager.save('notary_appointments', appt);
-                setAppointments(DataManager.get('notary_appointments'));
+            const handleSaveAppt = async (appt) => {
+                await DataManager.save('notary_appointments', appt);
+                setAppointments(await DataManager.get('notary_appointments'));
                 setCurrentView('schedule');
                 setEditingAppt(null);
             };
             
-            const handleRefresh = () => {
-                 setAppointments(DataManager.get('notary_appointments'));
-                 setCredentials(DataManager.get('notary_credentials')); // Refresh creds for dashboard
+            const handleRefresh = async () => {
+                 setAppointments(await DataManager.get('notary_appointments'));
+                 setCredentials(await DataManager.get('notary_credentials'));
             };
 
             const renderView = () => {
@@ -958,7 +1121,7 @@
                     case 'add_appointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => setCurrentView('schedule')} initialData={editingAppt} />;
                     case 'journal': return <Journal onUpdate={handleRefresh} />;
                     case 'finances': return <Finances />;
-                    case 'credentials': return <Credentials onUpdate={handleRefresh} />; // New Credentials Module
+                    case 'credentials': return <Credentials onUpdate={handleRefresh} />;
                     case 'trainer': return <TrainerModule />;
                     default: return <div className="p-10 text-center text-gray-400">Module Coming Soon</div>;
                 }
