@@ -1276,6 +1276,85 @@
             );
         };
 
+        const WelcomeTour = ({ onComplete }) => {
+            const [step, setStep] = useState(0);
+            const steps = [
+                {
+                    title: "Welcome to NotaryOS! 📜",
+                    content: "The all-in-one operating system for modern notaries. Let's take a quick 5-step tour of your new workspace.",
+                    icon: "fa-rocket",
+                    color: "text-blue-600",
+                    bg: "bg-blue-50"
+                },
+                {
+                    title: "Business Dashboard",
+                    content: "Track your monthly income, upcoming appointments, and get smart alerts for expiring credentials all in one place.",
+                    icon: "fa-chart-pie",
+                    color: "text-emerald-600",
+                    bg: "bg-emerald-50"
+                },
+                {
+                    title: "Schedule & Journal",
+                    content: "Manage your appointments and maintain a digital, compliant journal of all your signing events.",
+                    icon: "fa-calendar-check",
+                    color: "text-purple-600",
+                    bg: "bg-purple-50"
+                },
+                {
+                    title: "AI Training Center",
+                    content: "Access our 50-state knowledge base and practice with our 'Strict Mentor' AI to stay sharp on state laws.",
+                    icon: "fa-robot",
+                    color: "text-indigo-600",
+                    bg: "bg-indigo-50"
+                },
+                {
+                    title: "Settings & Profile",
+                    content: "Customize your business details, commission info, and branding for professional PDF invoices.",
+                    icon: "fa-cog",
+                    color: "text-slate-600",
+                    bg: "bg-slate-50"
+                }
+            ];
+
+            const next = () => step < steps.length - 1 ? setStep(step + 1) : onComplete();
+            const prev = () => step > 0 && setStep(step - 1);
+
+            return (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden auth-fade-in">
+                        <div className={`p-8 ${steps[step].bg} flex flex-col items-center text-center transition-colors duration-500`}>
+                            <div className={`w-20 h-20 ${steps[step].color} bg-white rounded-2xl shadow-lg flex items-center justify-center text-3xl mb-6 transform rotate-3`}>
+                                <i className={`fas ${steps[step].icon}`}></i>
+                            </div>
+                            <h2 className="text-2xl font-extrabold text-gray-900 mb-2">{steps[step].title}</h2>
+                            <p className="text-gray-600 leading-relaxed">{steps[step].content}</p>
+                        </div>
+                        <div className="p-6 bg-white">
+                            <div className="flex justify-center gap-2 mb-6">
+                                {steps.map((_, i) => (
+                                    <div key={i} className={`h-1.5 rounded-full transition-all duration-300 ${i === step ? 'w-8 bg-blue-600' : 'w-2 bg-gray-200'}`}></div>
+                                ))}
+                            </div>
+                            <div className="flex gap-3">
+                                {step > 0 ? (
+                                    <button onClick={prev} className="flex-1 py-3 px-4 rounded-xl font-bold text-gray-500 hover:bg-gray-50 transition-colors">
+                                        Back
+                                    </button>
+                                ) : (
+                                    <button onClick={onComplete} className="flex-1 py-3 px-4 rounded-xl font-bold text-gray-400 hover:text-gray-600 transition-colors">
+                                        Skip
+                                    </button>
+                                )}
+                                <button onClick={next} className="flex-[2] py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-200 transition-all transform active:scale-95">
+                                    {step === steps.length - 1 ? "Get Started" : "Next Step"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const AdminPanel = ({ stateDB, onUpdateStateDB, courseMods, onUpdateCourseMods }) => {
             const [activeTab, setActiveTab] = useState('states');
             const [selectedState, setSelectedState] = useState(Object.keys(stateDB)[0]);
@@ -1349,6 +1428,7 @@
             const [isCloudConnected, setIsCloudConnected] = useState(false);
             const [showPricing, setShowPricing] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
+            const [showTour, setShowTour] = useState(false);
             
             // ADMIN STATE
             const [stateDB, setStateDB] = useState(() => JSON.parse(localStorage.getItem('notary_state_db')) || STATE_DATABASE);
@@ -1379,6 +1459,11 @@
                                  setIsCloudConnected(true);
                                  setAppointments(await DataManager.get('notary_appointments'));
                                  setCredentials(await DataManager.get('notary_credentials'));
+                                 
+                                 // Check for first time tour
+                                 if (!localStorage.getItem('notary_tour_completed')) {
+                                     setShowTour(true);
+                                 }
                                  // We don't auto-redirect here to avoid overriding 'landing' state if user manually logged out but firebase session persisted
                                  // However, for UX, if user is found, usually we go to dashboard.
                                  // Let's rely on the initial useState for currentView to handle refresh persistence
@@ -1390,6 +1475,9 @@
                      } else {
                          setAppointments(await DataManager.get('notary_appointments'));
                          setCredentials(await DataManager.get('notary_credentials'));
+                         if (!localStorage.getItem('notary_tour_completed')) {
+                             setShowTour(true);
+                         }
                      }
                 };
                 init();
@@ -1478,6 +1566,7 @@
 
             return (
                 <div className="flex h-screen overflow-hidden">
+                    {showTour && <WelcomeTour onComplete={() => { setShowTour(false); localStorage.setItem('notary_tour_completed', 'true'); }} />}
                     {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={handleUpgrade} />}
                     {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} onSave={handleUpdateProfile} />}
                     
