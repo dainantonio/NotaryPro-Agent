@@ -731,6 +731,32 @@
         // --- MODULES ---
 
         // NEW: CLIENTS MODULE
+        const Toast = ({ message, type = 'success', onClose }) => {
+            useEffect(() => {
+                const timer = setTimeout(onClose, 3000);
+                return () => clearTimeout(timer);
+            }, [onClose]);
+
+            const icons = {
+                success: 'fa-check-circle',
+                error: 'fa-exclamation-circle',
+                info: 'fa-info-circle'
+            };
+
+            const colors = {
+                success: 'bg-emerald-500',
+                error: 'bg-red-500',
+                info: 'bg-blue-500'
+            };
+
+            return (
+                <div className={`fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] flex items-center gap-3 px-6 py-3 rounded-2xl text-white shadow-2xl toast-in ${colors[type]}`}>
+                    <i className={`fas ${icons[type]} text-lg`}></i>
+                    <span className="font-bold text-sm whitespace-nowrap">{message}</span>
+                </div>
+            );
+        };
+
         const EmptyState = ({ icon, title, description, actionLabel, onAction, colorClass = "text-blue-600", bgClass = "bg-blue-50" }) => (
             <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in">
                 <div className={`w-24 h-24 ${bgClass} ${colorClass} rounded-full flex items-center justify-center mb-6 text-4xl shadow-inner`}>
@@ -768,11 +794,13 @@
                 });
                 setShowForm(false);
                 setClients(await DataManager.get('notary_clients'));
+                window.showToast("Client saved successfully!");
             };
 
             const handleDelete = async (id) => {
                 await DataManager.delete('notary_clients', id);
                 setClients(await DataManager.get('notary_clients'));
+                window.showToast("Client deleted", "info");
             };
 
             return (
@@ -805,6 +833,8 @@
         };
 
         const Dashboard = ({ appointments, credentials, setView, isCloud }) => {
+            const chartRef = useRef(null);
+            const chartInstance = useRef(null);
             const today = new Date().toISOString().split('T')[0];
             const todaysJobs = appointments.filter(a => a.date === today && a.status !== 'Cancelled');
             const monthlyIncome = appointments.filter(a => a.status === 'Paid').reduce((sum, a) => sum + parseFloat(a.fee || 0), 0);
@@ -817,6 +847,90 @@
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 return diffDays <= 60; 
             });
+
+            useEffect(() => {
+                if (chartRef.current) {
+                    const ctx = chartRef.current.getContext('2d');
+                    
+                    // Prepare data for last 6 months
+                    const months = [];
+                    const incomeData = [];
+                    for (let i = 5; i >= 0; i--) {
+                        const d = new Date();
+                        d.setMonth(d.getMonth() - i);
+                        const monthName = d.toLocaleString('default', { month: 'short' });
+                        months.push(monthName);
+                        
+                        const monthStart = new Date(d.getFullYear(), d.getMonth(), 1);
+                        const monthEnd = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+                        
+                        const monthIncome = appointments
+                            .filter(a => a.status === 'Paid')
+                            .filter(a => {
+                                const apptDate = new Date(a.date);
+                                return apptDate >= monthStart && apptDate <= monthEnd;
+                            })
+                            .reduce((sum, a) => sum + parseFloat(a.fee || 0), 0);
+                        
+                        incomeData.push(monthIncome);
+                    }
+
+                    if (chartInstance.current) chartInstance.current.destroy();
+
+                    chartInstance.current = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: months,
+                            datasets: [{
+                                label: 'Income ($)',
+                                data: incomeData,
+                                borderColor: '#3b82f6',
+                                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                                fill: true,
+                                tension: 0.4,
+                                borderWidth: 3,
+                                pointBackgroundColor: '#3b82f6',
+                                pointBorderColor: '#fff',
+                                pointBorderWidth: 2,
+                                pointRadius: 4,
+                                pointHoverRadius: 6
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: false },
+                                tooltip: {
+                                    backgroundColor: '#1e293b',
+                                    titleFont: { size: 12, weight: 'bold' },
+                                    bodyFont: { size: 12 },
+                                    padding: 12,
+                                    displayColors: false,
+                                    callbacks: {
+                                        label: (context) => `$${context.parsed.y.toFixed(2)}`
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    grid: { color: '#f1f5f9' },
+                                    ticks: {
+                                        font: { size: 10 },
+                                        callback: (value) => `$${value}`
+                                    }
+                                },
+                                x: {
+                                    grid: { display: false },
+                                    ticks: { font: { size: 10 } }
+                                }
+                            }
+                        }
+                    });
+                }
+                return () => { if (chartInstance.current) chartInstance.current.destroy(); };
+            }, [appointments]);
 
             return (
                 <div className="p-6 space-y-6 pb-24">
@@ -850,37 +964,54 @@
                             </div>
                         </div>
                     </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-800 mb-4">Today's Agenda</h3>
-                        {todaysJobs.length === 0 ? (
-                            <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
-                                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400">
-                                    <i className="fas fa-coffee"></i>
-                                </div>
-                                <p className="text-gray-500 text-sm">No appointments scheduled for today.</p>
-                                <button onClick={() => setView('schedule')} className="mt-4 text-blue-600 text-sm font-semibold hover:underline">Add one now</button>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-lg font-bold text-gray-800">Income Visualization</h3>
+                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Last 6 Months</div>
                             </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {todaysJobs.map(job => (
-                                    <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center">
-                                        <div className="flex gap-4 items-center">
-                                            <div className="bg-blue-50 text-blue-600 w-12 h-12 rounded-lg flex flex-col items-center justify-center text-xs font-bold leading-none">
-                                                <span>{job.time.split(':')[0]}</span>
-                                                <span className="text-[10px] opacity-70">{job.time.split(':')[1]}</span>
-                                            </div>
-                                            <div>
-                                                <h4 className="font-bold text-gray-800">{job.clientName}</h4>
-                                                <p className="text-xs text-gray-500"><i className="fas fa-map-marker-alt mr-1"></i>{job.location}</p>
-                                            </div>
-                                        </div>
-                                        <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wide status-${job.status.toLowerCase()}`}>
-                                            {job.status}
-                                        </span>
+                            <div className="h-64 w-full">
+                                <canvas ref={chartRef}></canvas>
+                            </div>
+                        </div>
+
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                            <div className="flex justify-between items-center mb-6">
+                                <h3 className="text-lg font-bold text-gray-800">Today's Agenda</h3>
+                                <button onClick={() => setView('schedule')} className="text-blue-600 text-sm font-semibold hover:underline">View All</button>
+                            </div>
+                            
+                            {todaysJobs.length === 0 ? (
+                                <div className="text-center py-12">
+                                    <div className="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                                        <i className="fas fa-coffee"></i>
                                     </div>
-                                ))}
-                            </div>
-                        )}
+                                    <p className="text-gray-500 text-sm">No appointments scheduled for today.</p>
+                                    <button onClick={() => setView('schedule')} className="mt-4 text-blue-600 text-sm font-semibold hover:underline">Add one now</button>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {todaysJobs.map(job => (
+                                        <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center">
+                                            <div className="flex gap-4 items-center">
+                                                <div className="bg-blue-50 text-blue-600 w-12 h-12 rounded-lg flex flex-col items-center justify-center text-xs font-bold leading-none">
+                                                    <span>{job.time.split(':')[0]}</span>
+                                                    <span className="text-[10px] opacity-70">{job.time.split(':')[1]}</span>
+                                                </div>
+                                                <div>
+                                                    <h4 className="font-bold text-gray-800">{job.clientName}</h4>
+                                                    <p className="text-xs text-gray-500"><i className="fas fa-map-marker-alt mr-1"></i>{job.location}</p>
+                                                </div>
+                                            </div>
+                                            <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wide status-${job.status.toLowerCase()}`}>
+                                                {job.status}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             );
@@ -910,6 +1041,7 @@
                 setCreds(updated);
                 onUpdate();
                 setShowForm(false);
+                window.showToast("Credential saved successfully!");
             };
 
             const handleDelete = async (id) => {
@@ -1259,7 +1391,10 @@
                 e.preventDefault();
                 const formData = new FormData(e.target);
                 await DataManager.save('notary_journal', { id: Date.now().toString(), date: formData.get('date'), time: formData.get('time'), signer: formData.get('signer'), docType: formData.get('docType'), idType: formData.get('idType'), fee: formData.get('fee') });
-                onUpdate(); setShowForm(false); setEntries(await DataManager.get('notary_journal'));
+                onUpdate(); 
+                setShowForm(false); 
+                setEntries(await DataManager.get('notary_journal'));
+                window.showToast("Journal entry logged!");
             };
 
             const handleExport = () => {
@@ -1349,9 +1484,11 @@
                 if (activeTab === 'expenses') {
                     await DataManager.save('notary_expenses', { id: Date.now().toString(), date: formData.get('date'), category: formData.get('category'), desc: formData.get('desc'), amount: formData.get('amount') });
                     setExpenses(await DataManager.get('notary_expenses'));
+                    window.showToast("Expense saved!");
                 } else {
                     await DataManager.save('notary_mileage', { id: Date.now().toString(), date: formData.get('date'), start: formData.get('start'), end: formData.get('end'), miles: formData.get('miles') });
                     setMileage(await DataManager.get('notary_mileage'));
+                    window.showToast("Mileage logged!");
                 }
                 setShowForm(false);
             };
@@ -1724,6 +1861,11 @@
             const [showSettings, setShowSettings] = useState(false);
             const [showTour, setShowTour] = useState(false);
             const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('notary_sidebar_collapsed') === 'true');
+            const [toast, setToast] = useState(null);
+
+            window.showToast = (message, type = 'success') => {
+                setToast({ message, type });
+            };
 
             const toggleSidebar = () => {
                 const newState = !isSidebarCollapsed;
@@ -1870,6 +2012,7 @@
                     {showTour && <WelcomeTour onComplete={() => { setShowTour(false); localStorage.setItem('notary_tour_completed', 'true'); }} />}
                     {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={handleUpgrade} />}
                     {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} onSave={handleUpdateProfile} />}
+                    {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
                     
                     <Sidebar 
                         currentView={currentView} 
