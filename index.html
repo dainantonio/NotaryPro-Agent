@@ -581,11 +581,11 @@
             );
         };
 
-        const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout, userName, userPlan, onUpgrade, onSettings }) => {
+        const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout, userName, userPlan, onUpgrade, onSettings, isCollapsed, onToggleCollapse }) => {
             const menuItems = [
                 { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', color: 'text-blue-400' },
                 { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule', color: 'text-green-400' },
-                { id: 'clients', icon: 'fa-address-book', label: 'Clients', color: 'text-pink-400' }, // NEW
+                { id: 'clients', icon: 'fa-address-book', label: 'Clients', color: 'text-pink-400' },
                 { id: 'journal', icon: 'fa-book', label: 'Journal', color: 'text-purple-400' },
                 { id: 'finances', icon: 'fa-wallet', label: 'Finances', color: 'text-emerald-400' },
                 { id: 'credentials', icon: 'fa-id-card', label: 'Credentials', color: 'text-orange-400' },
@@ -596,33 +596,48 @@
             return (
                 <>
                     <div className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 lg:hidden ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
-                    <div className={`fixed inset-y-0 left-0 bg-slate-900 text-white z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:flex lg:flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-64`}>
-                        <div className="p-6 border-b border-slate-700 flex items-center justify-between">
+                    <div className={`fixed inset-y-0 left-0 bg-slate-900 text-white z-50 transform transition-all duration-300 ease-in-out lg:translate-x-0 lg:static lg:flex lg:flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${isCollapsed ? 'lg:w-20' : 'lg:w-64'}`}>
+                        <div className={`p-6 border-b border-slate-700 flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'}`}>
                             <div className="flex items-center gap-3">
                                 <div className="bg-blue-600 p-2 rounded-lg"><i className="fas fa-stamp"></i></div>
-                                <h1 className="font-bold text-xl tracking-tight">NotaryOS</h1>
+                                {!isCollapsed && <h1 className="font-bold text-xl tracking-tight">NotaryOS</h1>}
                             </div>
                             <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-white">
                                 <i className="fas fa-times text-xl"></i>
                             </button>
+                            {!isCollapsed && (
+                                <button onClick={onToggleCollapse} className="hidden lg:block text-slate-500 hover:text-white transition-colors">
+                                    <i className="fas fa-angle-double-left"></i>
+                                </button>
+                            )}
                         </div>
-                        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+                        
+                        {isCollapsed && (
+                            <div className="hidden lg:flex justify-center py-4 border-b border-slate-700">
+                                <button onClick={onToggleCollapse} className="text-slate-500 hover:text-white transition-colors">
+                                    <i className="fas fa-angle-double-right"></i>
+                                </button>
+                            </div>
+                        )}
+
+                        <nav className="flex-1 p-4 space-y-2 overflow-y-auto scrollbar-hide">
                             {menuItems.map(item => (
                                 <button 
                                     key={item.id}
                                     onClick={() => { setView(item.id); onClose(); }}
-                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${currentView === item.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'} group relative`}
+                                    title={isCollapsed ? item.label : ''}
+                                    className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-3 rounded-xl transition-all ${currentView === item.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'} group relative`}
                                 >
                                     <i className={`fas ${item.icon} w-5 text-center ${item.color}`}></i>
-                                    <span className="font-medium text-sm">{item.label}</span>
-                                    {item.isPro && userPlan !== 'pro' && (
+                                    {!isCollapsed && <span className="font-medium text-sm">{item.label}</span>}
+                                    {item.isPro && userPlan !== 'pro' && !isCollapsed && (
                                         <i className="fas fa-lock text-xs text-gray-500 absolute right-4"></i>
                                     )}
                                 </button>
                             ))}
                         </nav>
                         
-                        {userPlan !== 'pro' && (
+                        {userPlan !== 'pro' && !isCollapsed && (
                             <div className="px-4 pb-4">
                                 <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-4 text-center shadow-lg">
                                     <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2 text-white">
@@ -638,18 +653,22 @@
                         )}
 
                         <div className="p-4 border-t border-slate-700">
-                             <button onClick={onSettings} className="w-full flex items-center gap-3 px-4 py-2 mb-2 hover:bg-slate-800 rounded transition-colors group">
-                                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-blue-300">
+                             <button onClick={onSettings} className={`w-full flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 px-4'} py-2 mb-2 hover:bg-slate-800 rounded transition-colors group`}>
+                                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-blue-300 flex-shrink-0">
                                     {userName ? userName.substring(0,2).toUpperCase() : 'US'}
                                 </div>
-                                <div className="flex-1 overflow-hidden text-left">
-                                    <p className="text-xs font-bold truncate group-hover:text-white">{userName || 'User'}</p>
-                                    <p className="text-[10px] text-slate-400 capitalize">{userPlan} Plan</p>
-                                </div>
-                                <i className="fas fa-cog text-slate-500 group-hover:text-white"></i>
+                                {!isCollapsed && (
+                                    <>
+                                        <div className="flex-1 overflow-hidden text-left">
+                                            <p className="text-xs font-bold truncate group-hover:text-white">{userName || 'User'}</p>
+                                            <p className="text-[10px] text-slate-400 capitalize">{userPlan} Plan</p>
+                                        </div>
+                                        <i className="fas fa-cog text-slate-500 group-hover:text-white"></i>
+                                    </>
+                                )}
                             </button>
-                            <button onClick={onLogout} className="w-full text-left px-4 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-slate-800 rounded flex items-center gap-2 transition-colors">
-                                <i className="fas fa-sign-out-alt"></i> Log Out
+                            <button onClick={onLogout} title={isCollapsed ? 'Log Out' : ''} className={`w-full text-left ${isCollapsed ? 'justify-center' : 'px-4 gap-2'} py-2 text-xs text-red-400 hover:text-red-300 hover:bg-slate-800 rounded flex items-center transition-colors`}>
+                                <i className="fas fa-sign-out-alt"></i> {!isCollapsed && "Log Out"}
                             </button>
                         </div>
                     </div>
@@ -712,6 +731,24 @@
         // --- MODULES ---
 
         // NEW: CLIENTS MODULE
+        const EmptyState = ({ icon, title, description, actionLabel, onAction, colorClass = "text-blue-600", bgClass = "bg-blue-50" }) => (
+            <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in">
+                <div className={`w-24 h-24 ${bgClass} ${colorClass} rounded-full flex items-center justify-center mb-6 text-4xl shadow-inner`}>
+                    <i className={`fas ${icon}`}></i>
+                </div>
+                <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
+                <p className="text-gray-500 max-w-xs mb-8 leading-relaxed">{description}</p>
+                {onAction && (
+                    <button 
+                        onClick={onAction} 
+                        className={`px-8 py-3 ${colorClass.replace('text', 'bg')} text-white rounded-2xl font-bold shadow-lg transform transition-all hover:scale-105 active:scale-95`}
+                    >
+                        {actionLabel}
+                    </button>
+                )}
+            </div>
+        );
+
         const Clients = () => {
             const [clients, setClients] = useState([]);
             const [showForm, setShowForm] = useState(false);
@@ -742,7 +779,27 @@
                 <div className="p-6 pb-24">
                      <div className="flex justify-between items-center mb-6"><h3 className="text-lg font-bold text-gray-800">Client Directory</h3><button onClick={() => setShowForm(true)} className="bg-pink-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-pink-700 transition-colors shadow-md"><i className="fas fa-plus mr-2"></i>Add</button></div>
                     {showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 animate-fade-in"><form onSubmit={handleSave} className="space-y-4"><input required name="name" type="text" placeholder="Client Name" className="w-full p-3 bg-gray-50 border rounded-xl" /><div className="grid grid-cols-2 gap-4"><input name="email" type="email" placeholder="Email" className="w-full p-3 bg-gray-50 border rounded-xl" /><input name="phone" type="tel" placeholder="Phone" className="w-full p-3 bg-gray-50 border rounded-xl" /></div><input name="address" type="text" placeholder="Address" className="w-full p-3 bg-gray-50 border rounded-xl" /><textarea name="notes" placeholder="Notes (Gate codes, preferences...)" className="w-full p-3 bg-gray-50 border rounded-xl h-24"></textarea><div className="flex gap-2"><button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 bg-gray-100 rounded-lg">Cancel</button><button type="submit" className="flex-1 py-2 bg-pink-600 text-white rounded-lg">Save Client</button></div></form></div>}
-                    <div className="space-y-3">{clients.length === 0 ? <p className="text-center text-gray-400 py-10">No clients saved.</p> : clients.sort((a,b) => a.name.localeCompare(b.name)).map(c => <div key={c.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center"><div><h4 className="font-bold text-gray-800">{c.name}</h4><p className="text-xs text-gray-500">{c.phone} &bull; {c.email}</p></div><button onClick={() => handleDelete(c.id)} className="text-gray-300 hover:text-red-500 w-8 h-8 rounded-full hover:bg-red-50 flex items-center justify-center"><i className="fas fa-trash"></i></button></div>)}</div>
+                    <div className="space-y-3">
+                        {clients.length === 0 ? (
+                            <EmptyState 
+                                icon="fa-address-book"
+                                title="No Clients Yet"
+                                description="Start building your digital rolodex. Add your first client to keep their details handy for future signings."
+                                actionLabel="Add First Client"
+                                onAction={() => setShowForm(true)}
+                                colorClass="text-pink-600"
+                                bgClass="bg-pink-50"
+                            />
+                        ) : clients.sort((a,b) => a.name.localeCompare(b.name)).map(c => (
+                            <div key={c.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center">
+                                <div>
+                                    <h4 className="font-bold text-gray-800">{c.name}</h4>
+                                    <p className="text-xs text-gray-500">{c.phone} &bull; {c.email}</p>
+                                </div>
+                                <button onClick={() => handleDelete(c.id)} className="text-gray-300 hover:text-red-500 w-8 h-8 rounded-full hover:bg-red-50 flex items-center justify-center"><i className="fas fa-trash"></i></button>
+                            </div>
+                        ))}
+                    </div>
                 </div>
             );
         };
@@ -884,12 +941,15 @@
 
                     <div className="space-y-3">
                         {creds.length === 0 ? (
-                            <div className="text-center py-12">
-                                <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-300">
-                                    <i className="fas fa-id-card text-2xl"></i>
-                                </div>
-                                <p className="text-gray-400">No credentials tracked yet.</p>
-                            </div>
+                            <EmptyState 
+                                icon="fa-id-card"
+                                title="No Credentials"
+                                description="Keep track of your commission, bond, and insurance. We'll alert you before they expire."
+                                actionLabel="Add Credential"
+                                onAction={() => setShowForm(true)}
+                                colorClass="text-orange-600"
+                                bgClass="bg-orange-50"
+                            />
                         ) : creds.sort((a,b) => new Date(a.expiry) - new Date(b.expiry)).map(c => {
                             const daysLeft = Math.ceil((new Date(c.expiry) - new Date()) / (1000 * 60 * 60 * 24));
                             const statusColor = daysLeft < 0 ? 'bg-red-100 text-red-700' : (daysLeft < 60 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-700');
@@ -1145,10 +1205,15 @@
                     {viewMode === 'calendar' ? renderCalendar() : (
                         <div className="space-y-3">
                             {appointments.length === 0 ? (
-                                <div className="text-center py-20 bg-white rounded-2xl border border-dashed border-gray-200">
-                                    <i className="far fa-calendar-times text-4xl text-gray-200 mb-3"></i>
-                                    <p className="text-gray-400 text-sm">No appointments scheduled yet.</p>
-                                </div>
+                                <EmptyState 
+                                    icon="fa-calendar-alt"
+                                    title="Schedule is Empty"
+                                    description="You don't have any appointments scheduled. Use the 'New' button or try the Magic Smart Fill to add one."
+                                    actionLabel="Schedule Now"
+                                    onAction={() => setView('addAppointment')}
+                                    colorClass="text-blue-600"
+                                    bgClass="bg-blue-50"
+                                />
                             ) : appointments.sort((a,b) => new Date(a.date) - new Date(b.date)).map(job => (
                                 <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
                                     <div onClick={() => onEdit(job)} className="cursor-pointer">
@@ -1240,7 +1305,17 @@
                     )}
 
                     <div className="space-y-3">
-                        {entries.length === 0 ? <p className="text-center text-gray-400 py-10">No journal entries yet.</p> : entries.sort((a,b) => new Date(b.date) - new Date(a.date)).map(entry => (
+                        {entries.length === 0 ? (
+                            <EmptyState 
+                                icon="fa-book"
+                                title="Journal is Empty"
+                                description="Maintain a compliant digital record of your notarizations. Log your first entry to stay organized."
+                                actionLabel="Log First Entry"
+                                onAction={() => setShowForm(true)}
+                                colorClass="text-purple-600"
+                                bgClass="bg-purple-50"
+                            />
+                        ) : entries.sort((a,b) => new Date(b.date) - new Date(a.date)).map(entry => (
                             <div key={entry.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                                 <div className="flex justify-between items-start">
                                     <div>
@@ -1291,7 +1366,33 @@
                     <div className="bg-white p-1 rounded-xl flex mb-6 border border-gray-200 shadow-sm"><button onClick={() => setActiveTab('expenses')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'expenses' ? 'bg-emerald-50 text-emerald-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>Expenses</button><button onClick={() => setActiveTab('mileage')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'mileage' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>Mileage</button></div>
                     <div className="flex justify-between items-center mb-6"><div><p className="text-xs text-gray-500 uppercase font-bold">Total</p><p className="text-2xl font-bold text-gray-800">{activeTab === 'expenses' ? `$${expenses.reduce((s, i) => s + parseFloat(i.amount||0), 0).toFixed(2)}` : `${mileage.reduce((s, i) => s + parseFloat(i.miles||0), 0)} mi`}</p></div><div className="flex gap-2"><button onClick={handleExport} className="bg-white text-gray-500 border w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-file-export"></i></button><button onClick={() => setShowForm(true)} className="bg-gray-900 text-white w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-plus"></i></button></div></div>
                     {showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6"><form onSubmit={handleSave} className="space-y-4"><input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" />{activeTab === 'expenses' ? <><select name="category" className="w-full p-3 bg-gray-50 border rounded-xl"><option>Supplies</option><option>Insurance</option><option>Training</option><option>Software</option><option>Travel</option></select><input required name="desc" type="text" placeholder="Description" className="w-full p-3 bg-gray-50 border rounded-xl" /><input required name="amount" type="number" step="0.01" placeholder="Amount" className="w-full p-3 bg-gray-50 border rounded-xl" /></> : <><input required name="start" type="text" placeholder="Start" className="w-full p-3 bg-gray-50 border rounded-xl" /><input required name="end" type="text" placeholder="End" className="w-full p-3 bg-gray-50 border rounded-xl" /><input required name="miles" type="number" step="0.1" placeholder="Miles" className="w-full p-3 bg-gray-50 border rounded-xl" /></>}<div className="flex gap-2"><button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 bg-gray-100 rounded-lg">Cancel</button><button type="submit" className="flex-1 py-2 bg-gray-900 text-white rounded-lg">Save</button></div></form></div>}
-                    <div className="space-y-3">{activeTab === 'expenses' ? expenses.map(e => <div key={e.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between"><div><p className="font-bold text-gray-800">{e.desc}</p><p className="text-xs text-gray-500">{e.date} &bull; {e.category}</p></div><span className="font-mono text-red-600">-${e.amount}</span></div>) : mileage.map(m => <div key={m.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><div className="flex justify-between"><span className="text-xs text-gray-500">{m.date}</span><span className="font-bold text-blue-600">{m.miles} mi</span></div><div className="text-sm text-gray-800">{m.start} <i className="fas fa-arrow-right text-xs"></i> {m.end}</div></div>)}</div>
+                    <div className="space-y-3">
+                        {activeTab === 'expenses' ? (
+                            expenses.length === 0 ? (
+                                <EmptyState 
+                                    icon="fa-receipt"
+                                    title="No Expenses"
+                                    description="Track your business costs for tax season. Log supplies, insurance, and travel expenses here."
+                                    actionLabel="Log Expense"
+                                    onAction={() => setShowForm(true)}
+                                    colorClass="text-emerald-600"
+                                    bgClass="bg-emerald-50"
+                                />
+                            ) : expenses.map(e => <div key={e.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between"><div><p className="font-bold text-gray-800">{e.desc}</p><p className="text-xs text-gray-500">{e.date} &bull; {e.category}</p></div><span className="font-mono text-red-600">-${e.amount}</span></div>)
+                        ) : (
+                            mileage.length === 0 ? (
+                                <EmptyState 
+                                    icon="fa-car"
+                                    title="No Mileage Logged"
+                                    description="Don't miss out on mileage deductions. Track your travel to and from signing appointments."
+                                    actionLabel="Log Mileage"
+                                    onAction={() => setShowForm(true)}
+                                    colorClass="text-blue-600"
+                                    bgClass="bg-blue-50"
+                                />
+                            ) : mileage.map(m => <div key={m.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><div className="flex justify-between"><span className="text-xs text-gray-500">{m.date}</span><span className="font-bold text-blue-600">{m.miles} mi</span></div><div className="text-sm text-gray-800">{m.start} <i className="fas fa-arrow-right text-xs"></i> {m.end}</div></div>)
+                        )}
+                    </div>
                 </div>
             );
         };
@@ -1622,6 +1723,13 @@
             const [showPricing, setShowPricing] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
             const [showTour, setShowTour] = useState(false);
+            const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => localStorage.getItem('notary_sidebar_collapsed') === 'true');
+
+            const toggleSidebar = () => {
+                const newState = !isSidebarCollapsed;
+                setIsSidebarCollapsed(newState);
+                localStorage.setItem('notary_sidebar_collapsed', newState);
+            };
             
             // ADMIN STATE
             const [stateDB, setStateDB] = useState(() => JSON.parse(localStorage.getItem('notary_state_db')) || STATE_DATABASE);
@@ -1773,8 +1881,10 @@
                         userPlan={user.plan} 
                         onUpgrade={() => setShowPricing(true)} 
                         onSettings={() => setShowSettings(true)}
+                        isCollapsed={isSidebarCollapsed}
+                        onToggleCollapse={toggleSidebar}
                     />
-                    <main className="flex-1 flex flex-col h-screen md:ml-64 relative bg-gray-50">
+                    <main className={`flex-1 flex flex-col h-screen transition-all duration-300 relative bg-gray-50 ${isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'}`}>
                         <Header title={currentView === 'trainer' ? 'AI Training Center' : currentView.charAt(0).toUpperCase() + currentView.slice(1)} isCloud={isCloudConnected} />
                         <div className="flex-1 overflow-y-auto relative">{renderView()}</div>
                         <MobileNav currentView={currentView} setView={setCurrentView} onOpenMenu={() => setShowMobileMenu(true)} />
