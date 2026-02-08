@@ -24,6 +24,9 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
+    <!-- Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- FIREBASE SDK (COMPAT MODE - Stable) -->
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -97,6 +100,13 @@
         
         /* Safe area for mobile nav */
         .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
+
+        /* Toast Animations */
+        .toast-in { animation: toastIn 0.3s ease-out forwards; }
+        @keyframes toastIn {
+            from { transform: translate(-50%, 20px); opacity: 0; }
+            to { transform: translate(-50%, 0); opacity: 1; }
+        }
     </style>
 </head>
 <body>
