@@ -30,7 +30,7 @@
     <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
     <script>
-        // --- FIREBASE CONFIGURATION ---
+        // --- CONFIGURATION ZONE ---
         const firebaseConfig = {
             apiKey: "AIzaSyA32kVbmGOcY_CdDymrom9rWVzyXTj3so0",
             authDomain: "notaryos-67cd2.firebaseapp.com",
@@ -40,9 +40,11 @@
             appId: "1:660325303334:web:bb0f062fd4da8c7fca12e7"
         };
 
-        // Initialize
+        const STRIPE_PAYMENT_LINK = ""; // Leave empty for simulation mode
+
+        // Initialize Firebase
         try {
-            if (typeof firebase !== 'undefined' && !firebase.apps.length) {
+            if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
                 console.log("Firebase Connected");
             }
@@ -167,14 +169,39 @@
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
                 const primaryColor = [37, 99, 235];
+                
+                // Config
+                const businessName = user.businessName || user.name || "Notary Public";
+                const businessPhone = user.phone || "";
+                const businessAddress = user.address || "";
+
+                // Header
                 doc.setFontSize(22); doc.setTextColor(...primaryColor); doc.text("INVOICE", 160, 20);
                 doc.setFontSize(10); doc.setTextColor(100); doc.text(`ID: ${appt.id.substring(0,8)}`, 160, 26); doc.text(`Date: ${new Date().toLocaleDateString()}`, 160, 31);
-                doc.setFontSize(12); doc.setTextColor(0); doc.text("FROM:", 20, 20);
-                doc.setFontSize(10); doc.text(user.name || "Notary Public", 20, 26); doc.text(user.email || "", 20, 31);
-                doc.text("BILL TO:", 20, 45); doc.setFontSize(14); doc.text(appt.clientName, 20, 52); doc.setFontSize(10); doc.text(appt.location, 20, 58);
-                doc.autoTable({ startY: 70, head: [['Description', 'Date', 'Amount']], body: [[appt.type || 'Notary Service', appt.date, `$${appt.fee}`]], theme: 'grid', headStyles: { fillColor: primaryColor } });
+                
+                // From (Business)
+                doc.setFontSize(12); doc.setTextColor(0); doc.text(businessName.toUpperCase(), 20, 20);
+                doc.setFontSize(10); doc.setTextColor(100);
+                doc.text(businessPhone, 20, 26);
+                doc.text(user.email || "", 20, 31);
+                if(businessAddress) doc.text(businessAddress, 20, 36);
+
+                // To (Client)
+                doc.setTextColor(0); doc.text("BILL TO:", 20, 55); 
+                doc.setFontSize(14); doc.text(appt.clientName, 20, 62); 
+                doc.setFontSize(10); doc.text(appt.location, 20, 68);
+
+                // Table
+                doc.autoTable({ startY: 80, head: [['Description', 'Date', 'Amount']], body: [[appt.type || 'Notary Service', appt.date, `$${appt.fee}`]], theme: 'grid', headStyles: { fillColor: primaryColor } });
+                
                 const finalY = doc.lastAutoTable.finalY + 10;
                 doc.setFontSize(12); doc.text(`Total Due: $${appt.fee}`, 160, finalY, { align: 'right' });
+                
+                // Footer
+                doc.setFontSize(8); doc.setTextColor(150);
+                doc.text("Thank you for your business.", 105, 280, { align: 'center' });
+                if(user.commissionNumber) doc.text(`Commission #${user.commissionNumber}`, 105, 285, { align: 'center' });
+
                 doc.save(`invoice_${appt.clientName}.pdf`);
             },
             createReport: (title, columns, data, filename) => {
@@ -188,7 +215,7 @@
             }
         };
 
-        // --- FULL 50-STATE KNOWLEDGE BASE ---
+        // --- FULL KNOWLEDGE BASE (50 States) ---
         const STATE_DATABASE = {
              "AL": { "state": "Alabama", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Not specified" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
              "AK": { "state": "Alaska", "fees": { "acknowledgment": "$25.00", "jurat": "$25.00", "oath": "$25.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Not specified" }, "red_flags": ["Conflict of Interest"], "specialized": { "loan_signing": "Allowed", "apostille": "Lt. Governor", "marriage": "No" }},
@@ -240,7 +267,8 @@
              "WA": { "state": "Washington", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
              "WV": { "state": "West Virginia", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["Attorney State"], "specialized": { "loan_signing": "ATTORNEY STATE", "apostille": "Secretary of State", "marriage": "No" }},
              "WI": { "state": "Wisconsin", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
-             "WY": { "state": "Wyoming", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }}
+             "WY": { "state": "Wyoming", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "certificates": { "acknowledgment_text": "State of [State]...", "jurat_text": "Subscribed and sworn..." }
         };
 
         const COURSE_MODULES = [
@@ -257,17 +285,89 @@
         ];
 
         const PERSONA = `
-            ROLE: SUPPORTIVE NOTARY MENTOR & GUIDE.
-            TONE: Encouraging, professional, clear, and helpful.
-            APPROACH: Guide the user to the right answer. Explain the "Why" behind the laws softly but firmly regarding compliance.
-            
-            INTERACTION RULES:
-            1. Teach One Topic at a time.
-            2. Immediate Quiz: After explanation, give 1-3 multiple-choice questions or a "Trap Question".
-            3. Feedback: Explain why an answer is wrong citing rules.
+            ROLE: SUPPORTIVE NOTARY MENTOR.
+            TONE: Encouraging, professional, clear.
+            APPROACH: Guide the user. Explain the "Why" behind laws.
+            RULES: Teach One Topic -> Quiz -> Feedback.
         `;
 
         // --- COMPONENTS ---
+
+        // 1. Landing Page
+        const LandingPage = ({ onNavigate }) => {
+            return (
+                <div className="min-h-screen bg-white font-inter flex flex-col">
+                    <div className="bg-slate-900 text-white relative overflow-hidden flex-1 flex flex-col justify-center min-h-[60vh]">
+                        <div className="absolute inset-0 bg-blue-600/10 z-0"></div>
+                        
+                        {/* Header Nav inside Landing */}
+                        <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-20">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-blue-600 p-1.5 rounded-lg"><i className="fas fa-stamp text-xl"></i></div>
+                                <h1 className="text-xl font-bold">NotaryOS</h1>
+                            </div>
+                            <button onClick={onNavigate} className="text-gray-300 hover:text-white font-medium">Log In</button>
+                        </div>
+
+                        <div className="max-w-6xl mx-auto px-6 py-20 relative z-10">
+                            <div className="max-w-3xl">
+                                <h1 className="text-5xl md:text-7xl font-extrabold mb-8 leading-tight tracking-tight">
+                                    The Operating System for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Modern Notaries</span>.
+                                </h1>
+                                <p className="text-xl md:text-2xl text-gray-400 mb-10 leading-relaxed max-w-2xl">
+                                    Manage appointments, track compliance, generate invoices, and train with an AI expert. All in one place.
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <button onClick={onNavigate} className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-blue-500/30 transition-all transform hover:-translate-y-1">
+                                        Start Free Trial
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        {/* Background Shapes */}
+                        <div className="absolute top-20 right-0 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl -mr-20 animate-pulse"></div>
+                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl -ml-20"></div>
+                    </div>
+
+                    {/* Features Grid */}
+                    <div className="py-24 bg-gray-50">
+                        <div className="max-w-6xl mx-auto px-6">
+                            <div className="text-center mb-16">
+                                <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything you need to run your business</h2>
+                                <p className="text-gray-500 max-w-2xl mx-auto text-lg">Stop using spreadsheets and sticky notes. NotaryOS brings your entire workflow into one secure, compliant dashboard.</p>
+                            </div>
+                            
+                            <div className="grid md:grid-cols-3 gap-8">
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1">
+                                    <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-2xl mb-6"><i className="fas fa-calendar-check"></i></div>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-3">Smart Scheduling</h3>
+                                    <p className="text-gray-500 leading-relaxed">Track appointments, set reminders, and generate PDF invoices instantly. Never miss a signing.</p>
+                                </div>
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1">
+                                    <div className="w-14 h-14 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-2xl mb-6"><i className="fas fa-robot"></i></div>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-3">AI Compliance Coach</h3>
+                                    <p className="text-gray-500 leading-relaxed">A strict AI mentor trained on 50-state laws. Ask questions, roleplay scenarios, and stay compliant.</p>
+                                </div>
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1">
+                                    <div className="w-14 h-14 bg-green-100 text-green-600 rounded-xl flex items-center justify-center text-2xl mb-6"><i className="fas fa-cloud"></i></div>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <h3 className="text-xl font-bold text-gray-900">Cloud Sync</h3>
+                                        <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">Live</span>
+                                    </div>
+                                    <p className="text-gray-500 leading-relaxed">Start on your laptop, finish on your phone. Your data is encrypted and synced in real-time.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <footer className="bg-white border-t border-gray-200 py-12">
+                         <div className="max-w-6xl mx-auto px-6 text-center text-gray-400 text-sm">
+                            &copy; 2024 NotaryOS Inc.
+                         </div>
+                    </footer>
+                </div>
+            );
+        };
 
         const TermsModal = ({ onAccept }) => {
             return (
@@ -322,72 +422,35 @@
             </div>
         );
 
-        // 2. Auth & Landing
-        const LandingPage = ({ onNavigate }) => {
-            return (
-                <div className="min-h-screen bg-white font-inter flex flex-col">
-                    <div className="bg-slate-900 text-white relative overflow-hidden flex-1 flex flex-col justify-center min-h-[60vh]">
-                        <div className="absolute inset-0 bg-blue-600/10 z-0"></div>
-                        <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-20">
-                            <div className="flex items-center gap-3">
-                                <div className="bg-blue-600 p-1.5 rounded-lg"><i className="fas fa-stamp text-xl"></i></div>
-                                <h1 className="text-xl font-bold">NotaryOS</h1>
-                            </div>
-                            <button onClick={onNavigate} className="text-gray-300 hover:text-white font-medium">Log In</button>
-                        </div>
-                        <div className="max-w-6xl mx-auto px-6 py-20 relative z-10">
-                            <div className="max-w-3xl">
-                                <h1 className="text-5xl md:text-7xl font-extrabold mb-8 leading-tight tracking-tight">
-                                    The Operating System for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Modern Notaries</span>.
-                                </h1>
-                                <p className="text-xl md:text-2xl text-gray-400 mb-10 leading-relaxed max-w-2xl">
-                                    Manage appointments, track compliance, generate invoices, and train with an AI expert. All in one place.
-                                </p>
-                                <div className="flex flex-col sm:flex-row gap-4">
-                                    <button onClick={onNavigate} className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-blue-500/30 transition-all transform hover:-translate-y-1">
-                                        Start Free Trial
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        <div className="absolute top-20 right-0 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl -mr-20 animate-pulse"></div>
-                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl -ml-20"></div>
-                    </div>
+        // Settings Modal with Business Fields
+        const SettingsModal = ({ user, onClose, onSave }) => {
+            const [data, setData] = useState(user || {});
+            
+            const handleSave = (e) => {
+                e.preventDefault();
+                onSave(data);
+                onClose();
+            };
 
-                    <div className="py-24 bg-gray-50">
-                        <div className="max-w-6xl mx-auto px-6">
-                            <div className="text-center mb-16">
-                                <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything you need to run your business</h2>
-                                <p className="text-gray-500 max-w-2xl mx-auto text-lg">Stop using spreadsheets and sticky notes. NotaryOS brings your entire workflow into one secure, compliant dashboard.</p>
-                            </div>
-                            <div className="grid md:grid-cols-3 gap-8">
-                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1">
-                                    <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-2xl mb-6"><i className="fas fa-calendar-check"></i></div>
-                                    <h3 className="text-xl font-bold text-gray-900 mb-3">Smart Scheduling</h3>
-                                    <p className="text-gray-500 leading-relaxed">Track appointments, set reminders, and generate PDF invoices instantly. Never miss a signing.</p>
-                                </div>
-                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1">
-                                    <div className="w-14 h-14 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-2xl mb-6"><i className="fas fa-robot"></i></div>
-                                    <h3 className="text-xl font-bold text-gray-900 mb-3">AI Compliance Coach</h3>
-                                    <p className="text-gray-500 leading-relaxed">A strict AI mentor trained on 50-state laws. Ask questions, roleplay scenarios, and stay compliant.</p>
-                                </div>
-                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1">
-                                    <div className="w-14 h-14 bg-green-100 text-green-600 rounded-xl flex items-center justify-center text-2xl mb-6"><i className="fas fa-cloud"></i></div>
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <h3 className="text-xl font-bold text-gray-900">Cloud Sync</h3>
-                                        <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">Live</span>
-                                    </div>
-                                    <p className="text-gray-500 leading-relaxed">Start on your laptop, finish on your phone. Your data is encrypted and synced in real-time.</p>
-                                </div>
-                            </div>
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden auth-fade-in">
+                         <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+                            <h3 className="font-bold text-lg text-gray-800">Business Profile</h3>
+                            <button onClick={onClose} className="text-gray-500"><i className="fas fa-times"></i></button>
+                        </div>
+                        <div className="p-6">
+                            <form onSubmit={handleSave} className="space-y-4">
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Your Name</label><input className="w-full p-2 border rounded" value={data.name || ''} onChange={e => setData({...data, name: e.target.value})} /></div>
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Business Name</label><input className="w-full p-2 border rounded" placeholder="e.g. Acme Notary LLC" value={data.businessName || ''} onChange={e => setData({...data, businessName: e.target.value})} /></div>
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone</label><input className="w-full p-2 border rounded" placeholder="(555) 123-4567" value={data.phone || ''} onChange={e => setData({...data, phone: e.target.value})} /></div>
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Address (For Invoices)</label><textarea className="w-full p-2 border rounded" placeholder="123 Notary St, City, State" value={data.address || ''} onChange={e => setData({...data, address: e.target.value})}></textarea></div>
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Commission Number</label><input className="w-full p-2 border rounded" value={data.commissionNumber || ''} onChange={e => setData({...data, commissionNumber: e.target.value})} /></div>
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Exam Target Date</label><input type="date" className="w-full p-2 border rounded" value={data.targetDate || ''} onChange={e => setData({...data, targetDate: e.target.value})} /></div>
+                                <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">Save Profile</button>
+                            </form>
                         </div>
                     </div>
-                    
-                    <footer className="bg-white border-t border-gray-200 py-12">
-                         <div className="max-w-6xl mx-auto px-6 text-center text-gray-400 text-sm">
-                            &copy; 2024 NotaryOS Inc.
-                         </div>
-                    </footer>
                 </div>
             );
         };
@@ -401,7 +464,7 @@
             const handleAuth = (e) => {
                 e.preventDefault();
                 setError('');
-                setShowTerms(true); 
+                setShowTerms(true); // Trigger Terms Modal
             };
 
             const completeAuth = async () => {
@@ -458,7 +521,7 @@
                              <button onClick={onBack} className="absolute top-6 left-6 text-white/50 hover:text-white z-20 flex items-center gap-2"><i className="fas fa-arrow-left"></i> Back</button>
                              <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-blue-600 rounded-full opacity-20"></div>
                              <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 bg-purple-600 rounded-full opacity-20"></div>
-                            <div className="mb-8 relative z-10">
+                            <div className="mb-8 relative z-10 mt-10 md:mt-0">
                                 <div className="flex items-center gap-3 mb-2">
                                     <div className="bg-blue-600 p-2 rounded-lg"><i className="fas fa-stamp text-2xl"></i></div>
                                     <h1 className="text-4xl font-bold">NotaryOS</h1>
@@ -518,10 +581,11 @@
             );
         };
 
-        const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout, userName, userPlan, onUpgrade }) => {
+        const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout, userName, userPlan, onUpgrade, onSettings }) => {
             const menuItems = [
                 { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', color: 'text-blue-400' },
                 { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule', color: 'text-green-400' },
+                { id: 'clients', icon: 'fa-address-book', label: 'Clients', color: 'text-pink-400' }, // NEW
                 { id: 'journal', icon: 'fa-book', label: 'Journal', color: 'text-purple-400' },
                 { id: 'finances', icon: 'fa-wallet', label: 'Finances', color: 'text-emerald-400' },
                 { id: 'credentials', icon: 'fa-id-card', label: 'Credentials', color: 'text-orange-400' },
@@ -558,7 +622,6 @@
                             ))}
                         </nav>
                         
-                        {/* Upgrade Banner for Free Users */}
                         {userPlan !== 'pro' && (
                             <div className="px-4 pb-4">
                                 <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-4 text-center shadow-lg">
@@ -575,15 +638,16 @@
                         )}
 
                         <div className="p-4 border-t border-slate-700">
-                            <div className="flex items-center gap-3 px-4 py-2 mb-2">
+                             <button onClick={onSettings} className="w-full flex items-center gap-3 px-4 py-2 mb-2 hover:bg-slate-800 rounded transition-colors group">
                                 <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-blue-300">
                                     {userName ? userName.substring(0,2).toUpperCase() : 'US'}
                                 </div>
-                                <div className="flex-1 overflow-hidden">
-                                    <p className="text-xs font-bold truncate">{userName || 'User'}</p>
+                                <div className="flex-1 overflow-hidden text-left">
+                                    <p className="text-xs font-bold truncate group-hover:text-white">{userName || 'User'}</p>
                                     <p className="text-[10px] text-slate-400 capitalize">{userPlan} Plan</p>
                                 </div>
-                            </div>
+                                <i className="fas fa-cog text-slate-500 group-hover:text-white"></i>
+                            </button>
                             <button onClick={onLogout} className="w-full text-left px-4 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-slate-800 rounded flex items-center gap-2 transition-colors">
                                 <i className="fas fa-sign-out-alt"></i> Log Out
                             </button>
@@ -603,7 +667,7 @@
             ];
 
             return (
-                <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around items-center px-2 py-2 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] safe-area-pb">
+                <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around items-center px-2 py-2 z-30 shadow-lg safe-area-pb">
                     {menuItems.map(item => (
                         <button 
                             key={item.id}
@@ -646,6 +710,42 @@
         );
 
         // --- MODULES ---
+
+        // NEW: CLIENTS MODULE
+        const Clients = () => {
+            const [clients, setClients] = useState([]);
+            const [showForm, setShowForm] = useState(false);
+
+            useEffect(() => { DataManager.get('notary_clients').then(setClients); }, []);
+
+            const handleSave = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                await DataManager.save('notary_clients', {
+                    id: Date.now().toString(),
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    phone: formData.get('phone'),
+                    address: formData.get('address'),
+                    notes: formData.get('notes')
+                });
+                setShowForm(false);
+                setClients(await DataManager.get('notary_clients'));
+            };
+
+            const handleDelete = async (id) => {
+                await DataManager.delete('notary_clients', id);
+                setClients(await DataManager.get('notary_clients'));
+            };
+
+            return (
+                <div className="p-6 pb-24">
+                     <div className="flex justify-between items-center mb-6"><h3 className="text-lg font-bold text-gray-800">Client Directory</h3><button onClick={() => setShowForm(true)} className="bg-pink-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-pink-700 transition-colors shadow-md"><i className="fas fa-plus mr-2"></i>Add</button></div>
+                    {showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 animate-fade-in"><form onSubmit={handleSave} className="space-y-4"><input required name="name" type="text" placeholder="Client Name" className="w-full p-3 bg-gray-50 border rounded-xl" /><div className="grid grid-cols-2 gap-4"><input name="email" type="email" placeholder="Email" className="w-full p-3 bg-gray-50 border rounded-xl" /><input name="phone" type="tel" placeholder="Phone" className="w-full p-3 bg-gray-50 border rounded-xl" /></div><input name="address" type="text" placeholder="Address" className="w-full p-3 bg-gray-50 border rounded-xl" /><textarea name="notes" placeholder="Notes (Gate codes, preferences...)" className="w-full p-3 bg-gray-50 border rounded-xl h-24"></textarea><div className="flex gap-2"><button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 bg-gray-100 rounded-lg">Cancel</button><button type="submit" className="flex-1 py-2 bg-pink-600 text-white rounded-lg">Save Client</button></div></form></div>}
+                    <div className="space-y-3">{clients.length === 0 ? <p className="text-center text-gray-400 py-10">No clients saved.</p> : clients.sort((a,b) => a.name.localeCompare(b.name)).map(c => <div key={c.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center"><div><h4 className="font-bold text-gray-800">{c.name}</h4><p className="text-xs text-gray-500">{c.phone} &bull; {c.email}</p></div><button onClick={() => handleDelete(c.id)} className="text-gray-300 hover:text-red-500 w-8 h-8 rounded-full hover:bg-red-50 flex items-center justify-center"><i className="fas fa-trash"></i></button></div>)}</div>
+                </div>
+            );
+        };
 
         const Dashboard = ({ appointments, credentials, setView, isCloud }) => {
             const today = new Date().toISOString().split('T')[0];
@@ -732,23 +832,33 @@
         const Credentials = ({ onUpdate }) => {
             const [creds, setCreds] = useState(DataManager.get('notary_credentials'));
             const [showForm, setShowForm] = useState(false);
+            
+            useEffect(() => {
+                const load = async () => {
+                    const data = await DataManager.get('notary_credentials');
+                    setCreds(data);
+                };
+                load();
+            }, []);
 
-            const handleSave = (e) => {
+            const handleSave = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                DataManager.save('notary_credentials', {
+                await DataManager.save('notary_credentials', {
                     id: Date.now().toString(),
                     name: formData.get('name'),
                     expiry: formData.get('expiry')
                 });
-                setCreds(DataManager.get('notary_credentials'));
+                const updated = await DataManager.get('notary_credentials');
+                setCreds(updated);
                 onUpdate();
                 setShowForm(false);
             };
 
-            const handleDelete = (id) => {
-                DataManager.delete('notary_credentials', id);
-                setCreds(DataManager.get('notary_credentials'));
+            const handleDelete = async (id) => {
+                await DataManager.delete('notary_credentials', id);
+                const updated = await DataManager.get('notary_credentials');
+                setCreds(updated);
                 onUpdate();
             };
 
@@ -1166,7 +1276,6 @@
             );
         };
 
-        // ... existing AdminPanel ...
         const AdminPanel = ({ stateDB, onUpdateStateDB, courseMods, onUpdateCourseMods }) => {
             const [activeTab, setActiveTab] = useState('states');
             const [selectedState, setSelectedState] = useState(Object.keys(stateDB)[0]);
@@ -1236,6 +1345,7 @@
             const [showMobileMenu, setShowMobileMenu] = useState(false);
             const [isCloudConnected, setIsCloudConnected] = useState(false);
             const [showPricing, setShowPricing] = useState(false);
+            const [showSettings, setShowSettings] = useState(false);
             
             // ADMIN STATE
             const [stateDB, setStateDB] = useState(() => JSON.parse(localStorage.getItem('notary_state_db')) || STATE_DATABASE);
@@ -1250,14 +1360,18 @@
                          firebase.auth().onAuthStateChanged(async (u) => {
                              if (u) {
                                  // Basic Cloud Sync Simulation for Plan Status
-                                 // In real app, this comes from Firestore User Document
                                  const localProfile = JSON.parse(localStorage.getItem('notary_user_profile') || '{}');
                                  
                                  setUser({ 
                                      id: u.uid, 
-                                     name: u.displayName || u.email.split('@')[0], 
+                                     name: localProfile.name || u.displayName || u.email.split('@')[0], 
                                      email: u.email,
-                                     plan: localProfile.plan || 'free' // Persist plan across reloads
+                                     plan: localProfile.plan || 'free', // Persist plan across reloads
+                                     businessName: localProfile.businessName,
+                                     address: localProfile.address,
+                                     phone: localProfile.phone,
+                                     commissionNumber: localProfile.commissionNumber,
+                                     targetDate: localProfile.targetDate
                                  });
                                  setIsCloudConnected(true);
                                  setAppointments(await DataManager.get('notary_appointments'));
@@ -1275,6 +1389,20 @@
                 };
                 init();
             }, []);
+            
+            // Payment Success Handler
+            useEffect(() => {
+                const queryParams = new URLSearchParams(window.location.search);
+                if (queryParams.get('payment') === 'success') {
+                    // Update user to PRO
+                    const upgradedUser = { ...user, plan: 'pro' };
+                    localStorage.setItem('notary_user_profile', JSON.stringify(upgradedUser));
+                    setUser(upgradedUser);
+                    alert("🎉 Payment Successful! You are now a Pro member.");
+                    // Clean URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            }, [user]);
 
             const handleLogout = async () => {
                 if (typeof firebase !== 'undefined' && firebase.auth) await firebase.auth().signOut();
@@ -1284,12 +1412,23 @@
             };
 
             const handleUpgrade = () => {
-                // SIMULATED PAYMENT SUCCESS
-                const upgradedUser = { ...user, plan: 'pro' };
-                setUser(upgradedUser);
-                localStorage.setItem('notary_user_profile', JSON.stringify(upgradedUser));
-                setShowPricing(false);
-                alert("🎉 Success! Welcome to NotaryOS Pro.");
+                // REAL STRIPE REDIRECT LOGIC
+                if (STRIPE_PAYMENT_LINK) {
+                    window.location.href = STRIPE_PAYMENT_LINK;
+                } else {
+                    // Fallback Simulation for Testing
+                    const upgradedUser = { ...user, plan: 'pro' };
+                    setUser(upgradedUser);
+                    localStorage.setItem('notary_user_profile', JSON.stringify(upgradedUser));
+                    setShowPricing(false);
+                    alert("🎉 (Simulation) Success! Welcome to NotaryOS Pro.");
+                }
+            };
+            
+            const handleUpdateProfile = (updatedData) => {
+                const newUser = { ...user, ...updatedData };
+                setUser(newUser);
+                localStorage.setItem('notary_user_profile', JSON.stringify(newUser));
             };
 
             const handleSaveAppt = async (appt) => {
@@ -1315,6 +1454,7 @@
                     case 'journal': return <Journal onUpdate={handleRefresh} user={user} onUpgrade={() => setShowPricing(true)} />;
                     case 'finances': return <Finances />;
                     case 'credentials': return <Credentials onUpdate={handleRefresh} />;
+                    case 'clients': return <Clients />;
                     case 'trainer': return <TrainerModule stateDB={stateDB} courseMods={courseMods} user={user} onUpgrade={() => setShowPricing(true)} />;
                     case 'admin': return <AdminPanel stateDB={stateDB} onUpdateStateDB={handleUpdateStateDB} courseMods={courseMods} onUpdateCourseMods={handleUpdateCourseMods} />;
                     default: return <div className="p-10 text-center text-gray-400">Module Coming Soon</div>;
@@ -1334,7 +1474,19 @@
             return (
                 <div className="flex h-screen overflow-hidden">
                     {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={handleUpgrade} />}
-                    <Sidebar currentView={currentView} setView={setCurrentView} isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} onLogout={handleLogout} userName={user.name} userPlan={user.plan} onUpgrade={() => setShowPricing(true)} />
+                    {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} onSave={handleUpdateProfile} />}
+                    
+                    <Sidebar 
+                        currentView={currentView} 
+                        setView={setCurrentView} 
+                        isOpen={showMobileMenu} 
+                        onClose={() => setShowMobileMenu(false)} 
+                        onLogout={handleLogout} 
+                        userName={user.name} 
+                        userPlan={user.plan} 
+                        onUpgrade={() => setShowPricing(true)} 
+                        onSettings={() => setShowSettings(true)}
+                    />
                     <main className="flex-1 flex flex-col h-screen md:ml-64 relative bg-gray-50">
                         <Header title={currentView === 'trainer' ? 'AI Training Center' : currentView.charAt(0).toUpperCase() + currentView.slice(1)} isCloud={isCloudConnected} />
                         <div className="flex-1 overflow-y-auto relative">{renderView()}</div>
