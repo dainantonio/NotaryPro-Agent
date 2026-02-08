@@ -830,7 +830,7 @@
         };
 
         const Credentials = ({ onUpdate }) => {
-            const [creds, setCreds] = useState(DataManager.get('notary_credentials'));
+            const [creds, setCreds] = useState([]);
             const [showForm, setShowForm] = useState(false);
             
             useEffect(() => {
@@ -967,7 +967,7 @@
                 <div className="p-6 pb-24">
                     <div className="flex justify-between items-center mb-6">
                         <h3 className="text-lg font-bold text-gray-800">All Appointments</h3>
-                        <button onClick={() => setView('add_appointment')} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md"><i className="fas fa-plus mr-2"></i>New</button>
+                        <button onClick={() => setView('addAppointment')} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md"><i className="fas fa-plus mr-2"></i>New</button>
                     </div>
                     <div className="space-y-3">
                         {appointments.length === 0 ? <p className="text-center text-gray-400 py-10">Schedule empty.</p> : appointments.sort((a,b) => new Date(a.date) - new Date(b.date)).map(job => (
@@ -1338,7 +1338,10 @@
 
         const App = () => {
             const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('notary_user_profile') || 'null'));
-            const [currentView, setCurrentView] = useState('landing'); // Start at Landing Page
+            const [currentView, setCurrentView] = useState(() => {
+                const savedUser = localStorage.getItem('notary_user_profile');
+                return savedUser ? 'dashboard' : 'landing';
+            });
             const [appointments, setAppointments] = useState([]);
             const [editingAppt, setEditingAppt] = useState(null);
             const [credentials, setCredentials] = useState([]);
@@ -1376,7 +1379,9 @@
                                  setIsCloudConnected(true);
                                  setAppointments(await DataManager.get('notary_appointments'));
                                  setCredentials(await DataManager.get('notary_credentials'));
-                                 setCurrentView('dashboard'); // Auto-redirect to dashboard on login
+                                 // We don't auto-redirect here to avoid overriding 'landing' state if user manually logged out but firebase session persisted
+                                 // However, for UX, if user is found, usually we go to dashboard.
+                                 // Let's rely on the initial useState for currentView to handle refresh persistence
                              } else {
                                  setUser(null);
                                  setIsCloudConnected(false);
@@ -1449,8 +1454,8 @@
                     case 'landing': return <LandingPage onNavigate={() => setCurrentView('auth')} />;
                     case 'auth': return <AuthScreen onAuth={(profile) => { localStorage.setItem('notary_user_profile', JSON.stringify(profile)); setUser(profile); setCurrentView('dashboard'); }} onBack={() => setCurrentView('landing')} />;
                     case 'dashboard': return <Dashboard appointments={appointments} credentials={credentials} setView={setCurrentView} isCloud={isCloudConnected} />;
-                    case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onEdit={(a) => { setEditingAppt(a); setCurrentView('add_appointment'); }} user={user} onUpgrade={() => setShowPricing(true)} />;
-                    case 'add_appointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => setCurrentView('schedule')} initialData={editingAppt} />;
+                    case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onEdit={(a) => { setEditingAppt(a); setCurrentView('addAppointment'); }} user={user} onUpgrade={() => setShowPricing(true)} />;
+                    case 'addAppointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => setCurrentView('schedule')} initialData={editingAppt} />;
                     case 'journal': return <Journal onUpdate={handleRefresh} user={user} onUpgrade={() => setShowPricing(true)} />;
                     case 'finances': return <Finances />;
                     case 'credentials': return <Credentials onUpdate={handleRefresh} />;
