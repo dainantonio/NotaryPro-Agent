@@ -88,9 +88,6 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
         .sidebar-transition { transition: width 0.3s ease-in-out; }
-        
-        /* Safe area for mobile nav */
-        .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 </head>
 <body>
@@ -99,66 +96,90 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- HYBRID DATA MANAGER (Cloud + Local Fallback) ---
+        // --- SMART DATA MANAGER (Cloud + Automatic Fallback) ---
         const DataManager = {
-            isCloud: () => firebase.auth().currentUser !== null,
+            // Helper to save locally
+            saveLocal: (key, item) => {
+                const list = JSON.parse(localStorage.getItem(key) || '[]');
+                const index = list.findIndex(i => i.id === item.id);
+                if (index >= 0) list[index] = item;
+                else list.push(item);
+                localStorage.setItem(key, JSON.stringify(list));
+                return list;
+            },
             
-            get: async (collectionName) => {
-                if (DataManager.isCloud()) {
+            // Generic Save with Fallback
+            save: async (collectionName, item) => {
+                // If logged in, try cloud first
+                if (firebase.auth().currentUser) {
                     try {
                         const uid = firebase.auth().currentUser.uid;
-                        // Assuming Firestore has been created
+                        const itemWithUser = { ...item, userId: uid };
+                        const docId = item.id || Date.now().toString();
+                        
+                        await firebase.firestore().collection(collectionName).doc(docId).set(itemWithUser);
+                        
+                        // Cloud successful - refresh data from cloud
                         const snapshot = await firebase.firestore().collection(collectionName).where("userId", "==", uid).get();
                         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+
                     } catch (e) {
-                        console.error("Cloud fetch error:", e);
-                        // If error is permission related or missing DB, fallback logic isn't safe here for data consistency, return empty.
-                        return [];
+                        console.warn("Cloud save failed (Billing/Permission issue). Saving locally.", e);
+                        // FALLBACK: Save to LocalStorage if cloud fails
+                        return DataManager.saveLocal(collectionName, item);
+                    }
+                } else {
+                    // Not logged in -> Local Save
+                    return DataManager.saveLocal(collectionName, item);
+                }
+            },
+            
+            // Generic Fetch with Fallback
+            get: async (collectionName) => {
+                if (firebase.auth().currentUser) {
+                    try {
+                        const uid = firebase.auth().currentUser.uid;
+                        const snapshot = await firebase.firestore().collection(collectionName).where("userId", "==", uid).get();
+                        
+                        // If cloud is empty (or failed silently), check local storage as backup?
+                        // For now, if cloud returns success, trust it.
+                        return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    } catch (e) {
+                        console.warn("Cloud fetch failed. Fetching local data.", e);
+                        return JSON.parse(localStorage.getItem(collectionName) || '[]');
                     }
                 } else {
                     return JSON.parse(localStorage.getItem(collectionName) || '[]');
                 }
             },
-            
-            save: async (collectionName, item) => {
-                if (DataManager.isCloud()) {
+
+            // Generic Delete with Fallback
+            delete: async (collectionName, id) => {
+                let success = false;
+                
+                // Try Cloud Delete
+                if (firebase.auth().currentUser) {
                     try {
-                        const uid = firebase.auth().currentUser.uid;
-                        const itemWithUser = { ...item, userId: uid };
-                        const docId = item.id || Date.now().toString();
-                        await firebase.firestore().collection(collectionName).doc(docId).set(itemWithUser);
-                        return await DataManager.get(collectionName);
-                    } catch (e) {
-                        console.error("Cloud save error:", e);
-                        alert("Error saving to cloud: " + e.message + "\n\nDid you create the Firestore Database in the Firebase Console?");
-                        return [];
-                    }
-                } else {
-                    const list = JSON.parse(localStorage.getItem(collectionName) || '[]');
-                    const index = list.findIndex(i => i.id === item.id);
-                    if (index >= 0) list[index] = item;
-                    else list.push(item);
-                    localStorage.setItem(collectionName, JSON.stringify(list));
-                    return list;
-                }
-            },
-            
-             delete: async (collectionName, id) => {
-                if (DataManager.isCloud()) {
-                     try {
                         await firebase.firestore().collection(collectionName).doc(id).delete();
-                        return await DataManager.get(collectionName);
-                     } catch(e) {
-                         console.error("Delete error", e);
-                         alert("Error deleting: " + e.message);
-                         return [];
-                     }
-                } else {
-                    const list = JSON.parse(localStorage.getItem(collectionName) || '[]');
-                    const newList = list.filter(i => i.id !== id);
-                    localStorage.setItem(collectionName, JSON.stringify(newList));
-                    return newList;
+                        success = true;
+                    } catch(e) {
+                        console.warn("Cloud delete failed. Trying local.", e);
+                    }
                 }
+                
+                // Always clean up local storage too just in case
+                const list = JSON.parse(localStorage.getItem(collectionName) || '[]');
+                const newList = list.filter(i => i.id !== id);
+                localStorage.setItem(collectionName, JSON.stringify(newList));
+                
+                if (firebase.auth().currentUser && success) {
+                    // Refetch cloud
+                     const uid = firebase.auth().currentUser.uid;
+                     const snapshot = await firebase.firestore().collection(collectionName).where("userId", "==", uid).get();
+                     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                }
+                
+                return newList;
             }
         };
 
@@ -430,11 +451,7 @@
 
         const Header = ({ title }) => (
             <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-20">
-                <div className="flex items-center gap-2">
-                     {/* Brand visible on mobile now */}
-                     <i className="fas fa-stamp text-blue-600 text-xl md:hidden"></i>
-                    <h2 className="text-xl font-bold text-gray-800">{title}</h2>
-                </div>
+                <h2 className="text-xl font-bold text-gray-800">{title}</h2>
                 <div className="flex items-center gap-4">
                     <button className="relative text-gray-400 hover:text-blue-600 transition-colors">
                         <i className="fas fa-bell text-xl"></i>
@@ -1035,19 +1052,21 @@
 
              useEffect(() => {
                 const init = async () => {
-                    // Check auth state on load
+                     // Check if cloud active
                      if (window.firebase && window.firebase.auth) {
                          window.firebase.auth().onAuthStateChanged(async (u) => {
                              if (u) {
+                                 // Logged in
                                  setUser({ id: u.uid, name: u.email ? u.email.split('@')[0] : "User", email: u.email });
                                  setAppointments(await DataManager.get('notary_appointments'));
                                  setCredentials(await DataManager.get('notary_credentials'));
                              } else {
+                                 // Logged out
                                  setUser(null);
                              }
                          });
                      } else {
-                         // Fallback Load
+                         // Fallback Load (Local Mode)
                          setAppointments(await DataManager.get('notary_appointments'));
                          setCredentials(await DataManager.get('notary_credentials'));
                      }
@@ -1058,6 +1077,7 @@
 
             if (!user) {
                 return <AuthScreen onAuth={(profile) => {
+                    // Local fallback for profile persistence if auth fails or not used
                     localStorage.setItem('notary_user_profile', JSON.stringify(profile));
                     setUser(profile);
                 }} />;
