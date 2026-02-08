@@ -20,13 +20,13 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
 
-    <!-- FIREBASE SDK (Modular) -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+    <!-- FIREBASE SDK (COMPAT MODE - Stable) -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 
-        // --- 🔴 STEP 1: PASTE YOUR FIREBASE CONFIG HERE ---
+    <script>
+        // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
             apiKey: "AIzaSyA32kVbmGOcY_CdDymrom9rWVzyXTj3so0",
             authDomain: "notaryos-67cd2.firebaseapp.com",
@@ -36,23 +36,15 @@
             appId: "1:660325303334:web:bb0f062fd4da8c7fca12e7"
         };
 
-        // Initialize Firebase
-        let app, auth, db;
+        // Initialize
         try {
-            if (firebaseConfig.apiKey) {
-                app = initializeApp(firebaseConfig);
-                auth = getAuth(app);
-                db = getFirestore(app);
-                console.log("Firebase initialized successfully");
-            } else {
-                console.warn("Firebase Config missing. Falling back to LocalStorage mode.");
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+                console.log("Firebase Connected - v1.2");
             }
         } catch (e) {
-            console.error("Firebase init failed:", e);
+            console.error("Firebase Init Error:", e);
         }
-
-        // Expose to window for React to use
-        window.fb = { auth, db, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut, collection, addDoc, getDocs, updateDoc, deleteDoc, doc, query, where };
     </script>
 
     <!-- Fonts -->
@@ -106,15 +98,14 @@
 
         // --- HYBRID DATA MANAGER (Cloud + Local Fallback) ---
         const DataManager = {
-            isCloud: () => window.fb && window.fb.db && window.fb.auth && window.fb.auth.currentUser,
+            isCloud: () => firebase.auth().currentUser !== null,
             
             // Generic Fetch
             get: async (collectionName) => {
                 if (DataManager.isCloud()) {
                     try {
-                        const uid = window.fb.auth.currentUser.uid;
-                        const q = window.fb.query(window.fb.collection(window.fb.db, collectionName), window.fb.where("userId", "==", uid));
-                        const snapshot = await window.fb.getDocs(q);
+                        const uid = firebase.auth().currentUser.uid;
+                        const snapshot = await firebase.firestore().collection(collectionName).where("userId", "==", uid).get();
                         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     } catch (e) {
                         console.error("Cloud fetch error:", e);
@@ -129,17 +120,13 @@
             save: async (collectionName, item) => {
                 if (DataManager.isCloud()) {
                     try {
-                        const uid = window.fb.auth.currentUser.uid;
+                        const uid = firebase.auth().currentUser.uid;
                         const itemWithUser = { ...item, userId: uid };
-                        // Remove ID if present to let Firestore generate (or update if known ID)
-                        // For simplicity in this MVP, we treat 'id' as a local concept mostly, but let's try to update if ID exists
-                        // Note: Firestore update requires doc ref. 
+                        // Use provided ID or generate one if missing
+                        const docId = item.id || Date.now().toString();
+                        await firebase.firestore().collection(collectionName).doc(docId).set(itemWithUser);
                         
-                        // SIMPLE STRATEGY: Always Add New for now (MVP), but check duplicates? 
-                        // Better: We just add. Real app would update.
-                        // Let's implement a simple "add"
-                         await window.fb.addDoc(window.fb.collection(window.fb.db, collectionName), itemWithUser);
-                         return await DataManager.get(collectionName); // Refresh
+                        return await DataManager.get(collectionName); // Refresh
                     } catch (e) {
                         console.error("Cloud save error:", e);
                         return [];
@@ -156,11 +143,13 @@
             
              delete: async (collectionName, id) => {
                 if (DataManager.isCloud()) {
-                     // Deleting in cloud requires knowing the Document ID (not just internal ID). 
-                     // For MVP simplicity we stick to local delete or implement advanced doc mapping later.
-                     // Fallback: Just return current list.
-                     console.log("Cloud delete not fully wired in MVP step");
-                     return await DataManager.get(collectionName);
+                     try {
+                        await firebase.firestore().collection(collectionName).doc(id).delete();
+                        return await DataManager.get(collectionName);
+                     } catch(e) {
+                         console.error("Delete error", e);
+                         return [];
+                     }
                 } else {
                     const list = JSON.parse(localStorage.getItem(collectionName) || '[]');
                     const newList = list.filter(i => i.id !== id);
@@ -178,7 +167,6 @@
              "OH": { "state": "Ohio", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00", "travel": "Reasonable fee" }, "id_requirements": { "credible_witnesses": "Proof of identity by third person known to notary", "expired_id_rule": "Not specified" }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of Ohio\nCounty of ______...", "jurat_text": "State of Ohio\nCounty of ______..." }, "red_flags": [ "Never prepare instruments or give advice", "Cannot notarize if you have an interest" ] },
              "NY": { "state": "New York", "fees": { "acknowledgment": "$2.00", "jurat": "$2.00", "oath": "$2.00" }, "id_requirements": { "credible_witnesses": "Not specified", "expired_id_rule": "Not specified" }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of New York\nCounty of ______...", "jurat_text": "Sworn to before me on this ___ day of ___..." }, "red_flags": [ "Name must match signature exactly", "No initials if commissioned name is full" ] }
         };
-        // NOTE: In production, include all 50 states here. Using top 5 for file stability.
 
         const COURSE_MODULES = [
             { id: 1, title: "Authority & Qualifications", topic: "Commissioning authority, term length, and jurisdiction." },
@@ -244,17 +232,17 @@
                 try {
                     let user;
                     // Check if Firebase is active
-                    if (window.fb && window.fb.auth) {
+                    if (firebase.auth()) {
                         if (isLogin) {
-                            const cred = await window.fb.signInWithEmailAndPassword(window.fb.auth, formData.email, formData.password);
+                            const cred = await firebase.auth().signInWithEmailAndPassword(formData.email, formData.password);
                             user = cred.user;
                         } else {
-                            const cred = await window.fb.createUserWithEmailAndPassword(window.fb.auth, formData.email, formData.password);
+                            const cred = await firebase.auth().createUserWithEmailAndPassword(formData.email, formData.password);
                             user = cred.user;
                         }
                     } else {
                         // Fallback Local Auth
-                         console.warn("Firebase not configured. Using Local Simulation.");
+                         console.warn("Firebase not configured properly. Using Local Simulation.");
                     }
 
                     const profile = {
@@ -513,25 +501,35 @@
         };
 
         const Credentials = ({ onUpdate }) => {
-            const [creds, setCreds] = useState(DataManager.get('notary_credentials'));
+            const [creds, setCreds] = useState([]);
             const [showForm, setShowForm] = useState(false);
+            
+            useEffect(() => {
+                const load = async () => {
+                    const data = await DataManager.get('notary_credentials');
+                    setCreds(data);
+                };
+                load();
+            }, []);
 
-            const handleSave = (e) => {
+            const handleSave = async (e) => {
                 e.preventDefault();
                 const formData = new FormData(e.target);
-                DataManager.save('notary_credentials', {
+                await DataManager.save('notary_credentials', {
                     id: Date.now().toString(),
                     name: formData.get('name'),
                     expiry: formData.get('expiry')
                 });
-                setCreds(DataManager.get('notary_credentials'));
+                const updated = await DataManager.get('notary_credentials');
+                setCreds(updated);
                 onUpdate();
                 setShowForm(false);
             };
 
-            const handleDelete = (id) => {
-                DataManager.delete('notary_credentials', id);
-                setCreds(DataManager.get('notary_credentials'));
+            const handleDelete = async (id) => {
+                await DataManager.delete('notary_credentials', id);
+                const updated = await DataManager.get('notary_credentials');
+                setCreds(updated);
                 onUpdate();
             };
 
@@ -626,16 +624,6 @@
         };
 
         const Schedule = ({ appointments, setView, onEdit }) => {
-            const [showForm, setShowForm] = useState(false);
-            const [editingData, setEditingData] = useState(null);
-
-            const handleSave = async (data) => {
-                await DataManager.save('notary_appointments', { ...data, id: editingData?.id || Date.now().toString() });
-                setShowForm(false);
-                setEditingData(null);
-                onEdit(); // Trigger refresh
-            };
-
             return (
                 <div className="p-6 pb-24">
                     <div className="flex justify-between items-center mb-6">
@@ -1020,8 +1008,8 @@
              useEffect(() => {
                 const init = async () => {
                     // Check auth state on load
-                     if (window.fb && window.fb.auth) {
-                         window.fb.onAuthStateChanged(window.fb.auth, async (u) => {
+                     if (window.firebase && window.firebase.auth) {
+                         window.firebase.auth().onAuthStateChanged(async (u) => {
                              if (u) {
                                  setUser({ id: u.uid, name: u.email.split('@')[0], email: u.email });
                                  setAppointments(await DataManager.get('notary_appointments'));
@@ -1048,8 +1036,8 @@
             }
 
             const handleLogout = async () => {
-                if (window.fb && window.fb.auth) {
-                     await window.fb.signOut(window.fb.auth);
+                if (window.firebase && window.firebase.auth) {
+                     await window.firebase.auth().signOut();
                 }
                 localStorage.removeItem('notary_user_profile');
                 setUser(null);
