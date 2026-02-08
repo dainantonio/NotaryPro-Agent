@@ -40,7 +40,7 @@
         try {
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
-                console.log("Firebase Connected - v1.2");
+                console.log("Firebase Connected");
             }
         } catch (e) {
             console.error("Firebase Init Error:", e);
@@ -88,6 +88,9 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
         .sidebar-transition { transition: width 0.3s ease-in-out; }
+        
+        /* Safe area for mobile nav */
+        .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 </head>
 <body>
@@ -100,15 +103,16 @@
         const DataManager = {
             isCloud: () => firebase.auth().currentUser !== null,
             
-            // Generic Fetch
             get: async (collectionName) => {
                 if (DataManager.isCloud()) {
                     try {
                         const uid = firebase.auth().currentUser.uid;
+                        // Assuming Firestore has been created
                         const snapshot = await firebase.firestore().collection(collectionName).where("userId", "==", uid).get();
                         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     } catch (e) {
                         console.error("Cloud fetch error:", e);
+                        // If error is permission related or missing DB, fallback logic isn't safe here for data consistency, return empty.
                         return [];
                     }
                 } else {
@@ -116,19 +120,17 @@
                 }
             },
             
-            // Generic Save
             save: async (collectionName, item) => {
                 if (DataManager.isCloud()) {
                     try {
                         const uid = firebase.auth().currentUser.uid;
                         const itemWithUser = { ...item, userId: uid };
-                        // Use provided ID or generate one if missing
                         const docId = item.id || Date.now().toString();
                         await firebase.firestore().collection(collectionName).doc(docId).set(itemWithUser);
-                        
-                        return await DataManager.get(collectionName); // Refresh
+                        return await DataManager.get(collectionName);
                     } catch (e) {
                         console.error("Cloud save error:", e);
+                        alert("Error saving to cloud: " + e.message + "\n\nDid you create the Firestore Database in the Firebase Console?");
                         return [];
                     }
                 } else {
@@ -148,6 +150,7 @@
                         return await DataManager.get(collectionName);
                      } catch(e) {
                          console.error("Delete error", e);
+                         alert("Error deleting: " + e.message);
                          return [];
                      }
                 } else {
@@ -254,6 +257,17 @@
                     onAuth(profile);
                 } catch (err) {
                     setShowTerms(false);
+                    setError(err.message + " (Check Firebase Console -> Authentication -> Sign-in method)");
+                }
+            };
+            
+            // New: Google Sign In
+            const handleGoogleAuth = async () => {
+                try {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    await firebase.auth().signInWithPopup(provider);
+                    // Auth state change will handle the redirect
+                } catch (err) {
                     setError(err.message);
                 }
             };
@@ -284,7 +298,7 @@
                         {/* Form Side */}
                         <div className="p-8 md:w-1/2 flex flex-col justify-center bg-white">
                             <h2 className="text-2xl font-bold text-gray-800 mb-6">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
-                            {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-sm">{error}</div>}
+                            {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-xs">{error}</div>}
                             
                             <form onSubmit={handleAuth} className="space-y-4">
                                 {!isLogin && (
@@ -303,6 +317,16 @@
                                 </div>
                                 <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all shadow-md transform active:scale-95">
                                     {isLogin ? 'Sign In' : 'Start Free Trial'}
+                                </button>
+                                
+                                <div className="relative flex py-2 items-center">
+                                    <div className="flex-grow border-t border-gray-200"></div>
+                                    <span className="flex-shrink-0 mx-4 text-gray-400 text-xs">OR</span>
+                                    <div className="flex-grow border-t border-gray-200"></div>
+                                </div>
+
+                                <button type="button" onClick={handleGoogleAuth} className="w-full bg-white border border-gray-300 text-gray-700 font-bold py-3 rounded-lg transition-all shadow-sm hover:bg-gray-50 flex items-center justify-center gap-2">
+                                    <i className="fab fa-google text-red-500"></i> Continue with Google
                                 </button>
                             </form>
                             <div className="mt-6 text-center text-sm">
@@ -406,7 +430,11 @@
 
         const Header = ({ title }) => (
             <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-20">
-                <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+                <div className="flex items-center gap-2">
+                     {/* Brand visible on mobile now */}
+                     <i className="fas fa-stamp text-blue-600 text-xl md:hidden"></i>
+                    <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+                </div>
                 <div className="flex items-center gap-4">
                     <button className="relative text-gray-400 hover:text-blue-600 transition-colors">
                         <i className="fas fa-bell text-xl"></i>
@@ -944,7 +972,7 @@
                             <button onClick={() => setShowCertModal(true)} className="px-3 py-1 rounded text-xs font-bold bg-yellow-400 text-white ml-2"><i className="fas fa-file-contract"></i></button>
                         </div>
                     </div>
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4">
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-20">
                         {messages.map((m, i) => (
                             <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                                 <div className={`max-w-[85%] p-4 rounded-2xl text-sm ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'}`}>
@@ -957,11 +985,11 @@
                     </div>
                     
                     {/* Disclaimer Footer in Chat Area */}
-                    <div className="px-4 pb-2">
-                         <p className="text-[10px] text-gray-400 text-center italic">AI may make mistakes. Always check your official state handbook.</p>
+                    <div className="px-4 pb-2 text-[10px] text-gray-400 text-center italic">
+                        AI may make mistakes. Always check your official state handbook.
                     </div>
 
-                    <div className="p-4 border-t bg-white flex gap-2 pb-24 md:pb-4">
+                    <div className="p-4 border-t bg-white flex gap-2 pb-24 md:pb-4 safe-area-pb">
                         {mode === 'course' && (
                             <button onClick={() => { setCurrentModule(p => p+1); sendMessage(`Start Module ${currentModule+1}`); }} className="bg-green-600 text-white px-4 rounded-xl text-xs font-bold shadow-md hover:bg-green-700 transition-colors">Next</button>
                         )}
@@ -1011,7 +1039,7 @@
                      if (window.firebase && window.firebase.auth) {
                          window.firebase.auth().onAuthStateChanged(async (u) => {
                              if (u) {
-                                 setUser({ id: u.uid, name: u.email.split('@')[0], email: u.email });
+                                 setUser({ id: u.uid, name: u.email ? u.email.split('@')[0] : "User", email: u.email });
                                  setAppointments(await DataManager.get('notary_appointments'));
                                  setCredentials(await DataManager.get('notary_credentials'));
                              } else {
