@@ -40,8 +40,9 @@
             appId: "1:660325303334:web:bb0f062fd4da8c7fca12e7"
         };
 
-        const STRIPE_PAYMENT_LINK = ""; 
+        const STRIPE_PAYMENT_LINK = ""; // Leave empty for simulation mode
 
+        // Initialize Firebase
         try {
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
@@ -88,28 +89,14 @@
             font-family: 'Courier Prime', monospace;
         }
         
+        /* Auth Animations */
         .auth-fade-in { animation: fadeIn 0.5s ease-out; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         
         .sidebar-transition { transition: width 0.3s ease-in-out; }
-        .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
-
-        /* Empty State */
-        .empty-state-dashed {
-            background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%23CBD5E1FF' stroke-width='2' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e");
-        }
         
-        /* Floating Action Button */
-        .fab-ai {
-            position: fixed;
-            bottom: 80px; /* Above mobile nav */
-            right: 20px;
-            z-index: 40;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        @media (min-width: 768px) {
-            .fab-ai { bottom: 30px; }
-        }
+        /* Safe area for mobile nav */
+        .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
     </style>
 </head>
 <body>
@@ -118,26 +105,7 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        // --- SHARED UTILS ---
-        const AIService = {
-            getKey: () => localStorage.getItem('gemini_api_key') || '',
-            call: async (prompt, system) => {
-                const apiKey = AIService.getKey();
-                if (!apiKey) throw new Error("API Key missing");
-                
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ 
-                        contents: [{ role: "user", parts: [{ text: prompt }] }],
-                        systemInstruction: { parts: [{ text: system }] },
-                        generationConfig: { responseMimeType: "application/json" }
-                    })
-                });
-                return await response.json();
-            }
-        };
-
+        // --- HYBRID DATA MANAGER ---
         const DataManager = {
             isCloud: () => typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser !== null,
             get: async (collectionName) => {
@@ -147,8 +115,12 @@
                         const snapshot = await firebase.firestore().collection(collectionName).where("userId", "==", uid).get();
                         if (snapshot.empty) return DataManager.getLocal(collectionName);
                         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    } catch (e) { return DataManager.getLocal(collectionName); }
-                } else { return DataManager.getLocal(collectionName); }
+                    } catch (e) {
+                        return DataManager.getLocal(collectionName);
+                    }
+                } else {
+                    return DataManager.getLocal(collectionName);
+                }
             },
             save: async (collectionName, item) => {
                 const localData = DataManager.saveLocal(collectionName, item);
@@ -160,21 +132,26 @@
                         await firebase.firestore().collection(collectionName).doc(docId).set(itemWithUser);
                         const snapshot = await firebase.firestore().collection(collectionName).where("userId", "==", uid).get();
                         return { success: true, data: snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) };
-                    } catch (e) { return { success: false, data: localData }; }
+                    } catch (e) {
+                        return { success: false, data: localData };
+                    }
                 }
                 return { success: false, data: localData };
             },
             saveLocal: (key, item) => {
                 const list = JSON.parse(localStorage.getItem(key) || '[]');
                 const index = list.findIndex(i => i.id === item.id);
-                if (index >= 0) list[index] = item; else list.push(item);
+                if (index >= 0) list[index] = item;
+                else list.push(item);
                 localStorage.setItem(key, JSON.stringify(list));
                 return list;
             },
             getLocal: (key) => JSON.parse(localStorage.getItem(key) || '[]'),
              delete: async (collectionName, id) => {
                 const localData = DataManager.deleteLocal(collectionName, id);
-                if (DataManager.isCloud()) { try { await firebase.firestore().collection(collectionName).doc(id).delete(); } catch(e) {} }
+                if (DataManager.isCloud()) {
+                     try { await firebase.firestore().collection(collectionName).doc(id).delete(); } catch(e) {}
+                }
                 return localData;
             },
             deleteLocal: (key, id) => {
@@ -185,23 +162,46 @@
             }
         };
 
+        // --- PDF GENERATORS ---
         const PDFGenerator = {
             createInvoice: (appt, user) => {
                 if (!window.jspdf) { alert("PDF Library not loaded yet."); return; }
                 const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
                 const primaryColor = [37, 99, 235];
+                
+                // Config
                 const businessName = user.businessName || user.name || "Notary Public";
+                const businessPhone = user.phone || "";
+                const businessAddress = user.address || "";
+
+                // Header
                 doc.setFontSize(22); doc.setTextColor(...primaryColor); doc.text("INVOICE", 160, 20);
                 doc.setFontSize(10); doc.setTextColor(100); doc.text(`ID: ${appt.id.substring(0,8)}`, 160, 26); doc.text(`Date: ${new Date().toLocaleDateString()}`, 160, 31);
+                
+                // From (Business)
                 doc.setFontSize(12); doc.setTextColor(0); doc.text(businessName.toUpperCase(), 20, 20);
-                doc.setFontSize(10); doc.setTextColor(100); doc.text(user.phone || "", 20, 26); doc.text(user.email || "", 20, 31);
+                doc.setFontSize(10); doc.setTextColor(100);
+                doc.text(businessPhone, 20, 26);
+                doc.text(user.email || "", 20, 31);
+                if(businessAddress) doc.text(businessAddress, 20, 36);
+
+                // To (Client)
                 doc.setTextColor(0); doc.text("BILL TO:", 20, 55); 
                 doc.setFontSize(14); doc.text(appt.clientName, 20, 62); 
                 doc.setFontSize(10); doc.text(appt.location, 20, 68);
+
+                // Table
                 doc.autoTable({ startY: 80, head: [['Description', 'Date', 'Amount']], body: [[appt.type || 'Notary Service', appt.date, `$${appt.fee}`]], theme: 'grid', headStyles: { fillColor: primaryColor } });
+                
                 const finalY = doc.lastAutoTable.finalY + 10;
                 doc.setFontSize(12); doc.text(`Total Due: $${appt.fee}`, 160, finalY, { align: 'right' });
+                
+                // Footer
+                doc.setFontSize(8); doc.setTextColor(150);
+                doc.text("Thank you for your business.", 105, 280, { align: 'center' });
+                if(user.commissionNumber) doc.text(`Commission #${user.commissionNumber}`, 105, 285, { align: 'center' });
+
                 doc.save(`invoice_${appt.clientName}.pdf`);
             },
             createReport: (title, columns, data, filename) => {
@@ -215,164 +215,737 @@
             }
         };
 
-        const STATE_DATABASE = { "CA": { "state": "California", "fees": { "acknowledgment": "$15", "jurat": "$15" }, "id_requirements": { "credible_witnesses": "1 known OR 2 with ID" }, "red_flags": ["No 'Notario Publico'"] } }; // Abridged for brevity
+        // --- FULL KNOWLEDGE BASE (50 States) ---
+        const STATE_DATABASE = {
+             "AL": { "state": "Alabama", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Not specified" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "AK": { "state": "Alaska", "fees": { "acknowledgment": "$25.00", "jurat": "$25.00", "oath": "$25.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Not specified" }, "red_flags": ["Conflict of Interest"], "specialized": { "loan_signing": "Allowed", "apostille": "Lt. Governor", "marriage": "No" }},
+             "AZ": { "state": "Arizona", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "1 or 2 allowed", "expired_id_rule": "Not allowed" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "AR": { "state": "Arkansas", "fees": { "acknowledgment": "Reasonable", "jurat": "Reasonable", "oath": "Reasonable" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Not specified" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "CA": { "state": "California", "fees": { "acknowledgment": "$15.00", "jurat": "$15.00", "oath": "$15.00" }, "id_requirements": { "credible_witnesses": "1 known OR 2 with ID", "expired_id_rule": "5 years" }, "red_flags": ["Thumbprint mandatory for Deeds/POA"], "specialized": { "loan_signing": "Background Check Required", "apostille": "Secretary of State", "marriage": "No" }},
+             "CO": { "state": "Colorado", "fees": { "acknowledgment": "$15.00", "jurat": "$15.00", "oath": "$15.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "1 year" }, "red_flags": ["No Seal Embosser"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "CT": { "state": "Connecticut", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["Attorney State (Restriction)"], "specialized": { "loan_signing": "ATTORNEY STATE (Witness Only)", "apostille": "Secretary of State", "marriage": "No" }},
+             "DE": { "state": "Delaware", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["Attorney State"], "specialized": { "loan_signing": "ATTORNEY STATE", "apostille": "Secretary of State", "marriage": "No" }},
+             "DC": { "state": "District of Columbia", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Office of Notary", "marriage": "No" }},
+             "FL": { "state": "Florida", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "1 known OR 2 with ID", "expired_id_rule": "5 years" }, "red_flags": ["No Family"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "YES ($30 Fee)" }},
+             "GA": { "state": "Georgia", "fees": { "acknowledgment": "$2.00", "jurat": "$2.00", "oath": "$2.00" }, "id_requirements": { "credible_witnesses": "Not specified", "expired_id_rule": "Not specified" }, "red_flags": ["Attorney State"], "specialized": { "loan_signing": "ATTORNEY STATE", "apostille": "GSCCCA", "marriage": "No" }},
+             "HI": { "state": "Hawaii", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Lt. Governor", "marriage": "No" }},
+             "ID": { "state": "Idaho", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "IL": { "state": "Illinois", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["Cook County Record"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "IN": { "state": "Indiana", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["Title Producer License for LSA"], "specialized": { "loan_signing": "REQUIRES TPL LICENSE", "apostille": "Secretary of State", "marriage": "No" }},
+             "IA": { "state": "Iowa", "fees": { "acknowledgment": "Reasonable", "jurat": "Reasonable", "oath": "Reasonable" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "KS": { "state": "Kansas", "fees": { "acknowledgment": "Reasonable", "jurat": "Reasonable", "oath": "Reasonable" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "KY": { "state": "Kentucky", "fees": { "acknowledgment": "Not set", "jurat": "Not set", "oath": "Not set" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "LA": { "state": "Louisiana", "fees": { "acknowledgment": "Not set", "jurat": "Not set", "oath": "Not set" }, "id_requirements": { "credible_witnesses": "2 witnesses", "expired_id_rule": "Current" }, "red_flags": ["Civil Law Notary"], "specialized": { "loan_signing": "Civil Law Notary Exam Required", "apostille": "Secretary of State", "marriage": "No" }},
+             "ME": { "state": "Maine", "fees": { "acknowledgment": "Reasonable", "jurat": "Reasonable", "oath": "Reasonable" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "YES" }},
+             "MD": { "state": "Maryland", "fees": { "acknowledgment": "$4.00", "jurat": "$4.00", "oath": "$4.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["TIP License Required"], "specialized": { "loan_signing": "REQUIRES TIP LICENSE", "apostille": "Secretary of State", "marriage": "No" }},
+             "MA": { "state": "Massachusetts", "fees": { "acknowledgment": "Not set", "jurat": "Not set", "oath": "Not set" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["Attorney State"], "specialized": { "loan_signing": "ATTORNEY STATE", "apostille": "Secretary of the Commonwealth", "marriage": "No" }},
+             "MI": { "state": "Michigan", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "MN": { "state": "Minnesota", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["Closing Agent License"], "specialized": { "loan_signing": "REQUIRES CLOSING LICENSE", "apostille": "Secretary of State", "marriage": "No" }},
+             "MS": { "state": "Mississippi", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "5 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "MO": { "state": "Missouri", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "MT": { "state": "Montana", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "YES" }},
+             "NE": { "state": "Nebraska", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$2.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "NV": { "state": "Nevada", "fees": { "acknowledgment": "$15.00", "jurat": "$15.00", "oath": "$7.50" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Notary Discretion" }, "red_flags": ["Escrow License for LSA"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "YES (Specific Cert Required)" }},
+             "NH": { "state": "New Hampshire", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Not specified" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "NJ": { "state": "New Jersey", "fees": { "acknowledgment": "$2.50", "jurat": "$2.50", "oath": "$2.50" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Treasury Division", "marriage": "No" }},
+             "NM": { "state": "New Mexico", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "1 year" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "NY": { "state": "New York", "fees": { "acknowledgment": "$2.00", "jurat": "$2.00", "oath": "$2.00" }, "id_requirements": { "credible_witnesses": "Not specified", "expired_id_rule": "Not specified" }, "red_flags": ["No Initials in Name"], "specialized": { "loan_signing": "Allowed", "apostille": "Dept of State", "marriage": "No" }},
+             "NC": { "state": "North Carolina", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "ND": { "state": "North Dakota", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Valid" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "OH": { "state": "Ohio", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Not specified" }, "red_flags": ["Conflict of Interest"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "OK": { "state": "Oklahoma", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "OR": { "state": "Oregon", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "PA": { "state": "Pennsylvania", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of the Commonwealth", "marriage": "No" }},
+             "RI": { "state": "Rhode Island", "fees": { "acknowledgment": "$25.00", "jurat": "$25.00", "oath": "$25.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "SC": { "state": "South Carolina", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["Attorney Supervision"], "specialized": { "loan_signing": "ATTORNEY STATE", "apostille": "Secretary of State", "marriage": "YES" }},
+             "SD": { "state": "South Dakota", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "TN": { "state": "Tennessee", "fees": { "acknowledgment": "$0", "jurat": "$0", "oath": "$0" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["Reasonable Fees"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "YES" }},
+             "TX": { "state": "Texas", "fees": { "acknowledgment": "$6.00", "jurat": "$6.00", "oath": "$6.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "UT": { "state": "Utah", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Valid" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Lt. Governor", "marriage": "No" }},
+             "VT": { "state": "Vermont", "fees": { "acknowledgment": "No limit", "jurat": "No limit", "oath": "No limit" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["Attorney Supervision"], "specialized": { "loan_signing": "ATTORNEY STATE", "apostille": "Secretary of State", "marriage": "No" }},
+             "VA": { "state": "Virginia", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Current" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of the Commonwealth", "marriage": "No" }},
+             "WA": { "state": "Washington", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "WV": { "state": "West Virginia", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["Attorney State"], "specialized": { "loan_signing": "ATTORNEY STATE", "apostille": "Secretary of State", "marriage": "No" }},
+             "WI": { "state": "Wisconsin", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "WY": { "state": "Wyoming", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
+             "certificates": { "acknowledgment_text": "State of [State]...", "jurat_text": "Subscribed and sworn..." }
+        };
 
-        const COURSE_MODULES = [ { id: 1, title: "Authority", topic: "Commissioning authority." } ]; // Abridged
+        const COURSE_MODULES = [
+            { id: 1, title: "Authority & Qualifications", topic: "Commissioning authority, term length, and jurisdiction." },
+            { id: 2, title: "The Core 5 Steps", topic: "Personal Appearance, ID, Willingness, Awareness, Certificates." },
+            { id: 3, title: "Notarial Acts", topic: "Acknowledgments vs. Jurats vs. Oaths." },
+            { id: 4, title: "Identification Standards", topic: "Satisfactory Evidence, Credible Witnesses." },
+            { id: 5, title: "Rules, Fees, & Journals", topic: "Maximum fees, Journal requirements, Seal rules." },
+            { id: 6, title: "Special Circumstances", topic: "RON, Signature by Mark/Proxy, Foreign language." },
+            { id: 7, title: "Misconduct & Liability", topic: "Prohibited acts (UPL), Penalties, Liability." },
+            { id: 8, title: "Loan Signing Agent (LSA)", topic: "Handling loan packages (Deed of Trust, Note, CD), borrower interactions, and avoiding UPL in real estate." },
+            { id: 9, title: "Apostilles & Authentication", topic: "The apostille process, Secretary of State authentication, and chain of signature requirements for international documents." },
+            { id: 10, title: "Specialized Services", topic: "Field Inspections, I-9 Verification, and Marriage/Wedding solemnization rules (State Specific)." }
+        ];
 
-        const PERSONA = `ROLE: NOTARY MENTOR. TONE: Helpful.`;
+        const PERSONA = `
+            ROLE: SUPPORTIVE NOTARY MENTOR.
+            TONE: Encouraging, professional, clear.
+            APPROACH: Guide the user. Explain the "Why" behind laws.
+            RULES: Teach One Topic -> Quiz -> Feedback.
+        `;
 
         // --- COMPONENTS ---
 
-        // 1. Feature #5: Contextual AI Modal
-        const AIHelperModal = ({ onClose }) => {
-            const [input, setInput] = useState('');
-            const [messages, setMessages] = useState([{ role: 'assistant', content: "👋 Hi! I'm your Notary AI. Ask me about state laws, fees, or how to handle a tricky signing." }]);
-            const [loading, setLoading] = useState(false);
-            const scrollRef = useRef(null);
-            
-            useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
-
-            const handleSend = async () => {
-                if (!input.trim()) return;
-                const newMsgs = [...messages, { role: 'user', content: input }];
-                setMessages(newMsgs);
-                setInput('');
-                setLoading(true);
-                
-                // Use existing Trainer Logic but simplified
-                const apiKey = localStorage.getItem('gemini_api_key');
-                if (!apiKey) {
-                    setMessages([...newMsgs, { role: 'assistant', content: "⚠️ Please enter your API Key in the 'AI Trainer' tab first." }]);
-                    setLoading(false);
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: `You are a helpful Notary Assistant. Answer concisely. User Query: ${input}` }] }] })
-                    });
-                    const data = await response.json();
-                    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Error.";
-                    setMessages([...newMsgs, { role: 'assistant', content: aiText }]);
-                } catch (e) {
-                     setMessages([...newMsgs, { role: 'assistant', content: "Error: " + e.message }]);
-                } finally { setLoading(false); }
-            };
-
+        // 1. Landing Page
+        const LandingPage = ({ onNavigate }) => {
             return (
-                <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center pointer-events-none">
-                    <div className="bg-white w-full sm:w-96 sm:h-[500px] h-[80vh] shadow-2xl rounded-t-2xl sm:rounded-2xl flex flex-col pointer-events-auto border border-gray-200">
-                        <div className="p-4 border-b flex justify-between items-center bg-indigo-600 text-white rounded-t-2xl">
-                            <h3 className="font-bold flex items-center gap-2"><i className="fas fa-robot"></i> Quick Assist</h3>
-                            <button onClick={onClose}><i className="fas fa-times"></i></button>
+                <div className="min-h-screen bg-white font-inter flex flex-col">
+                    <div className="bg-slate-900 text-white relative overflow-hidden flex-1 flex flex-col justify-center min-h-[60vh]">
+                        <div className="absolute inset-0 bg-blue-600/10 z-0"></div>
+                        
+                        {/* Header Nav inside Landing */}
+                        <div className="absolute top-0 left-0 w-full p-6 flex justify-between items-center z-20">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-blue-600 p-1.5 rounded-lg"><i className="fas fa-stamp text-xl"></i></div>
+                                <h1 className="text-xl font-bold">NotaryOS</h1>
+                            </div>
+                            <button onClick={onNavigate} className="text-gray-300 hover:text-white font-medium">Log In</button>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50">
-                            {messages.map((m, i) => (
-                                <div key={i} className={`p-3 rounded-lg text-sm ${m.role === 'user' ? 'bg-indigo-100 ml-8 text-indigo-900' : 'bg-white mr-8 border text-gray-800'}`}>
-                                    <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(m.content)) }} />
+
+                        <div className="max-w-6xl mx-auto px-6 py-20 relative z-10">
+                            <div className="max-w-3xl">
+                                <h1 className="text-5xl md:text-7xl font-extrabold mb-8 leading-tight tracking-tight">
+                                    The Operating System for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Modern Notaries</span>.
+                                </h1>
+                                <p className="text-xl md:text-2xl text-gray-400 mb-10 leading-relaxed max-w-2xl">
+                                    Manage appointments, track compliance, generate invoices, and train with an AI expert. All in one place.
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-4">
+                                    <button onClick={onNavigate} className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-blue-500/30 transition-all transform hover:-translate-y-1">
+                                        Start Free Trial
+                                    </button>
                                 </div>
-                            ))}
-                            {loading && <div className="text-xs text-gray-400">AI is thinking...</div>}
-                            <div ref={scrollRef}></div>
+                            </div>
                         </div>
-                        <div className="p-3 border-t bg-white flex gap-2">
-                            <input className="flex-1 p-2 border rounded-lg text-sm" placeholder="Ask anything..." value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} />
-                            <button onClick={handleSend} className="bg-indigo-600 text-white w-10 rounded-lg"><i className="fas fa-paper-plane"></i></button>
+                        {/* Background Shapes */}
+                        <div className="absolute top-20 right-0 w-96 h-96 bg-purple-600/20 rounded-full blur-3xl -mr-20 animate-pulse"></div>
+                        <div className="absolute bottom-0 left-0 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl -ml-20"></div>
+                    </div>
+
+                    {/* Features Grid */}
+                    <div className="py-24 bg-gray-50">
+                        <div className="max-w-6xl mx-auto px-6">
+                            <div className="text-center mb-16">
+                                <h2 className="text-3xl font-bold text-gray-900 mb-4">Everything you need to run your business</h2>
+                                <p className="text-gray-500 max-w-2xl mx-auto text-lg">Stop using spreadsheets and sticky notes. NotaryOS brings your entire workflow into one secure, compliant dashboard.</p>
+                            </div>
+                            
+                            <div className="grid md:grid-cols-3 gap-8">
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1">
+                                    <div className="w-14 h-14 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center text-2xl mb-6"><i className="fas fa-calendar-check"></i></div>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-3">Smart Scheduling</h3>
+                                    <p className="text-gray-500 leading-relaxed">Track appointments, set reminders, and generate PDF invoices instantly. Never miss a signing.</p>
+                                </div>
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1">
+                                    <div className="w-14 h-14 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center text-2xl mb-6"><i className="fas fa-robot"></i></div>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-3">AI Compliance Coach</h3>
+                                    <p className="text-gray-500 leading-relaxed">A strict AI mentor trained on 50-state laws. Ask questions, roleplay scenarios, and stay compliant.</p>
+                                </div>
+                                <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1">
+                                    <div className="w-14 h-14 bg-green-100 text-green-600 rounded-xl flex items-center justify-center text-2xl mb-6"><i className="fas fa-cloud"></i></div>
+                                    <div className="flex items-center gap-2 mb-3">
+                                        <h3 className="text-xl font-bold text-gray-900">Cloud Sync</h3>
+                                        <span className="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase">Live</span>
+                                    </div>
+                                    <p className="text-gray-500 leading-relaxed">Start on your laptop, finish on your phone. Your data is encrypted and synced in real-time.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <footer className="bg-white border-t border-gray-200 py-12">
+                         <div className="max-w-6xl mx-auto px-6 text-center text-gray-400 text-sm">
+                            &copy; 2024 NotaryOS Inc.
+                         </div>
+                    </footer>
+                </div>
+            );
+        };
+
+        const TermsModal = ({ onAccept }) => {
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden auth-fade-in">
+                        <div className="p-6 border-b border-gray-100 bg-gray-50">
+                            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                <i className="fas fa-balance-scale text-blue-600"></i> Terms of Service
+                            </h2>
+                        </div>
+                        <div className="p-6 text-sm text-gray-600 space-y-4 max-h-[60vh] overflow-y-auto">
+                            <p className="font-bold text-gray-800">Please review and accept to continue.</p>
+                            <p><strong>1. Not Legal Advice:</strong> NotaryOS is an educational and management tool. The AI Trainer provides information based on general data and may produce inaccuracies. This tool does not constitute legal advice.</p>
+                            <p><strong>2. User Responsibility:</strong> You are responsible for verifying all laws with your state's official Notary Handbook. NotaryOS is not liable for any notarial errors, fines, or legal actions resulting from the use of this software.</p>
+                            <p><strong>3. Data Privacy:</strong> In this Beta version, your business data is stored locally on your device unless Cloud Sync is enabled.</p>
+                            <p><strong>4. AI Limitations:</strong> The AI features utilize Google Gemini. AI responses should always be fact-checked against official statutes.</p>
+                        </div>
+                        <div className="p-6 border-t border-gray-100 bg-gray-50">
+                            <button 
+                                onClick={onAccept}
+                                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg transform active:scale-95"
+                            >
+                                I Understand & Agree
+                            </button>
                         </div>
                     </div>
                 </div>
             );
         };
 
-        const OnboardingTour = ({ onComplete }) => {
-            const [step, setStep] = useState(0);
-            const steps = [
-                { title: "Welcome to NotaryOS!", desc: "The all-in-one operating system for your notary business. Let's show you around.", icon: "fa-door-open" },
-                { title: "Your Dashboard", desc: "Track your monthly income, upcoming jobs, and credential expirations at a glance.", icon: "fa-chart-pie" },
-                { title: "Smart Scheduling", desc: "Add appointments and generate professional PDF invoices in one click.", icon: "fa-calendar-alt" },
-                { title: "AI Assistant", desc: "Use the floating button in the corner to ask legal questions anytime, anywhere.", icon: "fa-robot" },
-                { title: "Ready to Launch", desc: "You're all set. Start by adding your first appointment or exploring the course.", icon: "fa-rocket" }
+        const PricingModal = ({ onClose, onUpgrade }) => (
+            <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden auth-fade-in text-center p-8">
+                    <div className="w-16 h-16 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center mx-auto mb-4 text-white text-3xl shadow-lg">
+                        <i className="fas fa-crown"></i>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-2">Upgrade to Pro</h2>
+                    <p className="text-gray-500 mb-6">Unlock the full power of NotaryOS.</p>
+                    
+                    <ul className="text-left space-y-3 mb-8 bg-gray-50 p-4 rounded-xl">
+                        <li className="flex items-center gap-3"><i className="fas fa-check text-green-500"></i> <span>Unlimited AI Training</span></li>
+                        <li className="flex items-center gap-3"><i className="fas fa-check text-green-500"></i> <span>Professional PDF Invoices</span></li>
+                        <li className="flex items-center gap-3"><i className="fas fa-check text-green-500"></i> <span>Cloud Sync & Backups</span></li>
+                        <li className="flex items-center gap-3"><i className="fas fa-check text-green-500"></i> <span>Advanced Reporting</span></li>
+                    </ul>
+
+                    <button onClick={onUpgrade} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-xl font-bold text-lg shadow-lg hover:shadow-xl transition-all transform hover:-translate-y-1">
+                        Get Pro - $19/mo
+                    </button>
+                    <button onClick={onClose} className="mt-4 text-sm text-gray-400 hover:text-gray-600">Maybe Later</button>
+                </div>
+            </div>
+        );
+
+        // Settings Modal with Business Fields
+        const SettingsModal = ({ user, onClose, onSave }) => {
+            const [data, setData] = useState(user || {});
+            
+            const handleSave = (e) => {
+                e.preventDefault();
+                onSave(data);
+                onClose();
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden auth-fade-in">
+                         <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+                            <h3 className="font-bold text-lg text-gray-800">Business Profile</h3>
+                            <button onClick={onClose} className="text-gray-500"><i className="fas fa-times"></i></button>
+                        </div>
+                        <div className="p-6">
+                            <form onSubmit={handleSave} className="space-y-4">
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Your Name</label><input className="w-full p-2 border rounded" value={data.name || ''} onChange={e => setData({...data, name: e.target.value})} /></div>
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Business Name</label><input className="w-full p-2 border rounded" placeholder="e.g. Acme Notary LLC" value={data.businessName || ''} onChange={e => setData({...data, businessName: e.target.value})} /></div>
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Phone</label><input className="w-full p-2 border rounded" placeholder="(555) 123-4567" value={data.phone || ''} onChange={e => setData({...data, phone: e.target.value})} /></div>
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Address (For Invoices)</label><textarea className="w-full p-2 border rounded" placeholder="123 Notary St, City, State" value={data.address || ''} onChange={e => setData({...data, address: e.target.value})}></textarea></div>
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Commission Number</label><input className="w-full p-2 border rounded" value={data.commissionNumber || ''} onChange={e => setData({...data, commissionNumber: e.target.value})} /></div>
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Exam Target Date</label><input type="date" className="w-full p-2 border rounded" value={data.targetDate || ''} onChange={e => setData({...data, targetDate: e.target.value})} /></div>
+                                <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">Save Profile</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const AuthScreen = ({ onAuth, onBack }) => {
+            const [isLogin, setIsLogin] = useState(true);
+            const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+            const [showTerms, setShowTerms] = useState(false);
+            const [error, setError] = useState('');
+
+            const handleAuth = (e) => {
+                e.preventDefault();
+                setError('');
+                setShowTerms(true); // Trigger Terms Modal
+            };
+
+            const completeAuth = async () => {
+                try {
+                    let user;
+                    // Check if Firebase is active
+                    if (firebase.auth()) {
+                        if (isLogin) {
+                            const cred = await firebase.auth().signInWithEmailAndPassword(formData.email, formData.password);
+                            user = cred.user;
+                        } else {
+                            const cred = await firebase.auth().createUserWithEmailAndPassword(formData.email, formData.password);
+                            user = cred.user;
+                        }
+                    } else {
+                        // Fallback Local Auth
+                         console.warn("Firebase not configured properly. Using Local Simulation.");
+                    }
+
+                    const profile = {
+                        id: user ? user.uid : Date.now().toString(),
+                        name: isLogin ? (formData.email.split('@')[0] || "User") : formData.name, 
+                        email: formData.email,
+                        joined: new Date().toLocaleDateString(),
+                        plan: 'free' // Default to free plan
+                    };
+                    onAuth(profile);
+                } catch (err) {
+                    setShowTerms(false);
+                    let msg = err.message;
+                    if(err.code === 'auth/configuration-not-found') msg = "Email login not enabled in Firebase Console.";
+                    setError(msg);
+                }
+            };
+            
+            // New: Google Sign In
+            const handleGoogleAuth = async () => {
+                try {
+                    const provider = new firebase.auth.GoogleAuthProvider();
+                    await firebase.auth().signInWithPopup(provider);
+                    // Auth state change will handle the redirect
+                } catch (err) {
+                    setError(err.message);
+                }
+            };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-gray-100 p-4">
+                    {showTerms && <TermsModal onAccept={completeAuth} />}
+                    
+                    <div className="bg-white rounded-2xl shadow-2xl overflow-hidden max-w-4xl w-full flex flex-col md:flex-row auth-fade-in">
+                        {/* Brand Side */}
+                        <div className="bg-slate-900 text-white p-8 md:w-1/2 flex flex-col justify-center relative overflow-hidden">
+                             <button onClick={onBack} className="absolute top-6 left-6 text-white/50 hover:text-white z-20 flex items-center gap-2"><i className="fas fa-arrow-left"></i> Back</button>
+                             <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 bg-blue-600 rounded-full opacity-20"></div>
+                             <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-48 h-48 bg-purple-600 rounded-full opacity-20"></div>
+                            <div className="mb-8 relative z-10 mt-10 md:mt-0">
+                                <div className="flex items-center gap-3 mb-2">
+                                    <div className="bg-blue-600 p-2 rounded-lg"><i className="fas fa-stamp text-2xl"></i></div>
+                                    <h1 className="text-4xl font-bold">NotaryOS</h1>
+                                </div>
+                                <p className="text-blue-200 text-lg">The Operating System for Modern Notaries.</p>
+                            </div>
+                            <ul className="space-y-4 text-gray-300 relative z-10">
+                                <li className="flex items-center gap-3"><i className="fas fa-check-circle text-green-400"></i> Business Management Suite</li>
+                                <li className="flex items-center gap-3"><i className="fas fa-check-circle text-green-400"></i> AI-Powered Compliance Coach</li>
+                                <li className="flex items-center gap-3"><i className="fas fa-check-circle text-green-400"></i> 50-State Law Database</li>
+                            </ul>
+                        </div>
+                        
+                        {/* Form Side */}
+                        <div className="p-8 md:w-1/2 flex flex-col justify-center bg-white">
+                            <h2 className="text-2xl font-bold text-gray-800 mb-6">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
+                            {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-xs">{error}</div>}
+                            
+                            <form onSubmit={handleAuth} className="space-y-4">
+                                {!isLogin && (
+                                    <div>
+                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Full Name</label>
+                                        <input required type="text" className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Jane Doe" />
+                                    </div>
+                                )}
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email Address</label>
+                                    <input required type="email" className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="notary@example.com" />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Password</label>
+                                    <input required type="password" className="w-full p-3 bg-gray-50 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="••••••••" />
+                                </div>
+                                <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all shadow-md transform active:scale-95">
+                                    {isLogin ? 'Sign In' : 'Start Free Trial'}
+                                </button>
+                                
+                                <div className="relative flex py-2 items-center">
+                                    <div className="flex-grow border-t border-gray-200"></div>
+                                    <span className="flex-shrink-0 mx-4 text-gray-400 text-xs">OR</span>
+                                    <div className="flex-grow border-t border-gray-200"></div>
+                                </div>
+
+                                <button type="button" onClick={handleGoogleAuth} className="w-full bg-white border border-gray-300 text-gray-700 font-bold py-3 rounded-lg transition-all shadow-sm hover:bg-gray-50 flex items-center justify-center gap-2">
+                                    <i className="fab fa-google text-red-500"></i> Continue with Google
+                                </button>
+                            </form>
+                            <div className="mt-6 text-center text-sm">
+                                <span className="text-gray-500">{isLogin ? "New to NotaryOS?" : "Already have an account?"}</span>
+                                <button onClick={() => setIsLogin(!isLogin)} className="ml-2 text-blue-600 font-bold hover:text-blue-700 transition-colors">
+                                    {isLogin ? 'Create Account' : 'Log In'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout, userName, userPlan, onUpgrade, onSettings }) => {
+            const menuItems = [
+                { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', color: 'text-blue-400' },
+                { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule', color: 'text-green-400' },
+                { id: 'clients', icon: 'fa-address-book', label: 'Clients', color: 'text-pink-400' }, // NEW
+                { id: 'journal', icon: 'fa-book', label: 'Journal', color: 'text-purple-400' },
+                { id: 'finances', icon: 'fa-wallet', label: 'Finances', color: 'text-emerald-400' },
+                { id: 'credentials', icon: 'fa-id-card', label: 'Credentials', color: 'text-orange-400' },
+                { id: 'trainer', icon: 'fa-robot', label: 'AI Trainer', color: 'text-indigo-400', isPro: true },
+                { id: 'admin', icon: 'fa-shield-alt', label: 'Admin', color: 'text-red-500' }
             ];
 
             return (
-                <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden auth-fade-in text-center p-8">
-                        <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 text-3xl shadow-sm"><i className={`fas ${steps[step].icon}`}></i></div>
-                        <h2 className="text-2xl font-bold text-gray-900 mb-3">{steps[step].title}</h2>
-                        <p className="text-gray-500 mb-8 leading-relaxed">{steps[step].desc}</p>
-                        <div className="flex gap-2 justify-center mb-6">{steps.map((_, i) => (<div key={i} className={`h-2 w-2 rounded-full ${i === step ? 'bg-blue-600 w-4' : 'bg-gray-200'} transition-all`}></div>))}</div>
-                        <button onClick={() => { if (step < steps.length - 1) setStep(step + 1); else onComplete(); }} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg">{step < steps.length - 1 ? "Next" : "Get Started"}</button>
+                <>
+                    <div className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 lg:hidden ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
+                    <div className={`fixed inset-y-0 left-0 bg-slate-900 text-white z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:flex lg:flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-64`}>
+                        <div className="p-6 border-b border-slate-700 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                                <div className="bg-blue-600 p-2 rounded-lg"><i className="fas fa-stamp"></i></div>
+                                <h1 className="font-bold text-xl tracking-tight">NotaryOS</h1>
+                            </div>
+                            <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-white">
+                                <i className="fas fa-times text-xl"></i>
+                            </button>
+                        </div>
+                        <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+                            {menuItems.map(item => (
+                                <button 
+                                    key={item.id}
+                                    onClick={() => { setView(item.id); onClose(); }}
+                                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${currentView === item.id ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:bg-slate-800 hover:text-white'} group relative`}
+                                >
+                                    <i className={`fas ${item.icon} w-5 text-center ${item.color}`}></i>
+                                    <span className="font-medium text-sm">{item.label}</span>
+                                    {item.isPro && userPlan !== 'pro' && (
+                                        <i className="fas fa-lock text-xs text-gray-500 absolute right-4"></i>
+                                    )}
+                                </button>
+                            ))}
+                        </nav>
+                        
+                        {userPlan !== 'pro' && (
+                            <div className="px-4 pb-4">
+                                <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-4 text-center shadow-lg">
+                                    <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-2 text-white">
+                                        <i className="fas fa-crown"></i>
+                                    </div>
+                                    <h4 className="font-bold text-sm mb-1">Upgrade to Pro</h4>
+                                    <p className="text-[10px] text-indigo-100 mb-3">Unlock AI Trainer & PDF Reports</p>
+                                    <button onClick={onUpgrade} className="w-full bg-white text-indigo-600 text-xs font-bold py-2 rounded-lg hover:bg-gray-50 transition-colors">
+                                        Upgrade Now
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        <div className="p-4 border-t border-slate-700">
+                             <button onClick={onSettings} className="w-full flex items-center gap-3 px-4 py-2 mb-2 hover:bg-slate-800 rounded transition-colors group">
+                                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-blue-300">
+                                    {userName ? userName.substring(0,2).toUpperCase() : 'US'}
+                                </div>
+                                <div className="flex-1 overflow-hidden text-left">
+                                    <p className="text-xs font-bold truncate group-hover:text-white">{userName || 'User'}</p>
+                                    <p className="text-[10px] text-slate-400 capitalize">{userPlan} Plan</p>
+                                </div>
+                                <i className="fas fa-cog text-slate-500 group-hover:text-white"></i>
+                            </button>
+                            <button onClick={onLogout} className="w-full text-left px-4 py-2 text-xs text-red-400 hover:text-red-300 hover:bg-slate-800 rounded flex items-center gap-2 transition-colors">
+                                <i className="fas fa-sign-out-alt"></i> Log Out
+                            </button>
+                        </div>
+                    </div>
+                </>
+            );
+        };
+
+        const MobileNav = ({ currentView, setView, onOpenMenu }) => {
+            const menuItems = [
+                { id: 'dashboard', icon: 'fa-chart-pie', label: 'Home', color: 'text-blue-500' },
+                { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule', color: 'text-green-500' },
+                { id: 'add', icon: 'fa-plus-circle', label: 'Add', special: true },
+                { id: 'trainer', icon: 'fa-robot', label: 'Trainer', color: 'text-indigo-500' },
+                { id: 'menu', icon: 'fa-bars', label: 'Menu', action: onOpenMenu },
+            ];
+
+            return (
+                <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around items-center px-2 py-2 z-30 shadow-lg safe-area-pb">
+                    {menuItems.map(item => (
+                        <button 
+                            key={item.id}
+                            onClick={() => item.special ? setView('add_appointment') : (item.action ? item.action() : setView(item.id))}
+                            className={`flex flex-col items-center justify-center w-full py-1 ${item.special ? '-mt-6' : ''}`}
+                        >
+                            {item.special ? (
+                                <div className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg shadow-blue-600/30">
+                                    <i className={`fas ${item.icon} text-2xl`}></i>
+                                </div>
+                            ) : (
+                                <>
+                                    <i className={`fas ${item.icon} text-lg mb-1 ${currentView === item.id ? 'text-blue-600' : 'text-gray-400'} ${item.color}`}></i>
+                                    <span className={`text-[10px] font-medium ${currentView === item.id ? 'text-blue-600' : 'text-gray-400'}`}>{item.label}</span>
+                                </>
+                            )}
+                        </button>
+                    ))}
+                </div>
+            );
+        };
+
+        const Header = ({ title, isCloud }) => (
+            <div className="bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center sticky top-0 z-20">
+                <div className="flex items-center gap-2">
+                     <i className="fas fa-stamp text-blue-600 text-xl md:hidden"></i>
+                    <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+                </div>
+                <div className="flex items-center gap-4">
+                    <div title={isCloud ? "Cloud Connected" : "Offline Mode (Local Save)"} className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded ${isCloud ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"}`}>
+                        <i className={`fas ${isCloud ? 'fa-cloud' : 'fa-save'}`}></i>
+                        <span className="hidden sm:inline">{isCloud ? "Online" : "Local"}</span>
+                    </div>
+                    <button className="relative text-gray-400 hover:text-blue-600 transition-colors">
+                        <i className="fas fa-bell text-xl"></i>
+                        <span className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>
+                    </button>
+                </div>
+            </div>
+        );
+
+        // --- MODULES ---
+
+        // NEW: CLIENTS MODULE
+        const Clients = () => {
+            const [clients, setClients] = useState([]);
+            const [showForm, setShowForm] = useState(false);
+
+            useEffect(() => { DataManager.get('notary_clients').then(setClients); }, []);
+
+            const handleSave = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                await DataManager.save('notary_clients', {
+                    id: Date.now().toString(),
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    phone: formData.get('phone'),
+                    address: formData.get('address'),
+                    notes: formData.get('notes')
+                });
+                setShowForm(false);
+                setClients(await DataManager.get('notary_clients'));
+            };
+
+            const handleDelete = async (id) => {
+                await DataManager.delete('notary_clients', id);
+                setClients(await DataManager.get('notary_clients'));
+            };
+
+            return (
+                <div className="p-6 pb-24">
+                     <div className="flex justify-between items-center mb-6"><h3 className="text-lg font-bold text-gray-800">Client Directory</h3><button onClick={() => setShowForm(true)} className="bg-pink-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-pink-700 transition-colors shadow-md"><i className="fas fa-plus mr-2"></i>Add</button></div>
+                    {showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 animate-fade-in"><form onSubmit={handleSave} className="space-y-4"><input required name="name" type="text" placeholder="Client Name" className="w-full p-3 bg-gray-50 border rounded-xl" /><div className="grid grid-cols-2 gap-4"><input name="email" type="email" placeholder="Email" className="w-full p-3 bg-gray-50 border rounded-xl" /><input name="phone" type="tel" placeholder="Phone" className="w-full p-3 bg-gray-50 border rounded-xl" /></div><input name="address" type="text" placeholder="Address" className="w-full p-3 bg-gray-50 border rounded-xl" /><textarea name="notes" placeholder="Notes (Gate codes, preferences...)" className="w-full p-3 bg-gray-50 border rounded-xl h-24"></textarea><div className="flex gap-2"><button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 bg-gray-100 rounded-lg">Cancel</button><button type="submit" className="flex-1 py-2 bg-pink-600 text-white rounded-lg">Save Client</button></div></form></div>}
+                    <div className="space-y-3">{clients.length === 0 ? <p className="text-center text-gray-400 py-10">No clients saved.</p> : clients.sort((a,b) => a.name.localeCompare(b.name)).map(c => <div key={c.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center"><div><h4 className="font-bold text-gray-800">{c.name}</h4><p className="text-xs text-gray-500">{c.phone} &bull; {c.email}</p></div><button onClick={() => handleDelete(c.id)} className="text-gray-300 hover:text-red-500 w-8 h-8 rounded-full hover:bg-red-50 flex items-center justify-center"><i className="fas fa-trash"></i></button></div>)}</div>
+                </div>
+            );
+        };
+
+        const Dashboard = ({ appointments, credentials, setView, isCloud }) => {
+            const today = new Date().toISOString().split('T')[0];
+            const todaysJobs = appointments.filter(a => a.date === today && a.status !== 'Cancelled');
+            const monthlyIncome = appointments.filter(a => a.status === 'Paid').reduce((sum, a) => sum + parseFloat(a.fee || 0), 0);
+            
+            // Calc Alerts
+            const expiringCreds = credentials.filter(c => {
+                const exp = new Date(c.expiry);
+                const now = new Date();
+                const diffTime = exp - now;
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                return diffDays <= 60; 
+            });
+
+            return (
+                <div className="p-6 space-y-6 pb-24">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                            <div className="absolute right-0 top-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4"></div>
+                            <div className="relative">
+                                <div className="text-gray-500 text-xs font-bold uppercase mb-1">Monthly Income</div>
+                                <div className="text-2xl font-bold text-gray-800">${monthlyIncome.toFixed(2)}</div>
+                                <div className="text-xs text-green-500 mt-1 font-medium"><i className="fas fa-arrow-up"></i> Updated just now</div>
+                            </div>
+                        </div>
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                            <div className="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4"></div>
+                            <div className="relative">
+                                <div className="text-gray-500 text-xs font-bold uppercase mb-1">Today's Jobs</div>
+                                <div className="text-2xl font-bold text-gray-800">{todaysJobs.length}</div>
+                                <div className="text-xs text-blue-500 mt-1 font-medium"><i className="fas fa-calendar-day"></i> Check schedule</div>
+                            </div>
+                        </div>
+                        <div onClick={() => setView('credentials')} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50 relative overflow-hidden">
+                            <div className={`absolute right-0 top-0 w-24 h-24 rounded-bl-full -mr-4 -mt-4 ${expiringCreds.length > 0 ? 'bg-red-50' : 'bg-gray-50'}`}></div>
+                            <div className="relative">
+                                <div className="text-gray-500 text-xs font-bold uppercase mb-1">Compliance Alerts</div>
+                                <div className={`text-2xl font-bold ${expiringCreds.length > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                                    {expiringCreds.length}
+                                </div>
+                                <div className="text-xs text-gray-400 mt-1 font-medium">
+                                    {expiringCreds.length > 0 ? `${expiringCreds.length} items expiring soon` : "All credentials active"}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-gray-800 mb-4">Today's Agenda</h3>
+                        {todaysJobs.length === 0 ? (
+                            <div className="bg-white rounded-2xl p-8 text-center border border-gray-100">
+                                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-3 text-gray-400">
+                                    <i className="fas fa-coffee"></i>
+                                </div>
+                                <p className="text-gray-500 text-sm">No appointments scheduled for today.</p>
+                                <button onClick={() => setView('schedule')} className="mt-4 text-blue-600 text-sm font-semibold hover:underline">Add one now</button>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {todaysJobs.map(job => (
+                                    <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center">
+                                        <div className="flex gap-4 items-center">
+                                            <div className="bg-blue-50 text-blue-600 w-12 h-12 rounded-lg flex flex-col items-center justify-center text-xs font-bold leading-none">
+                                                <span>{job.time.split(':')[0]}</span>
+                                                <span className="text-[10px] opacity-70">{job.time.split(':')[1]}</span>
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-gray-800">{job.clientName}</h4>
+                                                <p className="text-xs text-gray-500"><i className="fas fa-map-marker-alt mr-1"></i>{job.location}</p>
+                                            </div>
+                                        </div>
+                                        <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wide status-${job.status.toLowerCase()}`}>
+                                            {job.status}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+
+        const Credentials = ({ onUpdate }) => {
+            const [creds, setCreds] = useState([]);
+            const [showForm, setShowForm] = useState(false);
+            
+            useEffect(() => {
+                const load = async () => {
+                    const data = await DataManager.get('notary_credentials');
+                    setCreds(data);
+                };
+                load();
+            }, []);
+
+            const handleSave = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                await DataManager.save('notary_credentials', {
+                    id: Date.now().toString(),
+                    name: formData.get('name'),
+                    expiry: formData.get('expiry')
+                });
+                const updated = await DataManager.get('notary_credentials');
+                setCreds(updated);
+                onUpdate();
+                setShowForm(false);
+            };
+
+            const handleDelete = async (id) => {
+                await DataManager.delete('notary_credentials', id);
+                const updated = await DataManager.get('notary_credentials');
+                setCreds(updated);
+                onUpdate();
+            };
+
+            return (
+                <div className="p-6 pb-24">
+                     <div className="flex justify-between items-center mb-6">
+                        <h3 className="text-lg font-bold text-gray-800">My Credentials</h3>
+                        <button onClick={() => setShowForm(true)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-indigo-700 transition-colors shadow-md"><i className="fas fa-plus mr-2"></i>Add</button>
+                    </div>
+
+                    {showForm && (
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 animate-fade-in">
+                            <form onSubmit={handleSave} className="space-y-4">
+                                <input required name="name" type="text" placeholder="Credential Name (e.g. Commission, Bond)" className="w-full p-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" />
+                                <input required name="expiry" type="date" className="w-full p-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" />
+                                <div className="flex gap-2">
+                                    <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 bg-gray-100 rounded-lg font-medium">Cancel</button>
+                                    <button type="submit" className="flex-1 py-2 bg-indigo-600 text-white rounded-lg font-medium hover:bg-indigo-700">Save</button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    <div className="space-y-3">
+                        {creds.length === 0 ? (
+                            <div className="text-center py-12">
+                                <div className="w-16 h-16 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-4 text-indigo-300">
+                                    <i className="fas fa-id-card text-2xl"></i>
+                                </div>
+                                <p className="text-gray-400">No credentials tracked yet.</p>
+                            </div>
+                        ) : creds.sort((a,b) => new Date(a.expiry) - new Date(b.expiry)).map(c => {
+                            const daysLeft = Math.ceil((new Date(c.expiry) - new Date()) / (1000 * 60 * 60 * 24));
+                            const statusColor = daysLeft < 0 ? 'bg-red-100 text-red-700' : (daysLeft < 60 ? 'bg-yellow-100 text-yellow-800' : 'bg-green-100 text-green-700');
+                            
+                            return (
+                                <div key={c.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center">
+                                    <div>
+                                        <h4 className="font-bold text-gray-800">{c.name}</h4>
+                                        <p className="text-xs text-gray-500 mt-1"><i className="far fa-calendar-alt mr-1"></i> Expires: {c.expiry}</p>
+                                    </div>
+                                    <div className="flex items-center gap-3">
+                                        <span className={`text-xs px-3 py-1 rounded-full font-bold uppercase ${statusColor}`}>
+                                            {daysLeft < 0 ? 'EXPIRED' : `${daysLeft} days`}
+                                        </span>
+                                        <button onClick={() => handleDelete(c.id)} className="text-gray-300 hover:text-red-500 w-8 h-8 flex items-center justify-center rounded-full hover:bg-red-50 transition-colors"><i className="fas fa-trash"></i></button>
+                                    </div>
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             );
         };
 
         const AppointmentForm = ({ onSave, onCancel, initialData }) => {
-            const [formData, setFormData] = useState(initialData || { clientName: '', date: new Date().toISOString().split('T')[0], time: '12:00', location: '', type: 'General Notarization', fee: '', status: 'Scheduled', notes: '' });
-            const [isParsing, setIsParsing] = useState(false);
-            const [magicInput, setMagicInput] = useState('');
+            const [formData, setFormData] = useState(initialData || {
+                clientName: '', date: new Date().toISOString().split('T')[0], time: '12:00',
+                location: '', type: 'General Notarization', fee: '', status: 'Scheduled', notes: ''
+            });
 
-            // Feature #2: Smart Fill
-            const handleSmartFill = async () => {
-                if (!magicInput.trim()) return;
-                setIsParsing(true);
-                const apiKey = localStorage.getItem('gemini_api_key');
-                if (!apiKey) {
-                    alert("Please enter your API Key in the Trainer tab first to use Smart Fill.");
-                    setIsParsing(false);
-                    return;
-                }
-
-                try {
-                    // We ask Gemini to return JSON
-                    const systemPrompt = "Extract appointment details from text. Return JSON ONLY with keys: clientName, date (YYYY-MM-DD), time (HH:MM), location, fee (number), type (General Notarization, Loan Signing). Use today as base for 'tomorrow'.";
-                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ 
-                            contents: [{ role: "user", parts: [{ text: magicInput }] }],
-                            systemInstruction: { parts: [{ text: systemPrompt }] },
-                            generationConfig: { responseMimeType: "application/json" }
-                        })
-                    });
-                    const data = await response.json();
-                    const extracted = JSON.parse(data.candidates[0].content.parts[0].text);
-                    setFormData(prev => ({ ...prev, ...extracted, status: 'Scheduled' }));
-                } catch (e) {
-                    alert("Could not parse. Try standard format: 'Meeting with [Name] on [Date] at [Location]'");
-                } finally {
-                    setIsParsing(false);
-                }
+            const handleSubmit = (e) => {
+                e.preventDefault();
+                onSave({ ...formData, id: initialData?.id || Date.now().toString() });
             };
-
-            const handleSubmit = (e) => { e.preventDefault(); onSave({ ...formData, id: initialData?.id || Date.now().toString() }); };
 
             return (
                 <div className="p-6 max-w-2xl mx-auto">
                     <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
-                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2"><i className="fas fa-calendar-plus text-blue-600"></i>{initialData ? 'Edit Appointment' : 'New Appointment'}</h3>
-                        
-                        {/* Magic Input */}
-                        {!initialData && (
-                            <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-100">
-                                <label className="text-xs font-bold text-blue-600 uppercase mb-2 block"><i className="fas fa-bolt"></i> AI Smart Fill</label>
-                                <div className="flex gap-2">
-                                    <input value={magicInput} onChange={e => setMagicInput(e.target.value)} placeholder="e.g. Loan signing with John Smith tomorrow at 2pm for $150" className="flex-1 p-2 text-sm border rounded-lg" />
-                                    <button onClick={handleSmartFill} disabled={isParsing} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-md">
-                                        {isParsing ? <i className="fas fa-spinner fa-spin"></i> : "Fill"}
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-
+                        <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><i className="fas fa-calendar-plus text-blue-600"></i>{initialData ? 'Edit Appointment' : 'New Appointment'}</h3>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <input required type="text" placeholder="Client Name" className="w-full p-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500" value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} />
-                            <div className="grid grid-cols-2 gap-4"><input required type="date" className="w-full p-3 bg-gray-50 border rounded-xl" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} /><input required type="time" className="w-full p-3 bg-gray-50 border rounded-xl" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} /></div>
-                            <input required type="text" placeholder="Location" className="w-full p-3 bg-gray-50 border rounded-xl" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
-                            <div className="grid grid-cols-2 gap-4"><input required type="number" placeholder="Fee ($)" className="w-full p-3 bg-gray-50 border rounded-xl" value={formData.fee} onChange={e => setFormData({...formData, fee: e.target.value})} /><select className="w-full p-3 bg-gray-50 border rounded-xl" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}><option>Scheduled</option><option>Completed</option><option>Paid</option><option>Cancelled</option></select></div>
-                            <div className="flex gap-3 pt-4"><button type="button" onClick={onCancel} className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl">Cancel</button><button type="submit" className="flex-1 py-3 bg-blue-600 text-white rounded-xl">Save</button></div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <input required type="date" className="w-full p-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} />
+                                <input required type="time" className="w-full p-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} />
+                            </div>
+                            <input required type="text" placeholder="Location" className="w-full p-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
+                            <div className="grid grid-cols-2 gap-4">
+                                <input required type="number" placeholder="Fee ($)" className="w-full p-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500" value={formData.fee} onChange={e => setFormData({...formData, fee: e.target.value})} />
+                                <select className="w-full p-3 bg-gray-50 border rounded-xl outline-none focus:ring-2 focus:ring-blue-500" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}>
+                                    <option>Scheduled</option><option>Completed</option><option>Paid</option><option>Cancelled</option>
+                                </select>
+                            </div>
+                            <div className="flex gap-3 pt-4">
+                                <button type="button" onClick={onCancel} className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl">Cancel</button>
+                                <button type="submit" className="flex-1 py-3 bg-blue-600 text-white rounded-xl">Save</button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -380,40 +953,12 @@
         };
 
         const Schedule = ({ appointments, setView, onEdit, user, onUpgrade }) => {
-            // Feature #3: Calendar Toggle
-            const [viewMode, setViewMode] = useState('list'); // 'list' or 'calendar'
-
-            const CalendarView = () => {
-                const today = new Date();
-                const daysInMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0).getDate();
-                const firstDay = new Date(today.getFullYear(), today.getMonth(), 1).getDay();
-                const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-                
-                return (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
-                        <div className="text-center font-bold text-gray-800 mb-4">{today.toLocaleString('default', { month: 'long' })} {today.getFullYear()}</div>
-                        <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-400 mb-2">
-                            <div>Su</div><div>Mo</div><div>Tu</div><div>We</div><div>Th</div><div>Fr</div><div>Sa</div>
-                        </div>
-                        <div className="grid grid-cols-7 gap-1">
-                            {Array(firstDay).fill(null).map((_, i) => <div key={`empty-${i}`} className="h-10 md:h-16"></div>)}
-                            {days.map(day => {
-                                const dateStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                                const dayAppts = appointments.filter(a => a.date === dateStr);
-                                return (
-                                    <div key={day} className={`h-10 md:h-16 border border-gray-50 rounded-lg flex flex-col items-center justify-center relative ${dayAppts.length > 0 ? 'bg-blue-50 cursor-pointer hover:bg-blue-100' : ''}`} onClick={() => dayAppts.length > 0 && onEdit(dayAppts[0])}>
-                                        <span className={`text-xs ${day === today.getDate() ? 'bg-blue-600 text-white w-6 h-6 flex items-center justify-center rounded-full' : 'text-gray-700'}`}>{day}</span>
-                                        {dayAppts.length > 0 && <div className="mt-1 w-1.5 h-1.5 bg-blue-500 rounded-full"></div>}
-                                    </div>
-                                )
-                            })}
-                        </div>
-                    </div>
-                );
-            };
-
             const handleInvoice = (job) => {
-                if (user.plan !== 'pro') { onUpgrade(); return; }
+                // GATE: Invoice is a Pro feature
+                if (user.plan !== 'pro') {
+                    onUpgrade();
+                    return;
+                }
                 if (window.jspdf) PDFGenerator.createInvoice(job, user);
                 else alert("PDF library loading. Try again in 2 seconds.");
             };
@@ -421,120 +966,534 @@
             return (
                 <div className="p-6 pb-24">
                     <div className="flex justify-between items-center mb-6">
-                        <h3 className="text-lg font-bold text-gray-800">Schedule</h3>
-                        <div className="flex bg-gray-200 rounded-lg p-1">
-                            <button onClick={() => setViewMode('list')} className={`px-3 py-1 text-xs font-bold rounded-md ${viewMode === 'list' ? 'bg-white text-gray-800 shadow' : 'text-gray-500'}`}><i className="fas fa-list"></i></button>
-                            <button onClick={() => setViewMode('calendar')} className={`px-3 py-1 text-xs font-bold rounded-md ${viewMode === 'calendar' ? 'bg-white text-gray-800 shadow' : 'text-gray-500'}`}><i className="fas fa-calendar-alt"></i></button>
-                        </div>
+                        <h3 className="text-lg font-bold text-gray-800">All Appointments</h3>
+                        <button onClick={() => setView('addAppointment')} className="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors shadow-md"><i className="fas fa-plus mr-2"></i>New</button>
                     </div>
-                    
-                    {viewMode === 'calendar' ? <CalendarView /> : (
-                        <div className="space-y-3">
-                            {appointments.length === 0 ? <div className="text-center py-12 empty-state-dashed rounded-2xl"><p className="text-gray-400">Schedule empty.</p><button onClick={() => setView('addAppointment')} className="mt-2 text-blue-600 font-bold hover:underline">Add First Job</button></div> : appointments.sort((a,b) => new Date(a.date) - new Date(b.date)).map(job => (
-                                <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                                    <div onClick={() => onEdit(job)} className="cursor-pointer"><div className="flex justify-between items-start mb-2"><div><span className="text-xs font-bold text-gray-400 uppercase">{job.type}</span><h4 className="font-bold text-gray-800 text-lg">{job.clientName}</h4></div><span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase status-${job.status.toLowerCase()}`}>{job.status}</span></div><div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mt-3 pt-3 border-t border-gray-50"><div className="flex items-center gap-2"><i className="far fa-calendar-alt text-blue-400"></i> {job.date} {job.time}</div><div className="text-right font-bold text-gray-800">${job.fee}</div></div></div>
-                                    <div className="mt-3 pt-2 border-t border-gray-100 flex justify-end"><button onClick={(e) => { e.stopPropagation(); handleInvoice(job); }} className={`text-xs font-bold flex items-center gap-1 px-2 py-1 rounded ${user.plan === 'pro' ? 'text-blue-600 hover:bg-blue-50' : 'text-gray-400 hover:text-indigo-600'}`}><i className={`fas ${user.plan === 'pro' ? 'fa-file-invoice' : 'fa-lock'}`}></i> {user.plan === 'pro' ? 'Invoice' : 'Invoice (Pro)'}</button></div>
+                    <div className="space-y-3">
+                        {appointments.length === 0 ? <p className="text-center text-gray-400 py-10">Schedule empty.</p> : appointments.sort((a,b) => new Date(a.date) - new Date(b.date)).map(job => (
+                            <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                <div onClick={() => onEdit(job)} className="cursor-pointer"><div className="flex justify-between items-start mb-2"><div><span className="text-xs font-bold text-gray-400 uppercase tracking-wider">{job.type}</span><h4 className="font-bold text-gray-800 text-lg">{job.clientName}</h4></div><span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase tracking-wide status-${job.status.toLowerCase()}`}>{job.status}</span></div><div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mt-3 pt-3 border-t border-gray-50"><div className="flex items-center gap-2"><i className="far fa-calendar-alt text-blue-400"></i> {job.date} {job.time}</div><div className="text-right font-bold text-gray-800">${job.fee}</div></div></div>
+                                <div className="mt-3 pt-2 border-t border-gray-100 flex justify-end">
+                                    <button onClick={(e) => { e.stopPropagation(); handleInvoice(job); }} className={`text-xs font-bold flex items-center gap-1 px-2 py-1 rounded ${user.plan === 'pro' ? 'text-blue-600 hover:bg-blue-50' : 'text-gray-400 hover:text-indigo-600'}`}>
+                                        <i className={`fas ${user.plan === 'pro' ? 'fa-file-invoice' : 'fa-lock'}`}></i> {user.plan === 'pro' ? 'Invoice' : 'Invoice (Pro)'}
+                                    </button>
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                    
-                    {viewMode === 'calendar' && <div className="mt-6 flex justify-center"><button onClick={() => setView('addAppointment')} className="bg-blue-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg"><i className="fas fa-plus mr-2"></i> Add Appointment</button></div>}
-                    {viewMode === 'list' && appointments.length > 0 && <button onClick={() => setView('addAppointment')} className="fixed bottom-24 right-6 bg-blue-600 text-white w-14 h-14 rounded-full shadow-xl flex items-center justify-center md:hidden z-20"><i className="fas fa-plus text-xl"></i></button>}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             );
         };
 
-        // ... [Include Dashboard, Journal, Finances, Credentials, Trainer, AuthScreen, LandingPage components here exactly as before] ...
-        // Note: For brevity, I am re-using the existing definitions from the previous valid file for the components not modified.
-        // In the final full file, I will paste EVERYTHING to ensure no ReferenceErrors.
+        const Journal = ({ onUpdate, user, onUpgrade }) => {
+            const [entries, setEntries] = useState([]);
+            const [showForm, setShowForm] = useState(false);
 
-        // Placeholder for other components to make the code block complete:
-        const Dashboard = ({ appointments, credentials, setView, isCloud }) => { const today = new Date().toISOString().split('T')[0]; const todaysJobs = appointments.filter(a => a.date === today && a.status !== 'Cancelled'); const monthlyIncome = appointments.filter(a => a.status === 'Paid').reduce((sum, a) => sum + parseFloat(a.fee || 0), 0); const expiringCreds = credentials.filter(c => { const exp = new Date(c.expiry); return Math.ceil((exp - new Date()) / (1000 * 60 * 60 * 24)) <= 60; }); return (<div className="p-6 space-y-6 pb-24"><div className="grid grid-cols-1 md:grid-cols-3 gap-4"><div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100"><div className="text-gray-500 text-xs font-bold uppercase mb-1">Monthly Income</div><div className="text-2xl font-bold text-gray-800">${monthlyIncome.toFixed(2)}</div></div><div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100"><div className="text-gray-500 text-xs font-bold uppercase mb-1">Today's Jobs</div><div className="text-2xl font-bold text-gray-800">{todaysJobs.length}</div></div><div onClick={() => setView('credentials')} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50"><div className="text-gray-500 text-xs font-bold uppercase mb-1">Alerts</div><div className={`text-2xl font-bold ${expiringCreds.length > 0 ? 'text-red-600' : 'text-green-600'}`}>{expiringCreds.length}</div></div></div><div><h3 className="text-lg font-bold text-gray-800 mb-4">Today's Agenda</h3>{todaysJobs.length === 0 ? <div className="bg-white rounded-2xl p-8 text-center border border-gray-100 empty-state-dashed"><p className="text-gray-500 text-sm">No appointments.</p><button onClick={() => setView('schedule')} className="mt-4 text-blue-600 text-sm font-semibold hover:underline">Schedule One</button></div> : <div className="space-y-3">{todaysJobs.map(job => <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center"><div><h4 className="font-bold text-gray-800">{job.clientName}</h4><p className="text-xs text-gray-500">{job.time} @ {job.location}</p></div><span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase status-${job.status.toLowerCase()}`}>{job.status}</span></div>)}</div>}</div></div>); };
-        const Credentials = ({ onUpdate }) => { const [creds, setCreds] = useState([]); const [showForm, setShowForm] = useState(false); useEffect(() => { DataManager.get('notary_credentials').then(setCreds); }, []); const handleSave = async (e) => { e.preventDefault(); const formData = new FormData(e.target); await DataManager.save('notary_credentials', { id: Date.now().toString(), name: formData.get('name'), expiry: formData.get('expiry') }); onUpdate(); setShowForm(false); setCreds(await DataManager.get('notary_credentials')); }; const handleDelete = async (id) => { await DataManager.delete('notary_credentials', id); setCreds(await DataManager.get('notary_credentials')); onUpdate(); }; return (<div className="p-6 pb-24"><div className="flex justify-between items-center mb-6"><h3 className="text-lg font-bold text-gray-800">My Credentials</h3><button onClick={() => setShowForm(true)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Add</button></div>{showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 animate-fade-in"><form onSubmit={handleSave} className="space-y-4"><input required name="name" type="text" placeholder="Name" className="w-full p-3 bg-gray-50 border rounded-xl" /><input required name="expiry" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" /><div className="flex gap-2"><button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 bg-gray-100 rounded-lg">Cancel</button><button type="submit" className="flex-1 py-2 bg-indigo-600 text-white rounded-lg">Save</button></div></form></div>}<div className="space-y-3">{creds.length === 0 ? <div className="text-center py-12 empty-state-dashed rounded-2xl"><p className="text-gray-400">No credentials tracked.</p></div> : creds.sort((a,b) => new Date(a.expiry) - new Date(b.expiry)).map(c => { const daysLeft = Math.ceil((new Date(c.expiry) - new Date()) / (1000 * 60 * 60 * 24)); return <div key={c.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center"><div><h4 className="font-bold text-gray-800">{c.name}</h4><p className="text-xs text-gray-500">Expires: {c.expiry}</p></div><div className="flex items-center gap-3"><span className={`text-xs px-3 py-1 rounded-full font-bold ${daysLeft < 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{daysLeft < 0 ? 'EXPIRED' : `${daysLeft} days`}</span><button onClick={() => handleDelete(c.id)} className="text-gray-300 hover:text-red-500"><i className="fas fa-trash"></i></button></div></div>; })}</div></div>); };
-        const Journal = ({ onUpdate, user, onUpgrade }) => { const [entries, setEntries] = useState([]); const [showForm, setShowForm] = useState(false); useEffect(() => { DataManager.get('notary_journal').then(setEntries); }, []); const handleSave = async (e) => { e.preventDefault(); const formData = new FormData(e.target); await DataManager.save('notary_journal', { id: Date.now().toString(), date: formData.get('date'), time: formData.get('time'), signer: formData.get('signer'), docType: formData.get('docType'), idType: formData.get('idType'), fee: formData.get('fee') }); onUpdate(); setShowForm(false); setEntries(await DataManager.get('notary_journal')); }; const handleExport = () => { if (user.plan !== 'pro') { onUpgrade(); return; } if (window.jspdf) PDFGenerator.createReport("Notary Journal", ["Date", "Signer", "Doc", "Fee"], entries.map(e => [e.date, e.signer, e.docType, `$${e.fee}`]), "journal.pdf"); }; return (<div className="p-6 pb-24"><div className="flex justify-between items-center mb-6"><div className="flex gap-2"><h3 className="text-lg font-bold text-gray-800">Journal</h3><button onClick={handleExport} className="text-gray-400 hover:text-blue-600"><i className="fas fa-file-export"></i></button></div><button onClick={() => setShowForm(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Log</button></div>{showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6"><form onSubmit={handleSave} className="space-y-4"><input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" /><input required name="signer" type="text" placeholder="Signer" className="w-full p-3 bg-gray-50 border rounded-xl" /><div className="flex gap-2"><button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 rounded-lg">Cancel</button><button type="submit" className="flex-1 bg-purple-600 text-white rounded-lg">Save</button></div></form></div>}<div className="space-y-3">{entries.length === 0 ? <div className="text-center py-12 empty-state-dashed rounded-2xl"><p className="text-gray-400">Journal empty.</p></div> : entries.map(e => <div key={e.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><h4>{e.signer}</h4><p className="text-xs text-gray-500">{e.docType}</p></div>)}</div></div>); };
-        const Finances = () => { const [activeTab, setActiveTab] = useState('expenses'); const [expenses, setExpenses] = useState([]); const [mileage, setMileage] = useState([]); const [showForm, setShowForm] = useState(false); useEffect(() => { const load = async () => { setExpenses(await DataManager.get('notary_expenses')); setMileage(await DataManager.get('notary_mileage')); }; load(); }, []); const handleSave = async (e) => { e.preventDefault(); const formData = new FormData(e.target); if (activeTab === 'expenses') { await DataManager.save('notary_expenses', { id: Date.now().toString(), date: formData.get('date'), category: formData.get('category'), desc: formData.get('desc'), amount: formData.get('amount') }); setExpenses(await DataManager.get('notary_expenses')); } else { await DataManager.save('notary_mileage', { id: Date.now().toString(), date: formData.get('date'), start: formData.get('start'), end: formData.get('end'), miles: formData.get('miles') }); setMileage(await DataManager.get('notary_mileage')); } setShowForm(false); }; return (<div className="p-6 pb-24"><div className="bg-white p-1 rounded-xl flex mb-6 border border-gray-200 shadow-sm"><button onClick={() => setActiveTab('expenses')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'expenses' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-500'}`}>Expenses</button><button onClick={() => setActiveTab('mileage')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'mileage' ? 'bg-blue-50 text-blue-700' : 'text-gray-500'}`}>Mileage</button></div><div className="flex justify-between items-center mb-6"><div><p className="text-xs text-gray-500 uppercase font-bold">Total</p><p className="text-2xl font-bold text-gray-800">{activeTab === 'expenses' ? `$${expenses.reduce((s, i) => s + parseFloat(i.amount||0), 0).toFixed(2)}` : `${mileage.reduce((s, i) => s + parseFloat(i.miles||0), 0)} mi`}</p></div><button onClick={() => setShowForm(true)} className="bg-gray-900 text-white w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-plus"></i></button></div>{showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6"><form onSubmit={handleSave} className="space-y-4"><input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" />{activeTab === 'expenses' ? <input name="amount" placeholder="Amount" className="w-full p-3 border rounded-xl" /> : <input name="miles" placeholder="Miles" className="w-full p-3 border rounded-xl" />}<button className="w-full bg-gray-900 text-white py-3 rounded-lg">Save</button></form></div>}</div>); };
-        const TrainerModule = ({ stateDB, courseMods, user, onUpgrade }) => { /* ... existing ... */ return <div className="p-6 text-center text-gray-500">Trainer Active (Placeholder for brevity)</div>; }; // Note: In full implementation, paste the full trainer module code here. I will include the full code in the final block below.
-        const AdminPanel = ({ stateDB }) => <div className="p-6">Admin Panel</div>; 
-        const Clients = () => <div className="p-6 text-center text-gray-400">Client Directory</div>; // Placeholder
-        const LandingPage = ({ onNavigate }) => <div className="min-h-screen bg-white p-8 flex flex-col justify-center items-center text-center"><h1 className="text-5xl font-bold mb-6">NotaryOS</h1><button onClick={onNavigate} className="bg-blue-600 text-white px-8 py-3 rounded-xl font-bold">Start</button></div>;
-        const AuthScreen = ({ onAuth, onBack }) => <div className="min-h-screen flex items-center justify-center"><button onClick={() => onAuth({ id: '1', name: 'User', plan: 'free' })} className="bg-blue-600 text-white px-6 py-3 rounded-lg">Login (Sim)</button></div>;
-        const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout }) => <div className={`fixed inset-y-0 left-0 bg-slate-900 w-64 text-white z-50 ${isOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform lg:translate-x-0`}><div className="p-4"><h1 className="font-bold text-xl">NotaryOS</h1></div><button onClick={() => setView('dashboard')} className="block w-full text-left p-4 hover:bg-slate-800">Dashboard</button></div>;
-        const MobileNav = ({ setView, onOpenMenu }) => <div className="fixed bottom-0 w-full bg-white border-t p-2 flex justify-around md:hidden"><button onClick={() => setView('dashboard')}><i className="fas fa-home"></i></button><button onClick={onOpenMenu}><i className="fas fa-bars"></i></button></div>;
-        const Header = ({ title }) => <div className="bg-white border-b p-4 flex justify-between"><h2 className="font-bold">{title}</h2><div className="flex gap-2"><button className="fab-ai bg-indigo-600 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg"><i className="fas fa-robot"></i></button></div></div>;
-        const PricingModal = ({ onClose, onUpgrade }) => <div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="bg-white p-8 rounded-xl"><h2 className="text-xl font-bold">Upgrade</h2><button onClick={onUpgrade} className="mt-4 bg-blue-600 text-white px-4 py-2 rounded">Buy Pro</button><button onClick={onClose} className="ml-2">Close</button></div></div>;
-        const SettingsModal = ({ user, onClose, onSave }) => <div className="fixed inset-0 bg-black/50 flex items-center justify-center"><div className="bg-white p-8 rounded-xl"><h2 className="text-xl font-bold">Settings</h2><button onClick={onClose} className="mt-4">Close</button></div></div>;
+            useEffect(() => {
+                const load = async () => {
+                    const data = await DataManager.get('notary_journal');
+                    setEntries(data);
+                };
+                load();
+            }, []);
 
-        // ... RE-INJECTING THE FULL APP COMPONENT WITH ALL FEATURES ...
+            const handleSave = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                await DataManager.save('notary_journal', { id: Date.now().toString(), date: formData.get('date'), time: formData.get('time'), signer: formData.get('signer'), docType: formData.get('docType'), idType: formData.get('idType'), fee: formData.get('fee') });
+                onUpdate(); setShowForm(false); setEntries(await DataManager.get('notary_journal'));
+            };
+
+            const handleExport = () => {
+                 // GATE: Export is a Pro feature
+                 if (user.plan !== 'pro') {
+                    onUpgrade();
+                    return;
+                }
+                if (window.jspdf) PDFGenerator.createReport("Notary Journal Log", ["Date", "Time", "Signer", "Doc Type", "Fee"], entries.map(e => [e.date, e.time, e.signer, e.docType, `$${e.fee}`]), "journal_log.pdf");
+            };
+
+            return (
+                <div className="p-6 pb-24">
+                     <div className="flex justify-between items-center mb-6">
+                        <div className="flex gap-2 items-center">
+                            <h3 className="text-lg font-bold text-gray-800">Journal</h3>
+                            <button onClick={handleExport} className={`text-xs px-2 py-1 rounded border ${user.plan === 'pro' ? 'text-gray-500 hover:text-blue-600' : 'text-gray-300'}`} title="Export PDF">
+                                <i className={`fas ${user.plan === 'pro' ? 'fa-file-export' : 'fa-lock'}`}></i>
+                            </button>
+                        </div>
+                        <button onClick={() => setShowForm(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:bg-purple-700 transition-colors shadow-md"><i className="fas fa-plus mr-2"></i>Log</button>
+                    </div>
+
+                    {showForm && (
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                            <form onSubmit={handleSave} className="space-y-4">
+                                <div className="grid grid-cols-2 gap-4">
+                                    <input required name="date" type="date" defaultValue={new Date().toISOString().split('T')[0]} className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                    <input required name="time" type="time" defaultValue="12:00" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                </div>
+                                <input required name="signer" type="text" placeholder="Signer Name" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <div className="grid grid-cols-2 gap-4">
+                                    <input required name="docType" type="text" placeholder="Document Type" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                    <input required name="idType" type="text" placeholder="ID Type (e.g. DL)" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                </div>
+                                <input name="fee" type="number" placeholder="Fee Charged ($)" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <div className="flex gap-2">
+                                    <button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 bg-gray-100 rounded-lg">Cancel</button>
+                                    <button type="submit" className="flex-1 py-2 bg-purple-600 text-white rounded-lg">Save Entry</button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+
+                    <div className="space-y-3">
+                        {entries.length === 0 ? <p className="text-center text-gray-400 py-10">No journal entries yet.</p> : entries.sort((a,b) => new Date(b.date) - new Date(a.date)).map(entry => (
+                            <div key={entry.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <h4 className="font-bold text-gray-800">{entry.signer}</h4>
+                                        <p className="text-xs text-gray-500 mt-1"><i className="far fa-file-alt mr-1"></i> {entry.docType}</p>
+                                    </div>
+                                    <span className="text-xs text-gray-400 font-mono">{entry.date}</span>
+                                </div>
+                                <div className="mt-3 pt-3 border-t border-gray-50 flex justify-between items-center text-xs text-gray-500">
+                                    <span>ID: {entry.idType}</span>
+                                    <span className="font-bold text-purple-600">${entry.fee}</span>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+        const Finances = () => {
+            const [activeTab, setActiveTab] = useState('expenses');
+            const [expenses, setExpenses] = useState([]);
+            const [mileage, setMileage] = useState([]);
+            const [showForm, setShowForm] = useState(false);
+
+             useEffect(() => { const load = async () => { setExpenses(await DataManager.get('notary_expenses')); setMileage(await DataManager.get('notary_mileage')); }; load(); }, []);
+
+            const handleSave = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                if (activeTab === 'expenses') {
+                    await DataManager.save('notary_expenses', { id: Date.now().toString(), date: formData.get('date'), category: formData.get('category'), desc: formData.get('desc'), amount: formData.get('amount') });
+                    setExpenses(await DataManager.get('notary_expenses'));
+                } else {
+                    await DataManager.save('notary_mileage', { id: Date.now().toString(), date: formData.get('date'), start: formData.get('start'), end: formData.get('end'), miles: formData.get('miles') });
+                    setMileage(await DataManager.get('notary_mileage'));
+                }
+                setShowForm(false);
+            };
+            
+            const handleExport = () => {
+                if (activeTab === 'expenses') PDFGenerator.createReport("Expense Report", ["Date", "Category", "Description", "Amount"], expenses.map(e => [e.date, e.category, e.desc, `-$${e.amount}`]), "expenses.pdf");
+                else PDFGenerator.createReport("Mileage Log", ["Date", "Start", "End", "Miles"], mileage.map(m => [m.date, m.start, m.end, `${m.miles} mi`]), "mileage.pdf");
+            };
+
+            return (
+                <div className="p-6 pb-24">
+                    <div className="bg-white p-1 rounded-xl flex mb-6 border border-gray-200 shadow-sm"><button onClick={() => setActiveTab('expenses')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'expenses' ? 'bg-emerald-50 text-emerald-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>Expenses</button><button onClick={() => setActiveTab('mileage')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'mileage' ? 'bg-blue-50 text-blue-700 shadow-sm' : 'text-gray-500 hover:bg-gray-50'}`}>Mileage</button></div>
+                    <div className="flex justify-between items-center mb-6"><div><p className="text-xs text-gray-500 uppercase font-bold">Total</p><p className="text-2xl font-bold text-gray-800">{activeTab === 'expenses' ? `$${expenses.reduce((s, i) => s + parseFloat(i.amount||0), 0).toFixed(2)}` : `${mileage.reduce((s, i) => s + parseFloat(i.miles||0), 0)} mi`}</p></div><div className="flex gap-2"><button onClick={handleExport} className="bg-white text-gray-500 border w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-file-export"></i></button><button onClick={() => setShowForm(true)} className="bg-gray-900 text-white w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-plus"></i></button></div></div>
+                    {showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6"><form onSubmit={handleSave} className="space-y-4"><input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" />{activeTab === 'expenses' ? <><select name="category" className="w-full p-3 bg-gray-50 border rounded-xl"><option>Supplies</option><option>Insurance</option><option>Training</option><option>Software</option><option>Travel</option></select><input required name="desc" type="text" placeholder="Description" className="w-full p-3 bg-gray-50 border rounded-xl" /><input required name="amount" type="number" step="0.01" placeholder="Amount" className="w-full p-3 bg-gray-50 border rounded-xl" /></> : <><input required name="start" type="text" placeholder="Start" className="w-full p-3 bg-gray-50 border rounded-xl" /><input required name="end" type="text" placeholder="End" className="w-full p-3 bg-gray-50 border rounded-xl" /><input required name="miles" type="number" step="0.1" placeholder="Miles" className="w-full p-3 bg-gray-50 border rounded-xl" /></>}<div className="flex gap-2"><button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 bg-gray-100 rounded-lg">Cancel</button><button type="submit" className="flex-1 py-2 bg-gray-900 text-white rounded-lg">Save</button></div></form></div>}
+                    <div className="space-y-3">{activeTab === 'expenses' ? expenses.map(e => <div key={e.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between"><div><p className="font-bold text-gray-800">{e.desc}</p><p className="text-xs text-gray-500">{e.date} &bull; {e.category}</p></div><span className="font-mono text-red-600">-${e.amount}</span></div>) : mileage.map(m => <div key={m.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><div className="flex justify-between"><span className="text-xs text-gray-500">{m.date}</span><span className="font-bold text-blue-600">{m.miles} mi</span></div><div className="text-sm text-gray-800">{m.start} <i className="fas fa-arrow-right text-xs"></i> {m.end}</div></div>)}</div>
+                </div>
+            );
+        };
+
+        const TrainerModule = ({ stateDB, courseMods, user, onUpgrade }) => {
+            const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
+            const [hasKey, setHasKey] = useState(!!apiKey);
+            const [selectedStateKey, setSelectedStateKey] = useState('OH');
+            const [messages, setMessages] = useState([]);
+            const [input, setInput] = useState('');
+            const [loading, setLoading] = useState(false);
+            const [mode, setMode] = useState('study'); 
+            const [currentModule, setCurrentModule] = useState(0); 
+            const [showCertModal, setShowCertModal] = useState(false);
+            const [certType, setCertType] = useState('ack');
+            const messagesEndRef = useRef(null);
+
+            useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]);
+
+            const handleModeSwitch = (newMode) => {
+                setMode(newMode);
+                let msg = "";
+                if (newMode === 'study') msg = "📚 **Study Mode Active.**\n\nAsk me any factual question about state laws, fees, or ID requirements. I'm here to help!";
+                if (newMode === 'course') msg = "🎓 **Course Mode Active.**\n\nI will guide you through the 10-module curriculum step-by-step. Click 'Start Module 1' below when ready.";
+                if (newMode === 'scenario') msg = "🎭 **Roleplay Mode Active.**\n\nI am now acting as your client. I might try to trick you with an illegal request. Type 'Hi' to start the simulation.";
+                setMessages(prev => [...prev, { role: 'assistant', content: msg }]);
+            };
+
+            const startTraining = () => {
+                if(apiKey.trim()) {
+                    localStorage.setItem('gemini_api_key', apiKey);
+                    setHasKey(true);
+                    const stateName = stateDB[selectedStateKey].state;
+                    setMessages([{ role: 'assistant', content: `**NotaryPro Mentor Online.**\n\nJurisdiction Locked: **${stateName}**.\n\nPlease select a mode above to begin your session.` }]);
+                }
+            };
+
+            const sendMessage = async (overrideInput = null) => {
+                const textToSend = overrideInput || input;
+                if (!textToSend) return;
+                
+                const newMessages = [...messages, { role: 'user', content: textToSend }];
+                setMessages(newMessages);
+                setInput('');
+                setLoading(true);
+
+                const stateData = stateDB[selectedStateKey];
+                
+                let courseContext = "";
+                if (mode === 'course' && currentModule > 0) {
+                    const mod = courseMods[currentModule-1];
+                    courseContext = `TEACHING MODULE ${mod.id}: ${mod.title}. TOPIC: ${mod.topic}. Explain concept using Markdown, then QUIZ user.`;
+                }
+
+                const SYSTEM_PROMPT = `
+                    ${PERSONA}
+                    STATE DATA (${stateData.state}): ${JSON.stringify(stateData)}
+                    ${courseContext}
+                    MODE: ${mode.toUpperCase()}
+                    RULES: Use Markdown. Bold key terms. In Scenario mode, guide user gently if they make a mistake. Keep concise.
+                `;
+
+                try {
+                    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: SYSTEM_PROMPT }] }, ...newMessages.map(m => ({ role: m.role === 'assistant' ? 'model' : 'user', parts: [{ text: m.content }] }))] })
+                    });
+                    const data = await response.json();
+                    const aiText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Error: No response.";
+                    setMessages([...newMessages, { role: 'assistant', content: aiText }]);
+                } catch (error) {
+                    setMessages([...newMessages, { role: 'assistant', content: "API Error: " + error.message }]);
+                } finally {
+                    setLoading(false);
+                }
+            };
+
+            // Cert Modal Logic
+            const getCertText = (type) => {
+                const stateData = stateDB[selectedStateKey];
+                const text = type === 'ack' ? stateData.certificates.acknowledgment_text : stateData.certificates.jurat_text;
+                if (!text || text === "null" || text === "Not specified") return "Specific certificate wording is not available in the current database for this state.";
+                return text;
+            };
+            
+            // --- GATEKEEPER ---
+            if (user.plan !== 'pro') {
+                return (
+                     <div className="h-full flex flex-col items-center justify-center p-8 text-center">
+                        <div className="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mb-6 text-indigo-500">
+                            <i className="fas fa-lock text-3xl"></i>
+                        </div>
+                        <h2 className="text-2xl font-bold text-gray-800 mb-2">AI Trainer Locked</h2>
+                        <p className="text-gray-500 max-w-sm mb-8">Upgrade to the Pro Plan to access the 50-State AI Mentor, Course Mode, and Unlimited Scenarios.</p>
+                        <button onClick={onUpgrade} className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all">
+                            Unlock for $19/mo
+                        </button>
+                    </div>
+                );
+            }
+
+            if (!hasKey) return (
+                <div className="h-full flex flex-col items-center justify-center p-6 text-center">
+                    <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100 max-w-md w-full">
+                        <i className="fas fa-robot text-5xl text-blue-600 mb-4"></i>
+                        <h2 className="text-xl font-bold mb-2">Activate AI Trainer</h2>
+                        <input type="password" value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="API Key" className="w-full p-3 border rounded-xl mb-4" />
+                        <button onClick={startTraining} className="w-full bg-blue-600 text-white p-3 rounded-xl font-bold">Start</button>
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="flex flex-col h-full bg-white relative pb-20 md:pb-0">
+                    <div className="border-b px-4 py-3 flex justify-between items-center bg-gray-50">
+                        <select value={selectedStateKey} onChange={e => { setSelectedStateKey(e.target.value); setMessages([]); }} className="bg-white border text-sm rounded-lg p-2 font-semibold text-gray-700">
+                            {Object.entries(stateDB).map(([k,v]) => <option key={k} value={k}>{v.state}</option>)}
+                        </select>
+                        <div className="flex gap-2">
+                            <button onClick={() => handleModeSwitch('study')} className={`px-3 py-1 rounded text-xs font-bold ${mode === 'study' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>Study</button>
+                            <button onClick={() => handleModeSwitch('course')} className={`px-3 py-1 rounded text-xs font-bold ${mode === 'course' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>Course</button>
+                            <button onClick={() => handleModeSwitch('scenario')} className={`px-3 py-1 rounded text-xs font-bold ${mode === 'scenario' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>Sim</button>
+                            <button onClick={() => setShowCertModal(true)} className="px-3 py-1 rounded text-xs font-bold bg-yellow-400 text-white ml-2"><i className="fas fa-file-contract"></i></button>
+                        </div>
+                    </div>
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4">
+                        {messages.map((m, i) => (
+                            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[85%] p-4 rounded-2xl text-sm ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-800'}`}>
+                                    <div className="prose prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(marked.parse(m.content)) }} />
+                                </div>
+                            </div>
+                        ))}
+                        {loading && <div className="typing-indicator ml-4"><span></span><span></span><span></span></div>}
+                        <div ref={messagesEndRef} />
+                    </div>
+                    
+                    {/* Disclaimer Footer in Chat Area */}
+                    <div className="px-4 pb-2 text-[10px] text-gray-400 text-center italic">
+                        AI may make mistakes. Always check your official state handbook.
+                    </div>
+
+                    <div className="p-4 border-t bg-white flex gap-2 pb-24 md:pb-4 safe-area-pb">
+                        {mode === 'course' && (
+                            <button onClick={() => { setCurrentModule(p => p+1); sendMessage(`Start Module ${currentModule+1}`); }} className="bg-green-600 text-white px-4 rounded-xl text-xs font-bold shadow-md hover:bg-green-700 transition-colors">Next</button>
+                        )}
+                        <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} placeholder="Message AI..." className="flex-1 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        <button onClick={() => sendMessage()} className="bg-blue-600 text-white w-12 rounded-xl shadow-md hover:bg-blue-700 transition-colors"><i className="fas fa-paper-plane"></i></button>
+                    </div>
+
+                    {/* CERT MODAL */}
+                    {showCertModal && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                            <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
+                                <div className="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
+                                    <h3 className="font-bold text-lg text-gray-800">Certificates: {stateDB[selectedStateKey].state}</h3>
+                                    <button onClick={() => setShowCertModal(false)} className="text-gray-500 hover:text-gray-800"><i className="fas fa-times text-xl"></i></button>
+                                </div>
+                                <div className="p-2 bg-white flex gap-2 border-b">
+                                    <button onClick={() => setCertType('ack')} className={`flex-1 py-2 px-3 rounded text-sm font-medium ${certType === 'ack' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}>Acknowledgment</button>
+                                    <button onClick={() => setCertType('jurat')} className={`flex-1 py-2 px-3 rounded text-sm font-medium ${certType === 'jurat' ? 'bg-blue-100 text-blue-700' : 'text-gray-600 hover:bg-gray-100'}`}>Jurat</button>
+                                </div>
+                                <div className="p-6 overflow-y-auto bg-gray-100 flex-1">
+                                    <div className="paper-doc p-8 text-sm sm:text-base leading-relaxed text-gray-800 relative">
+                                        <div className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none"><i className="fas fa-stamp text-9xl"></i></div>
+                                        <h4 className="font-bold text-center mb-6 uppercase underline tracking-wider">{certType === 'ack' ? 'Certificate of Acknowledgment' : 'Jurat / Verification on Oath'}</h4>
+                                        <div className="whitespace-pre-wrap">{getCertText(certType)}</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        const AdminPanel = ({ stateDB, onUpdateStateDB, courseMods, onUpdateCourseMods }) => {
+            const [activeTab, setActiveTab] = useState('states');
+            const [selectedState, setSelectedState] = useState(Object.keys(stateDB)[0]);
+            const [editStateData, setEditStateData] = useState(stateDB[selectedState]);
+            
+            useEffect(() => { setEditStateData(stateDB[selectedState]); }, [selectedState, stateDB]);
+
+            const handleStateSave = () => {
+                const updatedDB = { ...stateDB, [selectedState]: editStateData };
+                onUpdateStateDB(updatedDB);
+                alert(`Saved changes for ${editStateData.state}`);
+            };
+            
+            const handleCourseSave = (index, field, value) => {
+                const newMods = [...courseMods];
+                newMods[index][field] = value;
+                onUpdateCourseMods(newMods);
+            };
+
+            return (
+                <div className="p-6 pb-24">
+                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                        <h3 className="font-bold text-red-800 flex items-center gap-2"><i className="fas fa-shield-alt"></i> Admin Control Panel</h3>
+                        <p className="text-xs text-red-600">Changes made here update the AI Trainer immediately.</p>
+                     </div>
+                     <div className="bg-white p-1 rounded-xl flex mb-6 border border-gray-200 shadow-sm">
+                        <button onClick={() => setActiveTab('states')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'states' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500'}`}>State Laws</button>
+                        <button onClick={() => setActiveTab('courses')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'courses' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500'}`}>Curriculum</button>
+                     </div>
+                     {activeTab === 'states' ? (
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                             <div className="mb-4"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Select Jurisdiction</label><select value={selectedState} onChange={e => setSelectedState(e.target.value)} className="w-full p-2 border rounded-lg">{Object.keys(stateDB).map(key => <option key={key} value={key}>{stateDB[key].state}</option>)}</select></div>
+                             <div className="space-y-4">
+                                <div><label className="text-xs font-bold text-gray-500 block mb-1">Specialized Services (Loan/Apostille/Marriage)</label><textarea value={JSON.stringify(editStateData.specialized || {}, null, 2)} onChange={e => { try { const parsed = JSON.parse(e.target.value); setEditStateData({...editStateData, specialized: parsed}); } catch(e){} }} className="w-full p-2 border rounded text-sm h-32 font-mono" placeholder='{"loan_signing": "..."}'></textarea></div>
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div><label className="text-xs text-gray-400 block">Ack Fee</label><input type="text" value={editStateData.fees.acknowledgment} onChange={e => setEditStateData({...editStateData, fees: {...editStateData.fees, acknowledgment: e.target.value}})} className="w-full p-2 border rounded" /></div>
+                                    <div><label className="text-xs text-gray-400 block">Jurat Fee</label><input type="text" value={editStateData.fees.jurat} onChange={e => setEditStateData({...editStateData, fees: {...editStateData.fees, jurat: e.target.value}})} className="w-full p-2 border rounded" /></div>
+                                    <div><label className="text-xs text-gray-400 block">Oath Fee</label><input type="text" value={editStateData.fees.oath} onChange={e => setEditStateData({...editStateData, fees: {...editStateData.fees, oath: e.target.value}})} className="w-full p-2 border rounded" /></div>
+                                </div>
+                                <div><label className="text-xs font-bold text-gray-500 block mb-1">ID Rules</label><textarea value={editStateData.id_requirements.credible_witnesses} onChange={e => setEditStateData({...editStateData, id_requirements: {...editStateData.id_requirements, credible_witnesses: e.target.value}})} className="w-full p-2 border rounded text-sm h-20" placeholder="Credible witness rules..."></textarea></div>
+                                <div><label className="text-xs font-bold text-red-500 block mb-1">Red Flags</label><textarea value={editStateData.red_flags.join(', ')} onChange={e => setEditStateData({...editStateData, red_flags: e.target.value.split(', ')})} className="w-full p-2 border rounded text-sm h-20 border-red-100 bg-red-50"></textarea></div>
+                                <button onClick={handleStateSave} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700">Save Changes</button>
+                             </div>
+                        </div>
+                     ) : (
+                         <div className="space-y-4">
+                            {courseMods.map((mod, idx) => (
+                                <div key={mod.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                    <div className="flex justify-between mb-2"><span className="text-xs font-bold text-gray-400">Module {mod.id}</span></div>
+                                    <input type="text" value={mod.title} onChange={e => handleCourseSave(idx, 'title', e.target.value)} className="w-full p-2 border rounded mb-2 font-bold" />
+                                    <textarea value={mod.topic} onChange={e => handleCourseSave(idx, 'topic', e.target.value)} className="w-full p-2 border rounded text-sm h-20"></textarea>
+                                </div>
+                            ))}
+                            <div className="text-center text-xs text-gray-400">Changes save automatically</div>
+                         </div>
+                     )}
+                </div>
+            );
+        };
+
         const App = () => {
             const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('notary_user_profile') || 'null'));
-            const [currentView, setCurrentView] = useState('landing');
+            const [currentView, setCurrentView] = useState(() => {
+                const savedUser = localStorage.getItem('notary_user_profile');
+                return savedUser ? 'dashboard' : 'landing';
+            });
             const [appointments, setAppointments] = useState([]);
+            const [editingAppt, setEditingAppt] = useState(null);
             const [credentials, setCredentials] = useState([]);
             const [showMobileMenu, setShowMobileMenu] = useState(false);
             const [isCloudConnected, setIsCloudConnected] = useState(false);
             const [showPricing, setShowPricing] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
-            const [showOnboarding, setShowOnboarding] = useState(false);
-            const [showAIModal, setShowAIModal] = useState(false); // Feature 5 State
+            
+            // ADMIN STATE
+            const [stateDB, setStateDB] = useState(() => JSON.parse(localStorage.getItem('notary_state_db')) || STATE_DATABASE);
+            const [courseMods, setCourseMods] = useState(() => JSON.parse(localStorage.getItem('notary_course_mods')) || COURSE_MODULES);
 
-            useEffect(() => {
+            const handleUpdateStateDB = (newDB) => { setStateDB(newDB); localStorage.setItem('notary_state_db', JSON.stringify(newDB)); };
+            const handleUpdateCourseMods = (newMods) => { setCourseMods(newMods); localStorage.setItem('notary_course_mods', JSON.stringify(newMods)); };
+
+             useEffect(() => {
                 const init = async () => {
                      if (typeof firebase !== 'undefined' && firebase.auth) {
                          firebase.auth().onAuthStateChanged(async (u) => {
                              if (u) {
+                                 // Basic Cloud Sync Simulation for Plan Status
                                  const localProfile = JSON.parse(localStorage.getItem('notary_user_profile') || '{}');
-                                 setUser({ id: u.uid, name: u.displayName || u.email.split('@')[0], email: u.email, plan: localProfile.plan || 'free', businessName: localProfile.businessName, phone: localProfile.phone, commissionNumber: localProfile.commissionNumber });
+                                 
+                                 setUser({ 
+                                     id: u.uid, 
+                                     name: localProfile.name || u.displayName || u.email.split('@')[0], 
+                                     email: u.email,
+                                     plan: localProfile.plan || 'free', // Persist plan across reloads
+                                     businessName: localProfile.businessName,
+                                     address: localProfile.address,
+                                     phone: localProfile.phone,
+                                     commissionNumber: localProfile.commissionNumber,
+                                     targetDate: localProfile.targetDate
+                                 });
                                  setIsCloudConnected(true);
                                  setAppointments(await DataManager.get('notary_appointments'));
                                  setCredentials(await DataManager.get('notary_credentials'));
-                                 if (!localStorage.getItem('notary_onboarded')) setShowOnboarding(true);
-                                 if (currentView === 'landing' || currentView === 'auth') setCurrentView('dashboard');
-                             } else { setUser(null); setIsCloudConnected(false); }
+                                 // We don't auto-redirect here to avoid overriding 'landing' state if user manually logged out but firebase session persisted
+                                 // However, for UX, if user is found, usually we go to dashboard.
+                                 // Let's rely on the initial useState for currentView to handle refresh persistence
+                             } else {
+                                 setUser(null);
+                                 setIsCloudConnected(false);
+                             }
                          });
-                     } else { setAppointments(await DataManager.get('notary_appointments')); setCredentials(await DataManager.get('notary_credentials')); }
+                     } else {
+                         setAppointments(await DataManager.get('notary_appointments'));
+                         setCredentials(await DataManager.get('notary_credentials'));
+                     }
                 };
                 init();
             }, []);
+            
+            // Payment Success Handler
+            useEffect(() => {
+                const queryParams = new URLSearchParams(window.location.search);
+                if (queryParams.get('payment') === 'success') {
+                    // Update user to PRO
+                    const upgradedUser = { ...user, plan: 'pro' };
+                    localStorage.setItem('notary_user_profile', JSON.stringify(upgradedUser));
+                    setUser(upgradedUser);
+                    alert("🎉 Payment Successful! You are now a Pro member.");
+                    // Clean URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
+                }
+            }, [user]);
 
-            // ... (Handlers: Logout, Upgrade, Save, etc. same as before) ...
-            const handleLogout = async () => { if (typeof firebase !== 'undefined') await firebase.auth().signOut(); localStorage.removeItem('notary_user_profile'); setUser(null); setCurrentView('landing'); };
-            const handleUpgrade = () => { const upgraded = { ...user, plan: 'pro' }; setUser(upgraded); localStorage.setItem('notary_user_profile', JSON.stringify(upgraded)); setShowPricing(false); alert("Upgrade Successful!"); };
-            const handleUpdateProfile = (data) => { const newUser = { ...user, ...data }; setUser(newUser); localStorage.setItem('notary_user_profile', JSON.stringify(newUser)); };
-            const handleSaveAppt = async (a) => { await DataManager.save('notary_appointments', a); setAppointments(await DataManager.get('notary_appointments')); setCurrentView('schedule'); };
-            const handleRefresh = async () => { setAppointments(await DataManager.get('notary_appointments')); setCredentials(await DataManager.get('notary_credentials')); };
+            const handleLogout = async () => {
+                if (typeof firebase !== 'undefined' && firebase.auth) await firebase.auth().signOut();
+                localStorage.removeItem('notary_user_profile');
+                setUser(null);
+                setCurrentView('landing');
+            };
+
+            const handleUpgrade = () => {
+                // REAL STRIPE REDIRECT LOGIC
+                if (STRIPE_PAYMENT_LINK) {
+                    window.location.href = STRIPE_PAYMENT_LINK;
+                } else {
+                    // Fallback Simulation for Testing
+                    const upgradedUser = { ...user, plan: 'pro' };
+                    setUser(upgradedUser);
+                    localStorage.setItem('notary_user_profile', JSON.stringify(upgradedUser));
+                    setShowPricing(false);
+                    alert("🎉 (Simulation) Success! Welcome to NotaryOS Pro.");
+                }
+            };
+            
+            const handleUpdateProfile = (updatedData) => {
+                const newUser = { ...user, ...updatedData };
+                setUser(newUser);
+                localStorage.setItem('notary_user_profile', JSON.stringify(newUser));
+            };
+
+            const handleSaveAppt = async (appt) => {
+                const result = await DataManager.save('notary_appointments', appt);
+                if (result.success) setAppointments(result.data);
+                else setAppointments(result.data);
+                setCurrentView('schedule');
+                setEditingAppt(null);
+            };
+            
+            const handleRefresh = async () => {
+                 setAppointments(await DataManager.get('notary_appointments'));
+                 setCredentials(await DataManager.get('notary_credentials')); 
+            };
 
             const renderView = () => {
                 switch(currentView) {
                     case 'landing': return <LandingPage onNavigate={() => setCurrentView('auth')} />;
-                    case 'auth': return <AuthScreen onAuth={(p) => { localStorage.setItem('notary_user_profile', JSON.stringify(p)); setUser(p); setCurrentView('dashboard'); localStorage.setItem('notary_onboarded', 'true'); }} onBack={() => setCurrentView('landing')} />;
+                    case 'auth': return <AuthScreen onAuth={(profile) => { localStorage.setItem('notary_user_profile', JSON.stringify(profile)); setUser(profile); setCurrentView('dashboard'); }} onBack={() => setCurrentView('landing')} />;
                     case 'dashboard': return <Dashboard appointments={appointments} credentials={credentials} setView={setCurrentView} isCloud={isCloudConnected} />;
-                    case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onEdit={(a) => { /* handle edit */ setCurrentView('addAppointment'); }} user={user} onUpgrade={() => setShowPricing(true)} />;
-                    case 'addAppointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => setCurrentView('schedule')} />;
+                    case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onEdit={(a) => { setEditingAppt(a); setCurrentView('addAppointment'); }} user={user} onUpgrade={() => setShowPricing(true)} />;
+                    case 'addAppointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => setCurrentView('schedule')} initialData={editingAppt} />;
                     case 'journal': return <Journal onUpdate={handleRefresh} user={user} onUpgrade={() => setShowPricing(true)} />;
                     case 'finances': return <Finances />;
                     case 'credentials': return <Credentials onUpdate={handleRefresh} />;
-                    case 'trainer': return <TrainerModule stateDB={STATE_DATABASE} courseMods={COURSE_MODULES} user={user} onUpgrade={() => setShowPricing(true)} />;
+                    case 'clients': return <Clients />;
+                    case 'trainer': return <TrainerModule stateDB={stateDB} courseMods={courseMods} user={user} onUpgrade={() => setShowPricing(true)} />;
+                    case 'admin': return <AdminPanel stateDB={stateDB} onUpdateStateDB={handleUpdateStateDB} courseMods={courseMods} onUpdateCourseMods={handleUpdateCourseMods} />;
                     default: return <div className="p-10 text-center text-gray-400">Module Coming Soon</div>;
                 }
             };
 
-            if (!user && currentView !== 'landing' && currentView !== 'auth') { setCurrentView('landing'); return null; }
-            if (currentView === 'landing' || currentView === 'auth') return renderView();
+            // If not logged in and not on landing/auth, force landing
+            if (!user && currentView !== 'landing' && currentView !== 'auth') {
+                setCurrentView('landing');
+                return null;
+            }
+            
+            if (currentView === 'landing' || currentView === 'auth') {
+                return renderView();
+            }
 
             return (
                 <div className="flex h-screen overflow-hidden">
-                    {/* Feature 5: Floating AI Button */}
-                    <button onClick={() => setShowAIModal(true)} className="fab-ai bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:bg-indigo-700 transition-transform transform hover:scale-110"><i className="fas fa-robot text-2xl"></i></button>
-                    {showAIModal && <AIHelperModal onClose={() => setShowAIModal(false)} />}
-
                     {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={handleUpgrade} />}
                     {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} onSave={handleUpdateProfile} />}
-                    {showOnboarding && <OnboardingTour onComplete={() => { localStorage.setItem('notary_onboarded', 'true'); setShowOnboarding(false); }} />}
                     
-                    <Sidebar currentView={currentView} setView={setCurrentView} isOpen={showMobileMenu} onClose={() => setShowMobileMenu(false)} onLogout={handleLogout} userName={user.name} userPlan={user.plan} onUpgrade={() => setShowPricing(true)} onSettings={() => setShowSettings(true)} />
+                    <Sidebar 
+                        currentView={currentView} 
+                        setView={setCurrentView} 
+                        isOpen={showMobileMenu} 
+                        onClose={() => setShowMobileMenu(false)} 
+                        onLogout={handleLogout} 
+                        userName={user.name} 
+                        userPlan={user.plan} 
+                        onUpgrade={() => setShowPricing(true)} 
+                        onSettings={() => setShowSettings(true)}
+                    />
                     <main className="flex-1 flex flex-col h-screen md:ml-64 relative bg-gray-50">
-                        <Header title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} isCloud={isCloudConnected} />
+                        <Header title={currentView === 'trainer' ? 'AI Training Center' : currentView.charAt(0).toUpperCase() + currentView.slice(1)} isCloud={isCloudConnected} />
                         <div className="flex-1 overflow-y-auto relative">{renderView()}</div>
                         <MobileNav currentView={currentView} setView={setCurrentView} onOpenMenu={() => setShowMobileMenu(true)} />
                     </main>
