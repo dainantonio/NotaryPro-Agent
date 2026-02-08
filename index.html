@@ -42,7 +42,7 @@
 
         // Initialize
         try {
-            if (!firebase.apps.length) {
+            if (typeof firebase !== 'undefined' && !firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
                 console.log("Firebase Connected");
             }
@@ -102,11 +102,12 @@
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
-        const { jsPDF } = window.jspdf;
 
-        // --- HYBRID DATA MANAGER ---
+        // --- HYBRID DATA MANAGER (Cloud + Local Fallback) ---
         const DataManager = {
-            isCloud: () => firebase.auth().currentUser !== null,
+            isCloud: () => typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser !== null,
+            
+            // Generic Fetch
             get: async (collectionName) => {
                 if (DataManager.isCloud()) {
                     try {
@@ -115,29 +116,37 @@
                         if (snapshot.empty) return DataManager.getLocal(collectionName);
                         return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     } catch (e) {
+                        console.warn("Cloud fetch error:", e);
                         return DataManager.getLocal(collectionName);
                     }
                 } else {
                     return DataManager.getLocal(collectionName);
                 }
             },
+            
+            // Generic Save
             save: async (collectionName, item) => {
+                // Optimistically save locally first for speed
                 const localData = DataManager.saveLocal(collectionName, item);
+                
                 if (DataManager.isCloud()) {
                     try {
                         const uid = firebase.auth().currentUser.uid;
                         const itemWithUser = { ...item, userId: uid };
                         const docId = item.id || Date.now().toString();
                         await firebase.firestore().collection(collectionName).doc(docId).set(itemWithUser);
+                        
+                        // Cloud successful - refresh data from cloud to be sure
                         const snapshot = await firebase.firestore().collection(collectionName).where("userId", "==", uid).get();
                         return { success: true, data: snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })) };
                     } catch (e) {
-                        console.warn("Cloud save failed.", e);
+                        console.warn("Cloud save failed. Fallback active.", e);
                         return { success: false, data: localData };
                     }
                 }
                 return { success: false, data: localData };
             },
+
             saveLocal: (key, item) => {
                 const list = JSON.parse(localStorage.getItem(key) || '[]');
                 const index = list.findIndex(i => i.id === item.id);
@@ -146,14 +155,21 @@
                 localStorage.setItem(key, JSON.stringify(list));
                 return list;
             },
+            
             getLocal: (key) => JSON.parse(localStorage.getItem(key) || '[]'),
-             delete: async (collectionName, id) => {
+            
+            delete: async (collectionName, id) => {
                 const localData = DataManager.deleteLocal(collectionName, id);
                 if (DataManager.isCloud()) {
-                     try { await firebase.firestore().collection(collectionName).doc(id).delete(); } catch(e) {}
+                     try {
+                        await firebase.firestore().collection(collectionName).doc(id).delete();
+                     } catch(e) {
+                         console.error("Delete error", e);
+                     }
                 }
                 return localData;
             },
+            
             deleteLocal: (key, id) => {
                 const list = JSON.parse(localStorage.getItem(key) || '[]');
                 const newList = list.filter(i => i.id !== id);
@@ -165,93 +181,56 @@
         // --- PDF GENERATORS ---
         const PDFGenerator = {
             createInvoice: (appt, user) => {
+                if (!window.jspdf) { alert("PDF Library not loaded yet."); return; }
+                const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
-                const primaryColor = [37, 99, 235]; // Blue
-
-                // Header
-                doc.setFontSize(22);
-                doc.setTextColor(...primaryColor);
-                doc.text("INVOICE", 160, 20);
-                
-                doc.setFontSize(10);
-                doc.setTextColor(100);
-                doc.text(`Invoice ID: ${appt.id.substring(0,8)}`, 160, 26);
-                doc.text(`Date: ${new Date().toLocaleDateString()}`, 160, 31);
-
-                // From (Notary)
-                doc.setFontSize(12);
-                doc.setTextColor(0);
-                doc.text("FROM:", 20, 20);
-                doc.setFontSize(10);
-                doc.text(user.name || "Notary Public", 20, 26);
-                doc.text(user.email || "", 20, 31);
-
-                // To (Client)
-                doc.text("BILL TO:", 20, 45);
-                doc.setFontSize(14);
-                doc.text(appt.clientName, 20, 52);
-                doc.setFontSize(10);
-                doc.text(appt.location, 20, 58);
-
-                // Table
-                doc.autoTable({
-                    startY: 70,
-                    head: [['Description', 'Date', 'Amount']],
-                    body: [
-                        [appt.type || 'Notary Service', appt.date, `$${appt.fee}`]
-                    ],
-                    theme: 'grid',
-                    headStyles: { fillColor: primaryColor }
-                });
-
-                // Total
+                const primaryColor = [37, 99, 235];
+                doc.setFontSize(22); doc.setTextColor(...primaryColor); doc.text("INVOICE", 160, 20);
+                doc.setFontSize(10); doc.setTextColor(100); doc.text(`ID: ${appt.id.substring(0,8)}`, 160, 26); doc.text(`Date: ${new Date().toLocaleDateString()}`, 160, 31);
+                doc.setFontSize(12); doc.setTextColor(0); doc.text("FROM:", 20, 20);
+                doc.setFontSize(10); doc.text(user.name || "Notary Public", 20, 26); doc.text(user.email || "", 20, 31);
+                doc.text("BILL TO:", 20, 45); doc.setFontSize(14); doc.text(appt.clientName, 20, 52); doc.setFontSize(10); doc.text(appt.location, 20, 58);
+                doc.autoTable({ startY: 70, head: [['Description', 'Date', 'Amount']], body: [[appt.type || 'Notary Service', appt.date, `$${appt.fee}`]], theme: 'grid', headStyles: { fillColor: primaryColor } });
                 const finalY = doc.lastAutoTable.finalY + 10;
-                doc.setFontSize(12);
-                doc.text(`Total Due: $${appt.fee}`, 160, finalY, { align: 'right' });
-                
-                doc.setFontSize(10);
-                doc.setTextColor(150);
-                doc.text("Thank you for your business.", 20, finalY + 20);
-
-                doc.save(`invoice_${appt.clientName}_${appt.date}.pdf`);
+                doc.setFontSize(12); doc.text(`Total Due: $${appt.fee}`, 160, finalY, { align: 'right' });
+                doc.save(`invoice_${appt.clientName}.pdf`);
             },
             createReport: (title, columns, data, filename) => {
+                if (!window.jspdf) { alert("PDF Library not loaded yet."); return; }
+                const { jsPDF } = window.jspdf;
                 const doc = new jsPDF();
-                doc.setFontSize(18);
-                doc.text(title, 14, 22);
-                doc.setFontSize(10);
-                doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
-                
-                doc.autoTable({
-                    startY: 35,
-                    head: [columns],
-                    body: data,
-                    theme: 'striped'
-                });
+                doc.setFontSize(18); doc.text(title, 14, 22);
+                doc.setFontSize(10); doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 28);
+                doc.autoTable({ startY: 35, head: [columns], body: data, theme: 'striped' });
                 doc.save(filename);
             }
         };
 
-        // --- KNOWLEDGE BASE (Abridged) ---
+        // --- KNOWLEDGE BASE ---
         const STATE_DATABASE = {
              "CA": { "state": "California", "fees": { "acknowledgment": "$15 per sig", "jurat": "$15", "oath": "$15", "travel": "null" }, "id_requirements": { "credible_witnesses": "One witness (personally known) OR Two witnesses (proven with IDs).", "expired_id_rule": "Allowed if current or issued within 5 years." }, "biometrics": { "journal_thumbprint": "REQUIRED for deeds, quitclaim deeds, deeds of trust, powers of attorney." }, "certificates": { "acknowledgment_text": "A notary public or other officer completing this certificate verifies only the identity of the individual...", "jurat_text": "Subscribed and sworn to (or affirmed) before me on this ____ day of _________, 20___..." }, "red_flags": [ "Cannot use title 'notario publico'", "Cannot use seal for non-notarial purposes" ] },
-             "TX": { "state": "Texas", "fees": { "acknowledgment": "$6 + $1", "jurat": "$6", "oath": "$6", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 credible witness", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Texas...", "jurat_text": "State of Texas..." }, "red_flags": ["Check state handbook"] },
-             "FL": { "state": "Florida", "fees": { "acknowledgment": "$10", "jurat": "$10", "oath": "$10", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 known OR 2 with ID", "expired_id_rule": "Issued within 5 years" }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "STATE OF FLORIDA...", "jurat_text": "STATE OF FLORIDA..." }, "red_flags": [ "Cannot notarize own signature." ] },
-             "OH": { "state": "Ohio", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00", "travel": "Reasonable fee" }, "id_requirements": { "credible_witnesses": "Proof of identity by third person known to notary", "expired_id_rule": "Not specified" }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of Ohio...", "jurat_text": "State of Ohio..." }, "red_flags": [ "Never prepare instruments" ] },
-             "NY": { "state": "New York", "fees": { "acknowledgment": "$2.00", "jurat": "$2.00", "oath": "$2.00" }, "id_requirements": { "credible_witnesses": "Not specified", "expired_id_rule": "Not specified" }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of New York...", "jurat_text": "Sworn to before me..." }, "red_flags": [ "Name must match signature exactly" ] }
+             "TX": { "state": "Texas", "fees": { "acknowledgment": "$6 (first signature) + $1 (each additional)", "jurat": "$6", "oath": "$6", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 credible witness (personally known to notary)", "expired_id_rule": "Must be current" }, "biometrics": { "journal_thumbprint": "Not specified" }, "certificates": { "acknowledgment_text": "State of Texas\nCounty of ______\n\nThis instrument was acknowledged before me...", "jurat_text": "State of Texas\nCounty of ______\n\nSworn to and subscribed before me..." }, "red_flags": ["Check state handbook for specific prohibited acts"] },
+             "FL": { "state": "Florida", "fees": { "acknowledgment": "Maximum $10 per notarial act", "jurat": "Maximum $10", "oath": "Maximum $10", "travel": "null" }, "id_requirements": { "credible_witnesses": "1 witness (personally known) OR 2 witnesses (proven by ID).", "expired_id_rule": "Acceptable if issued within past 5 years." }, "biometrics": { "journal_thumbprint": "null" }, "certificates": { "acknowledgment_text": "STATE OF FLORIDA\nCOUNTY OF ______...", "jurat_text": "STATE OF FLORIDA\nCOUNTY OF ______..." }, "red_flags": [ "Cannot notarize own signature.", "Physical presence required unless RON." ] },
+             "OH": { "state": "Ohio", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00", "travel": "Reasonable fee" }, "id_requirements": { "credible_witnesses": "Proof of identity by third person known to notary", "expired_id_rule": "Not specified" }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of Ohio\nCounty of ______...", "jurat_text": "State of Ohio\nCounty of ______..." }, "red_flags": [ "Never prepare instruments or give advice", "Cannot notarize if you have an interest" ] },
+             "NY": { "state": "New York", "fees": { "acknowledgment": "$2.00", "jurat": "$2.00", "oath": "$2.00" }, "id_requirements": { "credible_witnesses": "Not specified", "expired_id_rule": "Not specified" }, "biometrics": { "journal_thumbprint": "Not required" }, "certificates": { "acknowledgment_text": "State of New York\nCounty of ______...", "jurat_text": "Sworn to before me on this ___ day of ___..." }, "red_flags": [ "Name must match signature exactly", "No initials if commissioned name is full" ] }
         };
 
         const COURSE_MODULES = [
-            { id: 1, title: "Authority", topic: "Commissioning authority." },
-            { id: 2, title: "5 Steps", topic: "Personal Appearance, ID." },
-            { id: 3, title: "Acts", topic: "Acknowledgments vs. Jurats." },
-            { id: 4, title: "ID", topic: "Satisfactory Evidence." },
-            { id: 5, title: "Rules", topic: "Max fees and journals." },
-            { id: 6, title: "Special", topic: "RON and Mark." },
-            { id: 7, title: "Misconduct", topic: "Prohibited acts." }
+            { id: 1, title: "Authority & Qualifications", topic: "Commissioning authority, term length, and jurisdiction." },
+            { id: 2, title: "The Core 5 Steps", topic: "Personal Appearance, ID, Willingness, Awareness, Certificates." },
+            { id: 3, title: "Notarial Acts", topic: "Acknowledgments vs. Jurats vs. Oaths." },
+            { id: 4, title: "Identification Standards", topic: "Satisfactory Evidence, Credible Witnesses." },
+            { id: 5, title: "Rules, Fees, & Journals", topic: "Maximum fees, Journal requirements, Seal rules." },
+            { id: 6, title: "Special Circumstances", topic: "RON, Signature by Mark/Proxy, Foreign language." },
+            { id: 7, title: "Misconduct & Liability", topic: "Prohibited acts (UPL), Penalties, Liability." }
         ];
 
-        const PERSONA = `ROLE: SUPPORTIVE NOTARY MENTOR. TONE: Encouraging, professional.`;
+        const PERSONA = `
+            ROLE: SUPPORTIVE NOTARY MENTOR.
+            TONE: Encouraging, professional, clear.
+            APPROACH: Guide the user. Explain the "Why" behind laws.
+            RULES: Teach One Topic -> Quiz -> Feedback.
+        `;
 
         // --- COMPONENTS ---
 
@@ -260,16 +239,19 @@
                 <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden auth-fade-in">
                         <div className="p-6 border-b border-gray-100 bg-gray-50">
-                            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2"><i className="fas fa-balance-scale text-blue-600"></i> Terms of Service</h2>
+                            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                                <i className="fas fa-balance-scale text-blue-600"></i> Terms of Service
+                            </h2>
                         </div>
                         <div className="p-6 text-sm text-gray-600 space-y-4 max-h-[60vh] overflow-y-auto">
                             <p className="font-bold text-gray-800">Please review and accept to continue.</p>
-                            <p><strong>1. Not Legal Advice:</strong> NotaryOS is an educational tool. The AI may produce inaccuracies.</p>
-                            <p><strong>2. User Responsibility:</strong> You are responsible for verifying all laws with your state's official handbook.</p>
-                            <p><strong>3. Data Privacy:</strong> In this Beta version, your business data is stored locally unless Cloud Sync is enabled.</p>
+                            <p><strong>1. Not Legal Advice:</strong> NotaryOS is an educational and management tool. The AI Trainer provides information based on general data and may produce inaccuracies. This tool does not constitute legal advice.</p>
+                            <p><strong>2. User Responsibility:</strong> You are responsible for verifying all laws with your state's official Notary Handbook. NotaryOS is not liable for any notarial errors, fines, or legal actions resulting from the use of this software.</p>
+                            <p><strong>3. Data Privacy:</strong> In this Beta version, your business data is stored locally on your device unless Cloud Sync is enabled.</p>
+                            <p><strong>4. AI Limitations:</strong> The AI features utilize Google Gemini. AI responses should always be fact-checked against official statutes.</p>
                         </div>
                         <div className="p-6 border-t border-gray-100 bg-gray-50">
-                            <button onClick={onAccept} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg">I Understand & Agree</button>
+                            <button onClick={onAccept} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg transform active:scale-95">I Understand & Agree</button>
                         </div>
                     </div>
                 </div>
@@ -291,7 +273,7 @@
             const completeAuth = async () => {
                 try {
                     let user;
-                    if (firebase.auth()) {
+                    if (typeof firebase !== 'undefined' && firebase.auth) {
                         if (isLogin) {
                             const cred = await firebase.auth().signInWithEmailAndPassword(formData.email, formData.password);
                             user = cred.user;
@@ -303,7 +285,9 @@
                     onAuth({ id: user ? user.uid : Date.now().toString(), name: isLogin ? (formData.email.split('@')[0] || "User") : formData.name, email: formData.email });
                 } catch (err) {
                     setShowTerms(false);
-                    setError(err.message);
+                    let msg = err.message;
+                    if(err.code === 'auth/configuration-not-found') msg = "Email login not enabled in Firebase Console.";
+                    setError(msg);
                 }
             };
             
@@ -326,8 +310,8 @@
                             {error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-xs">{error}</div>}
                             <form onSubmit={handleAuth} className="space-y-4">
                                 {!isLogin && <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Full Name</label><input required type="text" className="w-full p-3 bg-gray-50 border rounded-lg" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} placeholder="Jane Doe" /></div>}
-                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label><input required type="email" className="w-full p-3 bg-gray-50 border rounded-lg" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} /></div>
-                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Password</label><input required type="password" className="w-full p-3 bg-gray-50 border rounded-lg" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} /></div>
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Email</label><input required type="email" className="w-full p-3 bg-gray-50 border rounded-lg" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} placeholder="notary@example.com" /></div>
+                                <div><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Password</label><input required type="password" className="w-full p-3 bg-gray-50 border rounded-lg" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} placeholder="••••••••" /></div>
                                 <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-md">{isLogin ? 'Sign In' : 'Start Free Trial'}</button>
                                 <button type="button" onClick={handleGoogleAuth} className="w-full bg-white border border-gray-300 text-gray-700 font-bold py-3 rounded-lg flex items-center justify-center gap-2"><i className="fab fa-google text-red-500"></i> Continue with Google</button>
                             </form>
@@ -346,15 +330,16 @@
                 { id: 'finances', icon: 'fa-wallet', label: 'Finances', color: 'text-emerald-400' },
                 { id: 'credentials', icon: 'fa-id-card', label: 'Credentials', color: 'text-orange-400' },
                 { id: 'trainer', icon: 'fa-robot', label: 'AI Trainer', color: 'text-indigo-400' },
+                { id: 'admin', icon: 'fa-shield-alt', label: 'Admin', color: 'text-red-500' }
             ];
 
             return (
                 <>
-                    <div className={`fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden ${isOpen ? 'block' : 'hidden'}`} onClick={onClose}></div>
-                    <div className={`fixed inset-y-0 left-0 bg-slate-900 text-white z-50 transform transition-transform duration-300 ease-in-out lg:static lg:flex lg:flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-64`}>
+                    <div className={`fixed inset-0 bg-black bg-opacity-50 z-40 transition-opacity duration-300 lg:hidden ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
+                    <div className={`fixed inset-y-0 left-0 bg-slate-900 text-white z-50 transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:flex lg:flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'} w-64`}>
                         <div className="p-6 border-b border-slate-700 flex items-center justify-between">
                             <div className="flex items-center gap-3"><div className="bg-blue-600 p-2 rounded-lg"><i className="fas fa-stamp"></i></div><h1 className="font-bold text-xl">NotaryOS</h1></div>
-                            <button onClick={onClose} className="lg:hidden text-slate-400"><i className="fas fa-times text-xl"></i></button>
+                            <button onClick={onClose} className="lg:hidden text-slate-400 hover:text-white"><i className="fas fa-times text-xl"></i></button>
                         </div>
                         <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
                             {menuItems.map(item => (
@@ -374,17 +359,17 @@
 
         const MobileNav = ({ currentView, setView, onOpenMenu }) => {
             const menuItems = [
-                { id: 'dashboard', icon: 'fa-chart-pie', label: 'Home' },
-                { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule' },
+                { id: 'dashboard', icon: 'fa-chart-pie', label: 'Home', color: 'text-blue-500' },
+                { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule', color: 'text-green-500' },
                 { id: 'add', icon: 'fa-plus-circle', label: 'Add', special: true },
-                { id: 'trainer', icon: 'fa-robot', label: 'Trainer' },
+                { id: 'trainer', icon: 'fa-robot', label: 'Trainer', color: 'text-indigo-500' },
                 { id: 'menu', icon: 'fa-bars', label: 'Menu', action: onOpenMenu },
             ];
             return (
                 <div className="md:hidden fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 flex justify-around items-center px-2 py-2 z-30 shadow-lg safe-area-pb">
                     {menuItems.map(item => (
                         <button key={item.id} onClick={() => item.special ? setView('add_appointment') : (item.action ? item.action() : setView(item.id))} className={`flex flex-col items-center justify-center w-full py-1 ${item.special ? '-mt-6' : ''}`}>
-                            {item.special ? <div className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg"><i className={`fas ${item.icon} text-2xl`}></i></div> : <><i className={`fas ${item.icon} text-lg mb-1 ${currentView === item.id ? 'text-blue-600' : 'text-gray-400'}`}></i><span className={`text-[10px] font-medium ${currentView === item.id ? 'text-blue-600' : 'text-gray-400'}`}>{item.label}</span></>}
+                            {item.special ? <div className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shadow-lg"><i className={`fas ${item.icon} text-2xl`}></i></div> : <><i className={`fas ${item.icon} text-lg mb-1 ${currentView === item.id ? 'text-blue-600' : 'text-gray-400'} ${item.color}`}></i><span className={`text-[10px] font-medium ${currentView === item.id ? 'text-blue-600' : 'text-gray-400'}`}>{item.label}</span></>}
                         </button>
                     ))}
                 </div>
@@ -403,7 +388,66 @@
 
         // --- MODULES ---
 
-        const Dashboard = ({ appointments, credentials, setView }) => {
+        const AdminPanel = ({ stateDB, onUpdateStateDB, courseMods, onUpdateCourseMods }) => {
+            const [activeTab, setActiveTab] = useState('states');
+            const [selectedState, setSelectedState] = useState(Object.keys(stateDB)[0]);
+            const [editStateData, setEditStateData] = useState(stateDB[selectedState]);
+            
+            useEffect(() => { setEditStateData(stateDB[selectedState]); }, [selectedState, stateDB]);
+
+            const handleStateSave = () => {
+                const updatedDB = { ...stateDB, [selectedState]: editStateData };
+                onUpdateStateDB(updatedDB);
+                alert(`Saved changes for ${editStateData.state}`);
+            };
+            
+            const handleCourseSave = (index, field, value) => {
+                const newMods = [...courseMods];
+                newMods[index][field] = value;
+                onUpdateCourseMods(newMods);
+            };
+
+            return (
+                <div className="p-6 pb-24">
+                     <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                        <h3 className="font-bold text-red-800 flex items-center gap-2"><i className="fas fa-shield-alt"></i> Admin Control Panel</h3>
+                        <p className="text-xs text-red-600">Changes made here update the AI Trainer immediately.</p>
+                     </div>
+                     <div className="bg-white p-1 rounded-xl flex mb-6 border border-gray-200 shadow-sm">
+                        <button onClick={() => setActiveTab('states')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'states' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500'}`}>State Laws</button>
+                        <button onClick={() => setActiveTab('courses')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'courses' ? 'bg-indigo-100 text-indigo-700' : 'text-gray-500'}`}>Curriculum</button>
+                     </div>
+                     {activeTab === 'states' ? (
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                             <div className="mb-4"><label className="block text-xs font-bold text-gray-500 uppercase mb-1">Select Jurisdiction</label><select value={selectedState} onChange={e => setSelectedState(e.target.value)} className="w-full p-2 border rounded-lg">{Object.keys(stateDB).map(key => <option key={key} value={key}>{stateDB[key].state}</option>)}</select></div>
+                             <div className="space-y-4">
+                                <div className="grid grid-cols-3 gap-2">
+                                    <div><label className="text-xs text-gray-400 block">Ack Fee</label><input type="text" value={editStateData.fees.acknowledgment} onChange={e => setEditStateData({...editStateData, fees: {...editStateData.fees, acknowledgment: e.target.value}})} className="w-full p-2 border rounded" /></div>
+                                    <div><label className="text-xs text-gray-400 block">Jurat Fee</label><input type="text" value={editStateData.fees.jurat} onChange={e => setEditStateData({...editStateData, fees: {...editStateData.fees, jurat: e.target.value}})} className="w-full p-2 border rounded" /></div>
+                                    <div><label className="text-xs text-gray-400 block">Oath Fee</label><input type="text" value={editStateData.fees.oath} onChange={e => setEditStateData({...editStateData, fees: {...editStateData.fees, oath: e.target.value}})} className="w-full p-2 border rounded" /></div>
+                                </div>
+                                <div><label className="text-xs font-bold text-gray-500 block mb-1">ID Rules</label><textarea value={editStateData.id_requirements.credible_witnesses} onChange={e => setEditStateData({...editStateData, id_requirements: {...editStateData.id_requirements, credible_witnesses: e.target.value}})} className="w-full p-2 border rounded text-sm h-20" placeholder="Credible witness rules..."></textarea></div>
+                                <div><label className="text-xs font-bold text-red-500 block mb-1">Red Flags</label><textarea value={editStateData.red_flags.join(', ')} onChange={e => setEditStateData({...editStateData, red_flags: e.target.value.split(', ')})} className="w-full p-2 border rounded text-sm h-20 border-red-100 bg-red-50"></textarea></div>
+                                <button onClick={handleStateSave} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700">Save Changes</button>
+                             </div>
+                        </div>
+                     ) : (
+                         <div className="space-y-4">
+                            {courseMods.map((mod, idx) => (
+                                <div key={mod.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                    <div className="flex justify-between mb-2"><span className="text-xs font-bold text-gray-400">Module {mod.id}</span></div>
+                                    <input type="text" value={mod.title} onChange={e => handleCourseSave(idx, 'title', e.target.value)} className="w-full p-2 border rounded mb-2 font-bold" />
+                                    <textarea value={mod.topic} onChange={e => handleCourseSave(idx, 'topic', e.target.value)} className="w-full p-2 border rounded text-sm h-20"></textarea>
+                                </div>
+                            ))}
+                            <div className="text-center text-xs text-gray-400">Changes save automatically</div>
+                         </div>
+                     )}
+                </div>
+            );
+        };
+
+        const Dashboard = ({ appointments, credentials, setView, isCloud }) => {
             const today = new Date().toISOString().split('T')[0];
             const todaysJobs = appointments.filter(a => a.date === today && a.status !== 'Cancelled');
             const monthlyIncome = appointments.filter(a => a.status === 'Paid').reduce((sum, a) => sum + parseFloat(a.fee || 0), 0);
@@ -413,16 +457,28 @@
                 <div className="p-6 space-y-6 pb-24">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
-                            <div className="text-gray-500 text-xs font-bold uppercase mb-1">Monthly Income</div>
-                            <div className="text-2xl font-bold text-gray-800">${monthlyIncome.toFixed(2)}</div>
+                            <div className="absolute right-0 top-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4"></div>
+                            <div className="relative">
+                                <div className="text-gray-500 text-xs font-bold uppercase mb-1">Monthly Income</div>
+                                <div className="text-2xl font-bold text-gray-800">${monthlyIncome.toFixed(2)}</div>
+                                <div className="text-xs text-green-500 mt-1 font-medium"><i className="fas fa-arrow-up"></i> Updated just now</div>
+                            </div>
                         </div>
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100">
-                            <div className="text-gray-500 text-xs font-bold uppercase mb-1">Today's Jobs</div>
-                            <div className="text-2xl font-bold text-gray-800">{todaysJobs.length}</div>
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden">
+                            <div className="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4"></div>
+                            <div className="relative">
+                                <div className="text-gray-500 text-xs font-bold uppercase mb-1">Today's Jobs</div>
+                                <div className="text-2xl font-bold text-gray-800">{todaysJobs.length}</div>
+                                <div className="text-xs text-blue-500 mt-1 font-medium"><i className="fas fa-calendar-day"></i> Check schedule</div>
+                            </div>
                         </div>
-                        <div onClick={() => setView('credentials')} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50">
-                            <div className="text-gray-500 text-xs font-bold uppercase mb-1">Alerts</div>
-                            <div className={`text-2xl font-bold ${expiringCreds.length > 0 ? 'text-red-600' : 'text-green-600'}`}>{expiringCreds.length}</div>
+                        <div onClick={() => setView('credentials')} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50 relative overflow-hidden">
+                            <div className={`absolute right-0 top-0 w-24 h-24 rounded-bl-full -mr-4 -mt-4 ${expiringCreds.length > 0 ? 'bg-red-50' : 'bg-gray-50'}`}></div>
+                            <div className="relative">
+                                <div className="text-gray-500 text-xs font-bold uppercase mb-1">Compliance Alerts</div>
+                                <div className={`text-2xl font-bold ${expiringCreds.length > 0 ? 'text-red-600' : 'text-green-600'}`}>{expiringCreds.length}</div>
+                                <div className="text-xs text-gray-400 mt-1 font-medium">{expiringCreds.length > 0 ? `${expiringCreds.length} items expiring soon` : "All credentials active"}</div>
+                            </div>
                         </div>
                     </div>
                     <div>
@@ -451,6 +507,26 @@
                      <div className="flex justify-between items-center mb-6"><h3 className="text-lg font-bold text-gray-800">My Credentials</h3><button onClick={() => setShowForm(true)} className="bg-indigo-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Add</button></div>
                     {showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6 animate-fade-in"><form onSubmit={handleSave} className="space-y-4"><input required name="name" type="text" placeholder="Name" className="w-full p-3 bg-gray-50 border rounded-xl" /><input required name="expiry" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" /><div className="flex gap-2"><button type="button" onClick={() => setShowForm(false)} className="flex-1 py-2 bg-gray-100 rounded-lg">Cancel</button><button type="submit" className="flex-1 py-2 bg-indigo-600 text-white rounded-lg">Save</button></div></form></div>}
                     <div className="space-y-3">{creds.map(c => { const daysLeft = Math.ceil((new Date(c.expiry) - new Date()) / (1000 * 60 * 60 * 24)); return <div key={c.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm flex justify-between items-center"><div><h4 className="font-bold text-gray-800">{c.name}</h4><p className="text-xs text-gray-500">Expires: {c.expiry}</p></div><span className={`text-xs px-3 py-1 rounded-full font-bold ${daysLeft < 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>{daysLeft < 0 ? 'EXPIRED' : `${daysLeft} days`}</span></div>; })}</div>
+                </div>
+            );
+        };
+
+        const AppointmentForm = ({ onSave, onCancel, initialData }) => {
+            const [formData, setFormData] = useState(initialData || { clientName: '', date: new Date().toISOString().split('T')[0], time: '12:00', location: '', type: 'General Notarization', fee: '', status: 'Scheduled', notes: '' });
+            const handleSubmit = (e) => { e.preventDefault(); onSave({ ...formData, id: initialData?.id || Date.now().toString() }); };
+
+            return (
+                <div className="p-6 max-w-2xl mx-auto">
+                    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+                        <h3 className="text-lg font-bold mb-6 flex items-center gap-2"><i className="fas fa-calendar-plus text-blue-600"></i>{initialData ? 'Edit Appointment' : 'New Appointment'}</h3>
+                        <form onSubmit={handleSubmit} className="space-y-4">
+                            <input required type="text" placeholder="Client Name" className="w-full p-3 bg-gray-50 border rounded-xl" value={formData.clientName} onChange={e => setFormData({...formData, clientName: e.target.value})} />
+                            <div className="grid grid-cols-2 gap-4"><input required type="date" className="w-full p-3 bg-gray-50 border rounded-xl" value={formData.date} onChange={e => setFormData({...formData, date: e.target.value})} /><input required type="time" className="w-full p-3 bg-gray-50 border rounded-xl" value={formData.time} onChange={e => setFormData({...formData, time: e.target.value})} /></div>
+                            <input required type="text" placeholder="Location" className="w-full p-3 bg-gray-50 border rounded-xl" value={formData.location} onChange={e => setFormData({...formData, location: e.target.value})} />
+                            <div className="grid grid-cols-2 gap-4"><input required type="number" placeholder="Fee ($)" className="w-full p-3 bg-gray-50 border rounded-xl" value={formData.fee} onChange={e => setFormData({...formData, fee: e.target.value})} /><select className="w-full p-3 bg-gray-50 border rounded-xl" value={formData.status} onChange={e => setFormData({...formData, status: e.target.value})}><option>Scheduled</option><option>Completed</option><option>Paid</option><option>Cancelled</option></select></div>
+                            <div className="flex gap-3 pt-4"><button type="button" onClick={onCancel} className="flex-1 py-3 bg-gray-100 text-gray-600 rounded-xl">Cancel</button><button type="submit" className="flex-1 py-3 bg-blue-600 text-white rounded-xl">Save</button></div>
+                        </form>
+                    </div>
                 </div>
             );
         };
@@ -534,7 +610,7 @@
             );
         };
 
-        const TrainerModule = () => {
+        const TrainerModule = ({ stateDB, courseMods }) => {
             const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
             const [hasKey, setHasKey] = useState(!!apiKey);
             const [selectedStateKey, setSelectedStateKey] = useState('OH');
@@ -562,7 +638,7 @@
                 if(apiKey.trim()) {
                     localStorage.setItem('gemini_api_key', apiKey);
                     setHasKey(true);
-                    const stateName = STATE_DATABASE[selectedStateKey].state;
+                    const stateName = stateDB[selectedStateKey].state;
                     setMessages([{ role: 'assistant', content: `**NotaryPro Mentor Online.**\n\nJurisdiction Locked: **${stateName}**.\n\nPlease select a mode above to begin your session.` }]);
                 }
             };
@@ -576,11 +652,11 @@
                 setInput('');
                 setLoading(true);
 
-                const stateData = STATE_DATABASE[selectedStateKey];
+                const stateData = stateDB[selectedStateKey];
                 
                 let courseContext = "";
                 if (mode === 'course' && currentModule > 0) {
-                    const mod = COURSE_MODULES[currentModule-1];
+                    const mod = courseMods[currentModule-1];
                     courseContext = `TEACHING MODULE ${mod.id}: ${mod.title}. TOPIC: ${mod.topic}. Explain concept using Markdown, then QUIZ user.`;
                 }
 
@@ -608,9 +684,8 @@
                 }
             };
 
-            // Cert Modal Logic
             const getCertText = (type) => {
-                const stateData = STATE_DATABASE[selectedStateKey];
+                const stateData = stateDB[selectedStateKey];
                 const text = type === 'ack' ? stateData.certificates.acknowledgment_text : stateData.certificates.jurat_text;
                 if (!text || text === "null" || text === "Not specified") return "Specific certificate wording is not available in the current database for this state.";
                 return text;
@@ -631,7 +706,7 @@
                 <div className="flex flex-col h-full bg-white relative pb-20 md:pb-0">
                     <div className="border-b px-4 py-3 flex justify-between items-center bg-gray-50">
                         <select value={selectedStateKey} onChange={e => { setSelectedStateKey(e.target.value); setMessages([]); }} className="bg-white border text-sm rounded-lg p-2 font-semibold text-gray-700">
-                            {Object.entries(STATE_DATABASE).map(([k,v]) => <option key={k} value={k}>{v.state}</option>)}
+                            {Object.entries(stateDB).map(([k,v]) => <option key={k} value={k}>{v.state}</option>)}
                         </select>
                         <div className="flex gap-2">
                             <button onClick={() => handleModeSwitch('study')} className={`px-3 py-1 rounded text-xs font-bold ${mode === 'study' ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-600'}`}>Study</button>
@@ -651,11 +726,6 @@
                         {loading && <div className="typing-indicator ml-4"><span></span><span></span><span></span></div>}
                         <div ref={messagesEndRef} />
                     </div>
-                    
-                    <div className="px-4 pb-2 text-[10px] text-gray-400 text-center italic">
-                        AI may make mistakes. Always check your official state handbook.
-                    </div>
-
                     <div className="p-4 border-t bg-white flex gap-2 pb-24 md:pb-4 safe-area-pb">
                         {mode === 'course' && (
                             <button onClick={() => { setCurrentModule(p => p+1); sendMessage(`Start Module ${currentModule+1}`); }} className="bg-green-600 text-white px-4 rounded-xl text-xs font-bold shadow-md hover:bg-green-700 transition-colors">Next</button>
@@ -663,13 +733,11 @@
                         <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} placeholder="Message AI..." className="flex-1 p-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500" />
                         <button onClick={() => sendMessage()} className="bg-blue-600 text-white w-12 rounded-xl shadow-md hover:bg-blue-700 transition-colors"><i className="fas fa-paper-plane"></i></button>
                     </div>
-
-                    {/* CERT MODAL */}
                     {showCertModal && (
                         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
                             <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col">
                                 <div className="p-4 border-b flex justify-between items-center bg-gray-50 rounded-t-xl">
-                                    <h3 className="font-bold text-lg text-gray-800">Certificates: {STATE_DATABASE[selectedStateKey].state}</h3>
+                                    <h3 className="font-bold text-lg text-gray-800">Certificates: {stateDB[selectedStateKey].state}</h3>
                                     <button onClick={() => setShowCertModal(false)} className="text-gray-500 hover:text-gray-800"><i className="fas fa-times text-xl"></i></button>
                                 </div>
                                 <div className="p-2 bg-white flex gap-2 border-b">
@@ -698,11 +766,25 @@
             const [credentials, setCredentials] = useState([]);
             const [showMobileMenu, setShowMobileMenu] = useState(false);
             const [isCloudConnected, setIsCloudConnected] = useState(false);
+            
+            // ADMIN STATE
+            const [stateDB, setStateDB] = useState(() => JSON.parse(localStorage.getItem('notary_state_db')) || STATE_DATABASE);
+            const [courseMods, setCourseMods] = useState(() => JSON.parse(localStorage.getItem('notary_course_mods')) || COURSE_MODULES);
+
+            const handleUpdateStateDB = (newDB) => {
+                setStateDB(newDB);
+                localStorage.setItem('notary_state_db', JSON.stringify(newDB));
+            };
+
+            const handleUpdateCourseMods = (newMods) => {
+                setCourseMods(newMods);
+                localStorage.setItem('notary_course_mods', JSON.stringify(newMods));
+            };
 
              useEffect(() => {
                 const init = async () => {
-                     if (window.firebase && window.firebase.auth) {
-                         window.firebase.auth().onAuthStateChanged(async (u) => {
+                     if (typeof firebase !== 'undefined' && firebase.auth) {
+                         firebase.auth().onAuthStateChanged(async (u) => {
                              if (u) {
                                  setUser({ id: u.uid, name: u.displayName || u.email.split('@')[0], email: u.email });
                                  setIsCloudConnected(true);
@@ -729,9 +811,7 @@
             }
 
             const handleLogout = async () => {
-                if (window.firebase && window.firebase.auth) {
-                     await window.firebase.auth().signOut();
-                }
+                if (typeof firebase !== 'undefined' && firebase.auth) await firebase.auth().signOut();
                 localStorage.removeItem('notary_user_profile');
                 setUser(null);
             };
@@ -757,7 +837,8 @@
                     case 'journal': return <Journal onUpdate={handleRefresh} />;
                     case 'finances': return <Finances />;
                     case 'credentials': return <Credentials onUpdate={handleRefresh} />;
-                    case 'trainer': return <TrainerModule />;
+                    case 'trainer': return <TrainerModule stateDB={stateDB} courseMods={courseMods} />;
+                    case 'admin': return <AdminPanel stateDB={stateDB} onUpdateStateDB={handleUpdateStateDB} courseMods={courseMods} onUpdateCourseMods={handleUpdateCourseMods} />;
                     default: return <div className="p-10 text-center text-gray-400">Module Coming Soon</div>;
                 }
             };
