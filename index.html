@@ -835,6 +835,7 @@
                 { id: 'journal', icon: 'fa-book', label: 'Journal', color: 'text-purple-400' },
                 { id: 'finances', icon: 'fa-wallet', label: 'Finances', color: 'text-emerald-400' },
                 { id: 'credentials', icon: 'fa-id-card', label: 'Credentials', color: 'text-orange-400' },
+                { id: 'agency', icon: 'fa-building', label: 'Agency', color: 'text-sky-400' },
                 { id: 'trainer', icon: 'fa-robot', label: 'AI Trainer', color: 'text-indigo-400', isPro: true },
                 { id: 'admin', icon: 'fa-shield-alt', label: 'Admin', color: 'text-red-500' }
             ];
@@ -1491,6 +1492,191 @@
                 </div>
             );
         };
+
+        const AgencyManagement = ({ appointments }) => {
+            const [team, setTeam] = useState([]);
+            const [assignments, setAssignments] = useState([]);
+            const [showForm, setShowForm] = useState(false);
+
+            useEffect(() => {
+                const load = async () => {
+                    setTeam(await DataManager.get('notary_team'));
+                    setAssignments(await DataManager.get('notary_assignments'));
+                };
+                load();
+            }, []);
+
+            const safeAppointments = Array.isArray(appointments) ? appointments : [];
+            const activeAppointments = safeAppointments
+                .filter(appt => appt.status !== 'Cancelled')
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const aggregateRevenue = safeAppointments
+                .filter(appt => ['Paid', 'Completed'].includes(appt.status))
+                .reduce((sum, appt) => sum + parseFloat(appt.fee || 0), 0);
+
+            const handleAddNotary = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const entry = {
+                    id: Date.now().toString(),
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    region: formData.get('region') || 'Unassigned',
+                    status: formData.get('status') || 'Available'
+                };
+                await DataManager.save('notary_team', entry);
+                setTeam(await DataManager.get('notary_team'));
+                setShowForm(false);
+                showToast("Team Member Added");
+            };
+
+            const handleAssign = async (appointmentId, notaryId) => {
+                if (!notaryId) return;
+                const assignment = {
+                    id: appointmentId,
+                    appointmentId,
+                    notaryId,
+                    assignedAt: new Date().toISOString()
+                };
+                await DataManager.save('notary_assignments', assignment);
+                setAssignments(await DataManager.get('notary_assignments'));
+                showToast("Assignment Updated");
+            };
+
+            const getAssignedNotary = (appointmentId) => {
+                const assignment = assignments.find(item => item.appointmentId === appointmentId);
+                return assignment ? team.find(member => member.id === assignment.notaryId) : null;
+            };
+
+            return (
+                <div className="p-6 pb-24">
+                    <div className="max-w-6xl mx-auto space-y-6">
+                        <div className="bg-white p-6 rounded-2xl shadow border border-gray-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                            <div>
+                                <p className="text-xs font-bold text-sky-600 uppercase">Team Mode</p>
+                                <h3 className="text-2xl font-bold text-gray-900">Agency Management</h3>
+                                <p className="text-sm text-gray-500">Assign jobs to notaries, manage capacity, and track revenue across your organization.</p>
+                            </div>
+                            <div className="flex flex-wrap gap-4">
+                                <div className="bg-slate-900 text-white rounded-xl px-5 py-4 min-w-[180px]">
+                                    <p className="text-xs uppercase text-slate-300">Active Notaries</p>
+                                    <p className="text-2xl font-bold">{team.length}</p>
+                                </div>
+                                <div className="bg-white border border-slate-200 rounded-xl px-5 py-4 min-w-[180px]">
+                                    <p className="text-xs uppercase text-slate-500">Monthly Revenue</p>
+                                    <p className="text-2xl font-bold text-slate-900">${aggregateRevenue.toFixed(2)}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="text-lg font-semibold text-gray-800">Notary Team</h4>
+                                    <button onClick={() => setShowForm(true)} className="text-sm font-semibold text-blue-600">Add</button>
+                                </div>
+                                {showForm && (
+                                    <form onSubmit={handleAddNotary} className="space-y-3 mb-4">
+                                        <input name="name" required placeholder="Full Name" className="w-full p-2 border rounded-lg" />
+                                        <input name="email" type="email" required placeholder="Email" className="w-full p-2 border rounded-lg" />
+                                        <input name="region" placeholder="Region / City" className="w-full p-2 border rounded-lg" />
+                                        <select name="status" className="w-full p-2 border rounded-lg">
+                                            <option>Available</option>
+                                            <option>On Assignment</option>
+                                            <option>Off Duty</option>
+                                        </select>
+                                        <div className="flex gap-2">
+                                            <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 rounded-lg py-2">Cancel</button>
+                                            <button type="submit" className="flex-1 bg-blue-600 text-white rounded-lg py-2">Save</button>
+                                        </div>
+                                    </form>
+                                )}
+                                <div className="space-y-3">
+                                    {team.length === 0 ? (
+                                        <EmptyState 
+                                            icon="fa-users"
+                                            title="No team members yet"
+                                            description="Add your first notary to start assigning jobs."
+                                            actionLabel="Add Notary"
+                                            onAction={() => setShowForm(true)}
+                                            colorClass="text-sky-600"
+                                            bgClass="bg-sky-50"
+                                        />
+                                    ) : (
+                                        team.map(member => (
+                                            <div key={member.id} className="border border-gray-100 rounded-xl p-3">
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <p className="font-semibold text-gray-800">{member.name}</p>
+                                                        <p className="text-xs text-gray-500">{member.email}</p>
+                                                    </div>
+                                                    <span className="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-full">{member.status}</span>
+                                                </div>
+                                                <p className="text-xs text-gray-400 mt-2">{member.region}</p>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="lg:col-span-2 space-y-6">
+                                <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
+                                    <h4 className="text-lg font-semibold text-gray-800 mb-3">Master Calendar</h4>
+                                    {activeAppointments.length === 0 ? (
+                                        <EmptyState 
+                                            icon="fa-calendar-alt"
+                                            title="No appointments scheduled"
+                                            description="Once appointments are booked, they'll show here for assignment."
+                                            actionLabel="Refresh"
+                                            onAction={() => showToast("Calendar Updated", "success")}
+                                            colorClass="text-blue-600"
+                                            bgClass="bg-blue-50"
+                                        />
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {activeAppointments.map(appt => {
+                                                const assignedNotary = getAssignedNotary(appt.id);
+                                                return (
+                                                    <div key={appt.id} className="border border-gray-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                                        <div>
+                                                            <p className="text-xs font-semibold text-gray-400 uppercase">{appt.type || 'Notary Service'}</p>
+                                                            <p className="text-lg font-semibold text-gray-800">{appt.clientName}</p>
+                                                            <p className="text-sm text-gray-500">{appt.date} • {appt.time || 'TBD'}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="text-right">
+                                                                <p className="text-xs text-gray-400">Assigned</p>
+                                                                <p className="text-sm font-semibold text-gray-700">{assignedNotary ? assignedNotary.name : 'Unassigned'}</p>
+                                                            </div>
+                                                            <select
+                                                                value={assignedNotary?.id || ''}
+                                                                onChange={(e) => handleAssign(appt.id, e.target.value)}
+                                                                className="border border-gray-200 rounded-lg p-2 text-sm"
+                                                            >
+                                                                <option value="">Assign Notary</option>
+                                                                {team.map(member => (
+                                                                    <option key={member.id} value={member.id}>{member.name}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="bg-slate-900 text-white p-6 rounded-2xl shadow">
+                                    <h4 className="text-lg font-semibold mb-2">Agency Insights</h4>
+                                    <p className="text-sm text-slate-200">Track assignments and revenue in one place. Expand your team and keep every signing accounted for.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
         
         const Credentials = ({ onUpdate }) => {
             const [creds, setCreds] = useState([]);
@@ -1616,6 +1802,7 @@
                     case 'journal': return <Journal user={user} onUpgrade={()=>{}} />;
                     case 'finances': return <Finances />;
                     case 'credentials': return <Credentials onUpdate={handleRefresh} />;
+                    case 'agency': return <AgencyManagement appointments={appointments} />;
                     case 'trainer': return <TrainerModule stateDB={STATE_DATABASE} courseMods={COURSE_MODULES} user={user} onUpgrade={()=>{}} />;
                     case 'admin': return <AdminPanel stateDB={STATE_DATABASE} onUpdateStateDB={()=>{}} />;
                     default: return <div>Not found</div>;
