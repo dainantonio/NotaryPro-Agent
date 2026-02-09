@@ -329,6 +329,12 @@
         );
 
         const LandingPage = ({ onNavigate }) => {
+            const [activeTab, setActiveTab] = useState('before'); // 'before' or 'after'
+            const [weeklyAppts, setWeeklyAppts] = useState(5);
+            const [adminMins, setAdminMins] = useState(20);
+            
+            const hoursSaved = Math.round((weeklyAppts * adminMins * 52) / 60);
+            const dollarsSaved = (hoursSaved * 50).toLocaleString(); // Assuming $50/hr value
             const [demoQuestion, setDemoQuestion] = useState("");
             const [demoResponse, setDemoResponse] = useState(null);
             
@@ -352,18 +358,18 @@
 
                     <div className="flex-1 flex flex-col justify-center items-center text-center px-6 relative z-10 py-20">
                         <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight tracking-tight max-w-5xl drop-shadow-2xl">
-                            The Operating System<br/>
-                            for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Modern Notaries</span>.
+                            Drowning in paperwork? <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Chasing payments?</span>
                         </h1>
                         <p className="text-lg text-slate-300 mb-10 max-w-2xl leading-relaxed">
-                            Manage appointments, track compliance, generate invoices, and train with an AI expert. All in one place.
+                            Stop worrying about state compliance. NotaryOS handles it all—so you can focus on signings, not spreadsheets.
                         </p>
                         <button onClick={onNavigate} className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-xl shadow-blue-500/20 transition-all transform hover:-translate-y-1">
                             Start Free Trial
                         </button>
                     </div>
                     
-                    {/* NEW AI Hero Feature Section */}
+                    {/* RESTORED AI Hero Feature Section */}
                     <div className="w-full bg-slate-900/50 border-y border-slate-800 py-20 relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-full bg-blue-500/5 blur-[100px] pointer-events-none"></div>
                         <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center relative z-10">
@@ -425,6 +431,43 @@
                                             </div>
                                         </div>
                                     )}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {/* Pain vs Power Section */}
+                    <div className="bg-slate-800 py-20 border-t border-slate-700">
+                        <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
+                            <div className="space-y-6">
+                                <h3 className="text-3xl font-bold text-white">Before & After</h3>
+                                <div className="p-6 bg-red-900/20 border border-red-500/30 rounded-xl">
+                                    <h4 className="text-red-400 font-bold mb-2"><i className="fas fa-times-circle mr-2"></i> The Old Way</h4>
+                                    <p className="text-slate-300 text-sm">Messy desk, lost sticky notes, stressing about expired commissions, and manual invoice creation in Word.</p>
+                                </div>
+                                <div className="p-6 bg-emerald-900/20 border border-emerald-500/30 rounded-xl">
+                                    <h4 className="text-emerald-400 font-bold mb-2"><i className="fas fa-check-circle mr-2"></i> The NotaryOS Way</h4>
+                                    <p className="text-slate-300 text-sm">A clean digital dashboard. One-click invoices. Automated compliance alerts. Peace of mind.</p>
+                                </div>
+                            </div>
+                            <div className="bg-slate-900 p-8 rounded-2xl border border-slate-700 shadow-2xl">
+                                <h4 className="text-xl font-bold text-white mb-6 text-center">Calculate Your Lost Time</h4>
+                                <div className="space-y-4">
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">Weekly Appointments</label>
+                                        <input type="range" min="1" max="50" value={weeklyAppts} onChange={e=>setWeeklyAppts(e.target.value)} className="w-full accent-blue-500" />
+                                        <div className="text-right text-blue-400 font-bold">{weeklyAppts}</div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs text-slate-400 mb-1">Admin Mins per Appt</label>
+                                        <input type="range" min="5" max="60" value={adminMins} onChange={e=>setAdminMins(e.target.value)} className="w-full accent-blue-500" />
+                                        <div className="text-right text-blue-400 font-bold">{adminMins} min</div>
+                                    </div>
+                                    <div className="pt-4 border-t border-slate-700 mt-4 text-center">
+                                        <p className="text-sm text-slate-400">You could save</p>
+                                        <div className="text-4xl font-bold text-white">{hoursSaved} Hours<span className="text-sm text-slate-500 font-normal">/yr</span></div>
+                                        <div className="text-sm text-emerald-400 mt-1">That's ${dollarsSaved} in billable time!</div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -818,14 +861,7 @@
         const AdminPanel = ({ stateDB }) => { 
             const [activeTab, setActiveTab] = useState('states'); 
             const [selectedState, setSelectedState] = useState('CA'); 
-            const [editStateData, setEditStateData] = useState(stateDB[selectedState]);
-
-            useEffect(() => { setEditStateData(stateDB[selectedState]); }, [selectedState, stateDB]);
-
-            const handleStateSave = () => {
-                alert(`Saved changes for ${editStateData.state}`);
-            };
-
+            
             return (
                 <div className="p-6 pb-24">
                     <div className="bg-red-50 border border-red-200 rounded p-4 mb-4"><h3 className="font-bold text-red-800">Admin Panel</h3></div>
@@ -834,17 +870,15 @@
                         <button onClick={()=>setActiveTab('curriculum')} className={`px-3 py-1 rounded ${activeTab==='curriculum'?'bg-indigo-100 text-indigo-800':''}`}>Curriculum</button>
                     </div>
                     {activeTab === 'states' ? (
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-6">
-                            <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Select Jurisdiction</label><select className="w-full border border-gray-200 p-3 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-700" value={selectedState} onChange={e=>setSelectedState(e.target.value)}>{Object.keys(stateDB).map(k=><option key={k} value={k}>{stateDB[k].state}</option>)}</select></div>
-                            <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Specialized Services (Loan/Apostille/Marriage)</label><textarea className="w-full h-32 border border-gray-200 p-3 rounded-lg font-mono text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none" value={JSON.stringify(editStateData.specialized || {}, null, 4)} onChange={e => { try { const parsed = JSON.parse(e.target.value); setEditStateData({...editStateData, specialized: parsed}); } catch(e){} }}></textarea></div>
-                            <div className="grid grid-cols-3 gap-4">
-                                <div><label className="block text-xs font-bold text-gray-400 uppercase mb-1">Ack Fee</label><div className="relative"><span className="absolute left-3 top-2.5 text-gray-400">$</span><input className="w-full pl-6 p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" value={editStateData.fees.acknowledgment.replace('$','')} onChange={e => setEditStateData({...editStateData, fees: {...editStateData.fees, acknowledgment: e.target.value}})} /></div></div>
-                                <div><label className="block text-xs font-bold text-gray-400 uppercase mb-1">Jurat Fee</label><div className="relative"><span className="absolute left-3 top-2.5 text-gray-400">$</span><input className="w-full pl-6 p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" value={editStateData.fees.jurat.replace('$','')} onChange={e => setEditStateData({...editStateData, fees: {...editStateData.fees, jurat: e.target.value}})} /></div></div>
-                                <div><label className="block text-xs font-bold text-gray-400 uppercase mb-1">Oath Fee</label><div className="relative"><span className="absolute left-3 top-2.5 text-gray-400">$</span><input className="w-full pl-6 p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" value={editStateData.fees.oath ? editStateData.fees.oath.replace('$','') : '0.00'} onChange={e => setEditStateData({...editStateData, fees: {...editStateData.fees, oath: e.target.value}})} /></div></div>
+                        <div className="bg-white p-4 rounded shadow border">
+                            <select className="w-full border p-2 mb-4" value={selectedState} onChange={e=>setSelectedState(e.target.value)}>
+                                {Object.keys(stateDB).map(k=><option key={k} value={k}>{stateDB[k].state}</option>)}
+                            </select>
+                            <div className="space-y-2">
+                                <label className="text-xs font-bold text-gray-500">Fees (Ack)</label>
+                                <input className="w-full border p-2 rounded" defaultValue={stateDB[selectedState].fees.acknowledgment} />
+                                <button className="bg-indigo-600 text-white px-4 py-2 rounded w-full">Save Changes</button>
                             </div>
-                            <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">ID Rules</label><textarea className="w-full h-20 border border-gray-200 p-3 rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none" value={editStateData.id_requirements.credible_witnesses} onChange={e => setEditStateData({...editStateData, id_requirements: {...editStateData.id_requirements, credible_witnesses: e.target.value}})}></textarea></div>
-                            <div><label className="block text-xs font-bold text-red-500 uppercase mb-2">Red Flags</label><div className="bg-red-50 p-3 rounded-lg border border-red-100"><textarea className="w-full h-16 bg-transparent border-none text-red-800 text-sm focus:ring-0 resize-none outline-none" value={editStateData.red_flags.join(', ')} onChange={e => setEditStateData({...editStateData, red_flags: e.target.value.split(', ')})}></textarea></div></div>
-                            <button onClick={handleStateSave} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all transform active:scale-95 text-sm uppercase tracking-wide">Save Changes</button>
                         </div>
                     ) : (
                         <div className="bg-white p-4 rounded shadow border"><p>Curriculum Editor Placeholder</p></div>
@@ -931,7 +965,7 @@
                     <ToastContainer />
                     <button onClick={() => setShowAIModal(true)} className="fab-ai bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:bg-indigo-700 transition-transform transform hover:scale-110"><i className="fas fa-robot text-2xl"></i></button>
                     {showAIModal && <AIHelperModal onClose={() => setShowAIModal(false)} />}
-                    {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={handleUpgrade} />}
+                    {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={()=>{}} />}
                     {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} onSave={handleUpdateProfile} />}
                     {showOnboarding && <OnboardingTour onComplete={() => { localStorage.setItem('notary_onboarded', 'true'); setShowOnboarding(false); }} />}
                     
