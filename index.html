@@ -80,7 +80,6 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
         .empty-state-dashed { background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%23CBD5E1FF' stroke-width='2' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e"); }
-        
         /* FIXED: Moved bottom up to avoid overlapping with bottom nav on some mobile devices */
         .fab-ai { position: fixed; bottom: 90px; right: 20px; z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: grid; place-items: center; }
         @media (min-width: 768px) { .fab-ai { bottom: 30px; } }
@@ -263,7 +262,7 @@
             }
         };
 
-        const STATE_DATABASE = { 
+        const STATE_DATABASE = {
             "AL": { "state": "Alabama", "fees": { "acknowledgment": "$5.00", "jurat": "$5.00", "oath": "$5.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Not specified" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
             "AK": { "state": "Alaska", "fees": { "acknowledgment": "$25.00", "jurat": "$25.00", "oath": "$25.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "Not specified" }, "red_flags": ["Conflict of Interest"], "specialized": { "loan_signing": "Allowed", "apostille": "Lt. Governor", "marriage": "No" }},
             "AZ": { "state": "Arizona", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "1 or 2 allowed", "expired_id_rule": "Not allowed" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
@@ -317,7 +316,6 @@
             "WY": { "state": "Wyoming", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
             "certificates": { "acknowledgment_text": "State of [State]...", "jurat_text": "Subscribed and sworn..." }
         };
-        
         const COURSE_MODULES = [ { id: 1, title: "Authority", topic: "Commissioning authority." } ]; 
         const PERSONA = `ROLE: NOTARY MENTOR. TONE: Helpful.`;
 
@@ -471,7 +469,7 @@
         );
 
         const LandingPage = ({ onNavigate }) => {
-            const [activeTab, setActiveTab] = useState('before'); // 'before' or 'after'
+            const [activeTab, setActiveTab] = useState('before');
             const [weeklyAppts, setWeeklyAppts] = useState(5);
             const [adminMins, setAdminMins] = useState(20);
             const [billing, setBilling] = useState('monthly');
@@ -479,7 +477,7 @@
             const [demoResponse, setDemoResponse] = useState(null);
             
             const hoursSaved = Math.round((weeklyAppts * adminMins * 52) / 60);
-            const dollarsSaved = (hoursSaved * 50).toLocaleString(); // Assuming $50/hr value
+            const dollarsSaved = (hoursSaved * 50).toLocaleString(); 
             
             const handleDemoAsk = (e) => {
                 e.preventDefault();
@@ -491,7 +489,7 @@
 
             return (
                 <div className="min-h-screen landing-bg text-white font-inter flex flex-col relative overflow-hidden">
-                    <div className="w-full p-6 flex justify-between items-center z-20 container mx-auto bg-slate-900/80 backdrop-blur-md border-b border-slate-800/50">
+                    <div className="w-full p-6 flex justify-between items-center z-20 container mx-auto">
                         <div className="flex items-center gap-2">
                             <i className="fas fa-file-signature text-xl text-teal-400"></i>
                             <h1 className="text-xl font-bold tracking-tight font-sans">NotaryOS</h1>
@@ -781,7 +779,7 @@
             );
         };
 
-        // 2. Auth Screen (Redesigned + Terms) - Restored
+        // 2. Auth Screen (Redesigned + Terms)
         const AuthScreen = ({ onAuth, onBack }) => {
             const [isLogin, setIsLogin] = useState(true);
             const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -864,14 +862,17 @@
             <div className="md:hidden fixed bottom-0 w-full bg-white border-t p-2 flex justify-around z-30 safe-area-pb shadow-lg">
                 <button onClick={() => setView('dashboard')}><i className="fas fa-home text-blue-500 text-xl"></i></button>
                 <button onClick={() => setView('schedule')}><i className="fas fa-calendar-alt text-green-500 text-xl"></i></button>
-                <button onClick={() => setView('addAppointment')} className="-mt-8 bg-blue-600 text-white rounded-full p-3 shadow-lg"><i className="fas fa-plus text-xl"></i></button>
+                
+                {/* IMPROVED FAB/ADD BUTTON FOR MOBILE */}
+                <button onClick={() => setView('addAppointment')} className="-mt-8 bg-blue-600 text-white rounded-full p-4 shadow-xl border-4 border-white active:scale-95 transition-transform"><i className="fas fa-plus text-2xl"></i></button>
+                
                 <button onClick={() => setView('trainer')}><i className="fas fa-robot text-indigo-500 text-xl"></i></button>
                 <button onClick={onOpenMenu}><i className="fas fa-bars text-gray-500 text-xl"></i></button>
             </div>
         );
 
         const Header = ({ title }) => (
-            <div className="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-20">
+            <div className="bg-white border-b p-4 flex justify-between items-center z-20">
                 <h2 className="font-bold text-gray-800 text-lg">{title}</h2>
                 <div className="flex gap-3">
                     <button className="text-gray-400"><i className="fas fa-bell"></i></button>
@@ -988,20 +989,54 @@
         const AppointmentForm = ({ onSave, onCancel }) => {
             const [formData, setFormData] = useState({ clientName: '', date: '', time: '', fee: '', status: 'Scheduled' });
             const [magicInput, setMagicInput] = useState('');
-            const handleSmartFill = () => { 
+            
+            // --- UPDATED SMART FILL TO USE API KEY IF AVAILABLE ---
+            const handleSmartFill = async () => { 
                 const apiKey = localStorage.getItem('gemini_api_key');
-                if(magicInput.includes('John') && !apiKey) { 
-                    setFormData({...formData, clientName: 'John Doe', date: '2023-12-01', time: '14:00', fee: '150'}); 
-                    showToast("Form Filled by AI (Demo)"); 
-                } else if (apiKey) {
-                    // Actual API Call Simulation (would be fetch here)
-                    showToast("Connecting to Gemini...");
-                    // Simulate response for now as we can't make real external calls easily without backend proxy
-                     setFormData({...formData, clientName: 'Parsed Name', date: '2023-12-01', time: '12:00', fee: '100'}); 
+                
+                if (apiKey) {
+                    showToast("Analyzing with Gemini AI...", "success");
+                    try {
+                        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                contents: [{
+                                    role: "user",
+                                    parts: [{ text: `Extract appointment details from this text into JSON {clientName, date (YYYY-MM-DD), time (HH:MM), fee (number)}: "${magicInput}". Current year is 2026.` }]
+                                }]
+                            })
+                        });
+                        const data = await response.json();
+                        const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                        // Extract JSON from text (simple regex for demo resilience)
+                        const jsonMatch = text.match(/\{[\s\S]*\}/);
+                        if (jsonMatch) {
+                            const parsed = JSON.parse(jsonMatch[0]);
+                            setFormData({
+                                ...formData,
+                                clientName: parsed.clientName || formData.clientName,
+                                date: parsed.date || formData.date,
+                                time: parsed.time || formData.time,
+                                fee: parsed.fee || formData.fee
+                            });
+                            showToast("Form Auto-Filled!");
+                        } else {
+                            showToast("Could not parse details.", "error");
+                        }
+                    } catch (e) {
+                        console.error(e);
+                        showToast("AI Error. Check API Key.", "error");
+                    }
+                } else if (magicInput.toLowerCase().includes('john')) { 
+                    // Fallback Demo Mode
+                    setFormData({...formData, clientName: 'John Doe', date: '2026-12-01', time: '14:00', fee: '150'}); 
+                    showToast("Form Filled (Demo Mode)"); 
                 } else {
-                     alert("API Key Needed for real AI, or type 'John' for demo."); 
+                     alert("Please add your Gemini API Key in Settings for real AI extraction, or type 'John' to see the demo."); 
                 }
             };
+            
             const handleSubmit = (e) => { e.preventDefault(); onSave({...formData, id: Date.now().toString()}); showToast("Appointment Scheduled"); };
 
             return (
@@ -1010,7 +1045,7 @@
                         <h3 className="font-bold text-lg mb-4">New Appointment</h3>
                         <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
                             <label className="text-xs font-bold text-blue-600 uppercase block mb-2"><i className="fas fa-magic"></i> Smart Fill</label>
-                            <div className="flex gap-2"><input value={magicInput} onChange={e=>setMagicInput(e.target.value)} className="flex-1 p-2 border rounded text-sm" placeholder="e.g. Loan signing with John tomorrow..." /><button onClick={handleSmartFill} className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold">Fill</button></div>
+                            <div className="flex gap-2"><input value={magicInput} onChange={e=>setMagicInput(e.target.value)} className="flex-1 p-2 border rounded text-sm" placeholder="e.g. Loan signing with Sarah tomorrow at 2pm for $150..." /><button onClick={handleSmartFill} className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold">Fill</button></div>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
                             <input className="w-full p-3 border rounded-xl" placeholder="Client Name" value={formData.clientName} onChange={e=>setFormData({...formData, clientName: e.target.value})} required />
@@ -1093,6 +1128,34 @@
             );
         };
         
+        const Credentials = ({ onUpdate }) => {
+            const [creds, setCreds] = useState([]);
+            const [showForm, setShowForm] = useState(false);
+            useEffect(() => { DataManager.get('notary_credentials').then(setCreds); }, []);
+            const handleSave = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await DataManager.save('notary_credentials', { id: Date.now().toString(), name: fd.get('name'), expiry: fd.get('expiry') }); setShowForm(false); setCreds(await DataManager.get('notary_credentials')); showToast("Credential Saved"); };
+            const handleDelete = async (id) => { await DataManager.delete('notary_credentials', id); setCreds(await DataManager.get('notary_credentials')); showToast("Credential Deleted", 'error'); };
+            
+            return (
+                <div className="p-6 pb-24">
+                    <div className="flex justify-between mb-4"><h3 className="font-bold">Credentials</h3><button onClick={()=>setShowForm(true)} className="bg-indigo-600 text-white px-3 py-1 rounded">Add</button></div>
+                    {showForm && <form onSubmit={handleSave} className="bg-white p-4 rounded shadow mb-4"><input name="name" placeholder="Name" className="w-full border p-2 mb-2 rounded" /><input name="expiry" type="date" className="w-full border p-2 mb-2 rounded" /><button className="bg-indigo-600 text-white px-4 py-2 rounded">Save</button></form>}
+                    <div className="space-y-3">
+                        {creds.length === 0 ? (
+                            <EmptyState 
+                                icon="fa-id-card"
+                                title="No Credentials"
+                                description="Keep track of your commission, bond, and insurance. We'll alert you before they expire."
+                                actionLabel="Add Credential"
+                                onAction={() => setShowForm(true)}
+                                colorClass="text-orange-600"
+                                bgClass="bg-orange-50"
+                            />
+                        ) : creds.map(c => <div key={c.id} className="bg-white p-3 rounded shadow flex justify-between"><div><b>{c.name}</b><br/><span className="text-sm text-gray-500">{c.expiry}</span></div><button onClick={()=>handleDelete(c.id)} className="text-red-500">Delete</button></div>)}
+                    </div>
+                </div>
+            );
+        };
+        
         const TrainerModule = ({ stateDB, courseMods, user, onUpgrade }) => { const [selectedStateKey, setSelectedStateKey] = useState('CA'); const [mode, setMode] = useState('study'); const [messages, setMessages] = useState([{ role: 'assistant', content: "Hello! I am your AI Mentor. Ask me anything about notary laws." }]); const [input, setInput] = useState(''); const [loading, setLoading] = useState(false); const scrollRef = useRef(null); useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]); const sendMessage = async () => { if (!input.trim()) return; const newMsgs = [...messages, { role: 'user', content: input }]; setMessages(newMsgs); setInput(''); setLoading(true); setTimeout(() => { setMessages([...newMsgs, { role: 'assistant', content: "This is a simulated AI response. Please configure your API Key." }]); setLoading(false); }, 800); }; return (<div className="flex flex-col h-full bg-white relative pb-20 md:pb-0"><div className="border-b px-4 py-3 flex justify-between items-center bg-gray-50"><select value={selectedStateKey} onChange={e => setSelectedStateKey(e.target.value)} className="bg-white border rounded p-1">{Object.keys(stateDB).map(k => <option key={k} value={k}>{stateDB[k].state}</option>)}</select><div className="flex gap-2"><button onClick={() => setMode('study')} className={`px-2 py-1 text-xs rounded ${mode==='study' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Study</button><button onClick={() => setMode('course')} className={`px-2 py-1 text-xs rounded ${mode==='course' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Course</button><button onClick={() => setMode('sim')} className={`px-2 py-1 text-xs rounded ${mode==='sim' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Sim</button></div></div><div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4">{messages.map((m, i) => <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] p-3 rounded-lg text-sm ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>{m.content}</div></div>)}{loading && <div className="text-xs text-gray-400 ml-4">Thinking...</div>}<div ref={scrollRef} /></div><div className="p-4 border-t bg-white flex gap-2 pb-24 md:pb-4 safe-area-pb"><input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} placeholder="Ask AI..." className="flex-1 p-2 border rounded" /><button onClick={sendMessage} className="bg-blue-600 text-white px-4 rounded">Send</button></div></div>); };
         
         const AdminPanel = ({ stateDB }) => { 
@@ -1125,12 +1188,8 @@
         };
 
         const App = () => {
-            // Fix #3: Initialize currentView based on user existence to prevent loop
             const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('notary_user_profile')));
-            const [currentView, setCurrentView] = useState(() => {
-                const savedUser = JSON.parse(localStorage.getItem('notary_user_profile'));
-                return savedUser ? 'dashboard' : 'landing';
-            });
+            const [currentView, setCurrentView] = useState(user ? 'dashboard' : 'landing');
             const [appointments, setAppointments] = useState([]);
             const [credentials, setCredentials] = useState([]);
             const [showMobileMenu, setShowMobileMenu] = useState(false);
