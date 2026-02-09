@@ -80,7 +80,8 @@
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
         .safe-area-pb { padding-bottom: env(safe-area-inset-bottom); }
         .empty-state-dashed { background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3crect width='100%25' height='100%25' fill='none' rx='16' ry='16' stroke='%23CBD5E1FF' stroke-width='2' stroke-dasharray='12%2c 12' stroke-dashoffset='0' stroke-linecap='square'/%3e%3c/svg%3e"); }
-        .fab-ai { position: fixed; bottom: 80px; right: 20px; z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: grid; place-items: center; }
+        /* FIXED: Moved bottom up to avoid overlapping with bottom nav on some mobile devices */
+        .fab-ai { position: fixed; bottom: 90px; right: 20px; z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: grid; place-items: center; }
         @media (min-width: 768px) { .fab-ai { bottom: 30px; } }
         
         /* Toast Animation */
@@ -240,10 +241,9 @@
                 doc.setFontSize(12); doc.text(`Total Due: $${appt.fee}`, 160, finalY, { align: 'right' });
                 
                 // --- BUSINESS LOGO/SEAL IF UPLOADED ---
-                // Simplified for demo: Using text fallback if no image logic, but showing where it would go
                 if(user.logoUrl) {
                     try {
-                        doc.addImage(user.logoUrl, 'PNG', 20, 5, 30, 30); // Placeholder coords
+                        doc.addImage(user.logoUrl, 'PNG', 20, 5, 30, 30); 
                     } catch(e) { console.log("Image error", e); }
                 }
 
@@ -308,7 +308,7 @@
                 if (file) {
                     const reader = new FileReader();
                     reader.onloadend = () => {
-                        setData({ ...data, logoUrl: reader.result }); // Save base64 string
+                        setData({ ...data, logoUrl: reader.result }); 
                     };
                     reader.readAsDataURL(file);
                 }
@@ -726,7 +726,6 @@
             );
         };
 
-        // 2. Auth Screen (Redesigned + Terms)
         const AuthScreen = ({ onAuth, onBack }) => {
             const [isLogin, setIsLogin] = useState(true);
             const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -1025,34 +1024,6 @@
             );
         };
         
-        const Credentials = ({ onUpdate }) => {
-            const [creds, setCreds] = useState([]);
-            const [showForm, setShowForm] = useState(false);
-            useEffect(() => { DataManager.get('notary_credentials').then(setCreds); }, []);
-            const handleSave = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await DataManager.save('notary_credentials', { id: Date.now().toString(), name: fd.get('name'), expiry: fd.get('expiry') }); setShowForm(false); setCreds(await DataManager.get('notary_credentials')); showToast("Credential Saved"); };
-            const handleDelete = async (id) => { await DataManager.delete('notary_credentials', id); setCreds(await DataManager.get('notary_credentials')); showToast("Credential Deleted", 'error'); };
-            
-            return (
-                <div className="p-6 pb-24">
-                    <div className="flex justify-between mb-4"><h3 className="font-bold">Credentials</h3><button onClick={()=>setShowForm(true)} className="bg-indigo-600 text-white px-3 py-1 rounded">Add</button></div>
-                    {showForm && <form onSubmit={handleSave} className="bg-white p-4 rounded shadow mb-4"><input name="name" placeholder="Name" className="w-full border p-2 mb-2 rounded" /><input name="expiry" type="date" className="w-full border p-2 mb-2 rounded" /><button className="bg-indigo-600 text-white px-4 py-2 rounded">Save</button></form>}
-                    <div className="space-y-3">
-                        {creds.length === 0 ? (
-                            <EmptyState 
-                                icon="fa-id-card"
-                                title="No Credentials"
-                                description="Keep track of your commission, bond, and insurance. We'll alert you before they expire."
-                                actionLabel="Add Credential"
-                                onAction={() => setShowForm(true)}
-                                colorClass="text-orange-600"
-                                bgClass="bg-orange-50"
-                            />
-                        ) : creds.map(c => <div key={c.id} className="bg-white p-3 rounded shadow flex justify-between"><div><b>{c.name}</b><br/><span className="text-sm text-gray-500">{c.expiry}</span></div><button onClick={()=>handleDelete(c.id)} className="text-red-500">Delete</button></div>)}
-                    </div>
-                </div>
-            );
-        };
-        
         const TrainerModule = ({ stateDB, courseMods, user, onUpgrade }) => { const [selectedStateKey, setSelectedStateKey] = useState('CA'); const [mode, setMode] = useState('study'); const [messages, setMessages] = useState([{ role: 'assistant', content: "Hello! I am your AI Mentor. Ask me anything about notary laws." }]); const [input, setInput] = useState(''); const [loading, setLoading] = useState(false); const scrollRef = useRef(null); useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]); const sendMessage = async () => { if (!input.trim()) return; const newMsgs = [...messages, { role: 'user', content: input }]; setMessages(newMsgs); setInput(''); setLoading(true); setTimeout(() => { setMessages([...newMsgs, { role: 'assistant', content: "This is a simulated AI response. Please configure your API Key." }]); setLoading(false); }, 800); }; return (<div className="flex flex-col h-full bg-white relative pb-20 md:pb-0"><div className="border-b px-4 py-3 flex justify-between items-center bg-gray-50"><select value={selectedStateKey} onChange={e => setSelectedStateKey(e.target.value)} className="bg-white border rounded p-1">{Object.keys(stateDB).map(k => <option key={k} value={k}>{stateDB[k].state}</option>)}</select><div className="flex gap-2"><button onClick={() => setMode('study')} className={`px-2 py-1 text-xs rounded ${mode==='study' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Study</button><button onClick={() => setMode('course')} className={`px-2 py-1 text-xs rounded ${mode==='course' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Course</button><button onClick={() => setMode('sim')} className={`px-2 py-1 text-xs rounded ${mode==='sim' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Sim</button></div></div><div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4">{messages.map((m, i) => <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] p-3 rounded-lg text-sm ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>{m.content}</div></div>)}{loading && <div className="text-xs text-gray-400 ml-4">Thinking...</div>}<div ref={scrollRef} /></div><div className="p-4 border-t bg-white flex gap-2 pb-24 md:pb-4 safe-area-pb"><input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} placeholder="Ask AI..." className="flex-1 p-2 border rounded" /><button onClick={sendMessage} className="bg-blue-600 text-white px-4 rounded">Send</button></div></div>); };
         
         const AdminPanel = ({ stateDB }) => { 
@@ -1085,23 +1056,27 @@
         };
 
         const App = () => {
-            // Fix #3: Initialize currentView based on user existence to prevent loop
             const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('notary_user_profile')));
+            // FIX: Initialize view based on user existence to prevent loop
             const [currentView, setCurrentView] = useState(user ? 'dashboard' : 'landing');
-            
             const [appointments, setAppointments] = useState([]);
             const [credentials, setCredentials] = useState([]);
             const [showMobileMenu, setShowMobileMenu] = useState(false);
             const [isCloudConnected, setIsCloudConnected] = useState(false);
             const [showPricing, setShowPricing] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
+            // FIX: Initialize onboarding state correctly
             const [showOnboarding, setShowOnboarding] = useState(false);
             const [showAIModal, setShowAIModal] = useState(false); 
 
             useEffect(() => {
                 DataManager.get('notary_appointments').then(setAppointments);
                 DataManager.get('notary_credentials').then(setCredentials);
-                if (user && !localStorage.getItem('notary_onboarded')) setShowOnboarding(true);
+                
+                // Only show onboarding if user is logged in AND hasn't seen it
+                if (user && !localStorage.getItem('notary_onboarded')) {
+                    setShowOnboarding(true);
+                }
             }, [user]);
             
             const handleUpdateProfile = (updatedData) => {
@@ -1115,7 +1090,10 @@
                 localStorage.setItem('notary_user_profile', JSON.stringify(profile));
                 setUser(profile);
                 setCurrentView('dashboard');
-                if (!localStorage.getItem('notary_onboarded')) setShowOnboarding(true);
+                // Check onboarding on login
+                if (!localStorage.getItem('notary_onboarded')) {
+                    setShowOnboarding(true);
+                }
                 showToast("Welcome Back!");
             };
 
@@ -1162,7 +1140,14 @@
             return (
                 <div className="flex h-screen overflow-hidden font-sans">
                     <ToastContainer />
-                    <button onClick={() => setShowAIModal(true)} className="fab-ai bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:bg-indigo-700 transition-transform transform hover:scale-110"><i className="fas fa-robot text-2xl"></i></button>
+                    
+                    {/* Hide FAB on Trainer Page to avoid overlap/redundancy */}
+                    {currentView !== 'trainer' && (
+                        <button onClick={() => setShowAIModal(true)} className="fab-ai bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:bg-indigo-700 transition-transform transform hover:scale-110">
+                            <i className="fas fa-robot text-2xl"></i>
+                        </button>
+                    )}
+                    
                     {showAIModal && <AIHelperModal onClose={() => setShowAIModal(false)} />}
                     {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={handleUpgrade} />}
                     {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} onSave={handleUpdateProfile} />}
