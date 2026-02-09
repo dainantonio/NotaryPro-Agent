@@ -1431,10 +1431,113 @@
         const Journal = ({ user, onUpgrade }) => {
             const [entries, setEntries] = useState([]);
             const [showForm, setShowForm] = useState(false);
+            const [idCapture, setIdCapture] = useState(null);
+            const [idPreview, setIdPreview] = useState('');
+            const [selectedEntry, setSelectedEntry] = useState(null);
             useEffect(() => { DataManager.get('notary_journal').then(setEntries); }, []);
-            const handleSave = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await DataManager.save('notary_journal', { id: Date.now().toString(), date: fd.get('date'), signer: fd.get('signer'), docType: fd.get('docType'), fee: fd.get('fee') }); setShowForm(false); setEntries(await DataManager.get('notary_journal')); showToast("Entry Logged"); };
+            const handleSave = async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const encryptedId = idCapture ? encryptPayload(idCapture) : null;
+                await DataManager.save('notary_journal', {
+                    id: Date.now().toString(),
+                    date: fd.get('date'),
+                    signer: fd.get('signer'),
+                    docType: fd.get('docType'),
+                    fee: fd.get('fee'),
+                    idCapture: encryptedId
+                });
+                setShowForm(false);
+                setIdCapture(null);
+                setIdPreview('');
+                setEntries(await DataManager.get('notary_journal'));
+                showToast("Entry Logged");
+            };
+            const handleIdUpload = (file) => {
+                if (!file) {
+                    setIdCapture(null);
+                    setIdPreview('');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const result = reader.result;
+                    setIdCapture(typeof result === 'string' ? result : null);
+                    setIdPreview(typeof result === 'string' ? result : '');
+                };
+                reader.readAsDataURL(file);
+            };
             const handleExport = () => { if (user.plan !== 'pro') { onUpgrade(); return; } if (window.jspdf) PDFGenerator.createReport("Notary Journal", ["Date", "Signer", "Doc", "Fee"], entries.map(e => [e.date, e.signer, e.docType, `$${e.fee}`]), "journal.pdf"); };
-            return (<div className="p-6 pb-24"><div className="flex justify-between items-center mb-6"><div className="flex gap-2"><h3 className="text-lg font-bold text-gray-800">Journal</h3><button onClick={handleExport} className="text-gray-400 hover:text-blue-600"><i className="fas fa-file-export"></i></button></div><button onClick={() => setShowForm(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Log</button></div>{showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6"><form onSubmit={handleSave} className="space-y-4"><input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" /><input required name="signer" type="text" placeholder="Signer" className="w-full p-3 bg-gray-50 border rounded-xl" /><div className="flex gap-2"><button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 rounded-lg">Cancel</button><button type="submit" className="flex-1 bg-purple-600 text-white rounded-lg">Save</button></div></form></div>}<div className="space-y-3">{entries.length === 0 ? <EmptyState icon="fa-book" title="Journal Empty" description="Log your notarial acts." actionLabel="Log" onAction={()=>setShowForm(true)} colorClass="text-purple-600" bgClass="bg-purple-50" /> : entries.map(e => <div key={e.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><h4>{e.signer}</h4><p className="text-xs text-gray-500">{e.docType}</p></div>)}</div></div>);
+            return (
+                <div className="p-6 pb-24">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex gap-2">
+                            <h3 className="text-lg font-bold text-gray-800">Journal</h3>
+                            <button onClick={handleExport} className="text-gray-400 hover:text-blue-600"><i className="fas fa-file-export"></i></button>
+                        </div>
+                        <button onClick={() => setShowForm(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Log</button>
+                    </div>
+                    {showForm && (
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                            <form onSubmit={handleSave} className="space-y-4">
+                                <input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input required name="signer" type="text" placeholder="Signer" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input name="docType" type="text" placeholder="Document Type" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input name="fee" type="number" placeholder="Fee" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+                                    <label className="text-xs font-bold text-slate-500 uppercase block">Audit-Proof Capture (ID/Thumbprint)</label>
+                                    <input type="file" accept="image/*" capture="environment" onChange={(e) => handleIdUpload(e.target.files?.[0])} className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200" />
+                                    {idPreview && <img src={idPreview} alt="ID capture preview" className="w-full max-h-48 object-contain rounded-lg border border-slate-200" />}
+                                    <p className="text-xs text-slate-400">Captured image is stored locally with light encryption for audit review.</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 rounded-lg">Cancel</button>
+                                    <button type="submit" className="flex-1 bg-purple-600 text-white rounded-lg">Save</button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+                    <div className="space-y-3">
+                        {entries.length === 0 ? (
+                            <EmptyState icon="fa-book" title="Journal Empty" description="Log your notarial acts." actionLabel="Log" onAction={()=>setShowForm(true)} colorClass="text-purple-600" bgClass="bg-purple-50" />
+                        ) : entries.map(e => {
+                            const decrypted = e.idCapture ? decryptPayload(e.idCapture) : null;
+                            return (
+                                <div key={e.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div>
+                                            <h4 className="font-semibold text-gray-800">{e.signer}</h4>
+                                            <p className="text-xs text-gray-500">{e.docType || 'Notarial Entry'}</p>
+                                        </div>
+                                        {e.idCapture && (
+                                            <button onClick={() => setSelectedEntry({ ...e, decrypted })} className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">View Capture</button>
+                                        )}
+                                    </div>
+                                    {e.fee && <p className="text-xs text-gray-400 mt-2">Fee: ${e.fee}</p>}
+                                </div>
+                            );
+                        })}
+                    </div>
+                    {selectedEntry && (
+                        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                            <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h4 className="text-lg font-semibold text-gray-800">Audit Capture</h4>
+                                        <p className="text-sm text-gray-500">{selectedEntry.signer} • {selectedEntry.date}</p>
+                                    </div>
+                                    <button onClick={() => setSelectedEntry(null)} className="text-gray-400"><i className="fas fa-times"></i></button>
+                                </div>
+                                {selectedEntry.decrypted ? (
+                                    <img src={selectedEntry.decrypted} alt="Audit capture" className="w-full max-h-80 object-contain rounded-xl border border-slate-200" />
+                                ) : (
+                                    <p className="text-sm text-gray-500">Unable to decrypt capture.</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
         };
 
         const Finances = () => {
