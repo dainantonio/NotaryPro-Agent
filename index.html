@@ -220,6 +220,14 @@
             }
         };
 
+        const safeParse = (value, fallback) => {
+            try {
+                return JSON.parse(value);
+            } catch (err) {
+                return fallback;
+            }
+        };
+
         // --- PDF GENERATORS ---
         const PDFGenerator = {
             createInvoice: (appt, user) => {
@@ -1420,266 +1428,6 @@
             );
         };
 
-        const ClientPortal = ({ user, appointments }) => {
-            const [clients, setClients] = useState([]);
-            const [portalClient, setPortalClient] = useState(null);
-            const [loginData, setLoginData] = useState({ email: '', code: '' });
-            const [portalError, setPortalError] = useState('');
-            const [signatures, setSignatures] = useState([]);
-            const [activeDoc, setActiveDoc] = useState(null);
-            const [signatureInput, setSignatureInput] = useState('');
-            const [consentChecked, setConsentChecked] = useState(false);
-
-            useEffect(() => {
-                DataManager.get('notary_clients').then(setClients);
-                DataManager.get('notary_esignatures').then(setSignatures);
-            }, []);
-
-            const documents = [
-                {
-                    id: 'service-agreement',
-                    title: 'Service Agreement',
-                    description: 'Review the service scope, travel policies, and payment terms before your appointment.',
-                    body: 'By signing this service agreement, you confirm the appointment details, travel policies, and payment terms provided by your notary. You agree to pay the agreed fee upon completion of service and acknowledge cancellation policies communicated by the notary.'
-                },
-                {
-                    id: 'privacy-consent',
-                    title: 'Privacy & Communication Consent',
-                    description: 'Authorize appointment reminders and secure document handling.',
-                    body: 'By signing this consent, you authorize the notary to send appointment confirmations, reminders, and follow-ups to the contact information you provided. You acknowledge that your data will be handled securely and only used for the purposes of the notarial service.'
-                }
-            ];
-
-            const safeAppointments = Array.isArray(appointments) ? appointments : [];
-            const portalAppointments = portalClient
-                ? safeAppointments.filter(appt => appt.clientName?.toLowerCase().includes(portalClient.name.toLowerCase()))
-                : [];
-
-            const handlePortalLogin = (e) => {
-                e.preventDefault();
-                setPortalError('');
-                const client = clients.find(c => c.email?.toLowerCase() === loginData.email.toLowerCase());
-                if (!client) {
-                    setPortalError("We couldn't find a client profile with that email.");
-                    return;
-                }
-                const last4 = (client.phone || '').replace(/\D/g, '').slice(-4);
-                const accessCode = client.accessCode || last4;
-                if (!loginData.code || loginData.code !== accessCode) {
-                    setPortalError("Access code invalid. Please use your secure code or phone last four digits.");
-                    return;
-                }
-                setPortalClient(client);
-                showToast("Welcome to your secure portal!");
-            };
-
-            const handleSignDocument = async (doc) => {
-                if (!portalClient) return;
-                if (!signatureInput || !consentChecked) {
-                    showToast("Please type your full name and consent to sign.", "error");
-                    return;
-                }
-                const signedAt = new Date().toISOString();
-                const record = {
-                    id: `${doc.id}-${portalClient.email}`,
-                    clientEmail: portalClient.email,
-                    clientName: portalClient.name,
-                    documentId: doc.id,
-                    documentTitle: doc.title,
-                    signature: signatureInput,
-                    signedAt
-                };
-                await DataManager.save('notary_esignatures', record);
-                setSignatures(await DataManager.get('notary_esignatures'));
-                setSignatureInput('');
-                setConsentChecked(false);
-                setActiveDoc(null);
-                showToast("Document Signed");
-            };
-
-            const handleDownloadSigned = (doc) => {
-                const signatureRecord = signatures.find(s => s.documentId === doc.id && s.clientEmail === portalClient?.email);
-                if (!signatureRecord) return;
-                PDFGenerator.createSignedAgreement({
-                    clientName: signatureRecord.clientName,
-                    clientEmail: signatureRecord.clientEmail,
-                    signature: signatureRecord.signature,
-                    signedAt: signatureRecord.signedAt,
-                    title: doc.title,
-                    body: doc.body
-                });
-            };
-
-            return (
-                <div className="p-6 pb-24">
-                    <div className="max-w-5xl mx-auto space-y-6">
-                        <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                <div>
-                                    <h3 className="text-xl font-bold text-gray-900">Client Portal & E-Sign</h3>
-                                    <p className="text-sm text-gray-500">Securely review appointments, download invoices, and sign non-notarial documents.</p>
-                                </div>
-                                {portalClient && (
-                                    <div className="flex items-center gap-3 bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-sm">
-                                        <i className="fas fa-shield-alt"></i>
-                                        <span>Logged in as {portalClient.name}</span>
-                                        <button onClick={() => setPortalClient(null)} className="text-blue-600 font-semibold ml-2">Log out</button>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-
-                        {!portalClient ? (
-                            <div className="bg-white p-6 rounded-2xl shadow border border-gray-100 max-w-xl">
-                                <h4 className="text-lg font-semibold text-gray-800 mb-3">Client Secure Login</h4>
-                                <p className="text-sm text-gray-500 mb-4">Use your email and access code (or last 4 digits of your phone) to enter.</p>
-                                {portalError && <div className="bg-red-50 text-red-600 text-sm p-3 rounded mb-4">{portalError}</div>}
-                                <form onSubmit={handlePortalLogin} className="space-y-4">
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Email</label>
-                                        <input type="email" className="w-full p-3 border rounded-xl" value={loginData.email} onChange={(e) => setLoginData({ ...loginData, email: e.target.value })} required />
-                                    </div>
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Access Code</label>
-                                        <input type="text" className="w-full p-3 border rounded-xl" value={loginData.code} onChange={(e) => setLoginData({ ...loginData, code: e.target.value })} required />
-                                    </div>
-                                    <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold">Enter Portal</button>
-                                </form>
-                            </div>
-                        ) : (
-                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                                <div className="lg:col-span-2 space-y-6">
-                                    <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
-                                        <h4 className="text-lg font-semibold text-gray-800 mb-3">Your Upcoming Appointments</h4>
-                                        {portalAppointments.length === 0 ? (
-                                            <EmptyState 
-                                                icon="fa-calendar-check"
-                                                title="No upcoming appointments"
-                                                description="Your notary will update your schedule here once it is booked."
-                                                actionLabel="Need help?"
-                                                onAction={() => showToast("Please contact your notary.", "success")}
-                                                colorClass="text-blue-600"
-                                                bgClass="bg-blue-50"
-                                            />
-                                        ) : (
-                                            <div className="space-y-3">
-                                                {portalAppointments.map(appt => (
-                                                    <div key={appt.id} className="border border-gray-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                                                        <div>
-                                                            <p className="text-xs font-semibold text-gray-400 uppercase">{appt.type || 'Notary Service'}</p>
-                                                            <p className="text-lg font-semibold text-gray-800">{appt.date} • {appt.time}</p>
-                                                            <p className="text-sm text-gray-500">Location: {appt.location || 'Provided by notary'}</p>
-                                                        </div>
-                                                        <div className="text-right">
-                                                            <p className="text-sm text-gray-500">Fee</p>
-                                                            <p className="text-lg font-bold text-gray-800">${appt.fee || '--'}</p>
-                                                        </div>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-
-                                    <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
-                                        <h4 className="text-lg font-semibold text-gray-800 mb-3">Completed Invoices</h4>
-                                        {portalAppointments.filter(appt => ['Completed', 'Paid'].includes(appt.status)).length === 0 ? (
-                                            <EmptyState 
-                                                icon="fa-file-invoice"
-                                                title="No invoices yet"
-                                                description="After your appointment is completed, invoices will appear here for download."
-                                                actionLabel="Contact notary"
-                                                onAction={() => showToast("We will notify you when invoices are ready.", "success")}
-                                                colorClass="text-emerald-600"
-                                                bgClass="bg-emerald-50"
-                                            />
-                                        ) : (
-                                            <div className="space-y-3">
-                                                {portalAppointments.filter(appt => ['Completed', 'Paid'].includes(appt.status)).map(appt => (
-                                                    <div key={appt.id} className="flex items-center justify-between border border-gray-100 rounded-xl p-4">
-                                                        <div>
-                                                            <p className="font-semibold text-gray-800">{appt.date} Invoice</p>
-                                                            <p className="text-sm text-gray-500">Total: ${appt.fee}</p>
-                                                        </div>
-                                                        <button onClick={() => PDFGenerator.createInvoice(appt, user)} className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-semibold">Download</button>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </div>
-                                </div>
-
-                                <div className="space-y-6">
-                                    <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
-                                        <h4 className="text-lg font-semibold text-gray-800 mb-3">E-Sign Documents</h4>
-                                        <div className="space-y-4">
-                                            {documents.map(doc => {
-                                                const signed = signatures.find(s => s.documentId === doc.id && s.clientEmail === portalClient.email);
-                                                return (
-                                                    <div key={doc.id} className="border border-gray-100 rounded-xl p-4">
-                                                        <div className="flex items-start justify-between gap-4">
-                                                            <div>
-                                                                <p className="font-semibold text-gray-800">{doc.title}</p>
-                                                                <p className="text-sm text-gray-500">{doc.description}</p>
-                                                            </div>
-                                                            {signed ? (
-                                                                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">Signed</span>
-                                                            ) : (
-                                                                <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full">Pending</span>
-                                                            )}
-                                                        </div>
-                                                        <div className="mt-3 flex flex-wrap gap-2">
-                                                            {!signed ? (
-                                                                <button onClick={() => { setActiveDoc(doc); setSignatureInput(''); setConsentChecked(false); }} className="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-semibold">Review & Sign</button>
-                                                            ) : (
-                                                                <button onClick={() => handleDownloadSigned(doc)} className="bg-gray-900 text-white px-3 py-2 rounded-lg text-xs font-semibold">Download Copy</button>
-                                                            )}
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
-                                        </div>
-                                    </div>
-
-                                    <div className="bg-slate-900 text-white p-6 rounded-2xl shadow">
-                                        <h4 className="text-lg font-semibold mb-2">Secure by Design</h4>
-                                        <p className="text-sm text-slate-200">Clients access only their own records using email + access code verification. Signed documents are timestamped for audit readiness.</p>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-
-                    {activeDoc && (
-                        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-                            <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h4 className="text-lg font-semibold text-gray-800">{activeDoc.title}</h4>
-                                        <p className="text-sm text-gray-500">{activeDoc.description}</p>
-                                    </div>
-                                    <button onClick={() => setActiveDoc(null)} className="text-gray-400"><i className="fas fa-times"></i></button>
-                                </div>
-                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 max-h-40 overflow-y-auto">
-                                    {activeDoc.body}
-                                </div>
-                                <div className="mt-4 space-y-3">
-                                    <div>
-                                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Type your full name</label>
-                                        <input className="w-full p-3 border rounded-xl" value={signatureInput} onChange={(e) => setSignatureInput(e.target.value)} placeholder="Full legal name" />
-                                    </div>
-                                    <label className="flex items-start gap-2 text-sm text-gray-500">
-                                        <input type="checkbox" checked={consentChecked} onChange={(e) => setConsentChecked(e.target.checked)} className="mt-1" />
-                                        I agree that this e-signature is the legal equivalent of my handwritten signature.
-                                    </label>
-                                    <button onClick={() => handleSignDocument(activeDoc)} className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold">Sign & Submit</button>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            );
-        };
-
         const Journal = ({ user, onUpgrade }) => {
             const [entries, setEntries] = useState([]);
             const [showForm, setShowForm] = useState(false);
@@ -1697,7 +1445,7 @@
             const [currentTrip, setCurrentTrip] = useState(null);
             const [locationStatus, setLocationStatus] = useState('');
              useEffect(() => { const load = async () => { setExpenses(await DataManager.get('notary_expenses')); setMileage(await DataManager.get('notary_mileage')); }; load(); }, []);
-            useEffect(() => { setCurrentTrip(JSON.parse(localStorage.getItem('notary_active_trip') || 'null')); }, []);
+            useEffect(() => { setCurrentTrip(safeParse(localStorage.getItem('notary_active_trip'), null)); }, []);
             const handleSave = async (e) => { e.preventDefault(); const formData = new FormData(e.target); if (activeTab === 'expenses') { await DataManager.save('notary_expenses', { id: Date.now().toString(), date: formData.get('date'), category: formData.get('category'), desc: formData.get('desc'), amount: formData.get('amount') }); setExpenses(await DataManager.get('notary_expenses')); } else { await DataManager.save('notary_mileage', { id: Date.now().toString(), date: formData.get('date'), start: formData.get('start'), end: formData.get('end'), miles: formData.get('miles') }); setMileage(await DataManager.get('notary_mileage')); } setShowForm(false); showToast("Record Saved"); };
             const handleExport = () => { if (activeTab === 'expenses') PDFGenerator.createReport("Expense Report", ["Date", "Category", "Description", "Amount"], expenses.map(e => [e.date, e.category, e.desc, `-$${e.amount}`]), "expenses.pdf"); else PDFGenerator.createReport("Mileage Log", ["Date", "Start", "End", "Miles"], mileage.map(m => [m.date, m.start, m.end, `${m.miles} mi`]), "mileage.pdf"); };
             const haversineMiles = (start, end) => {
@@ -2065,7 +1813,7 @@
         };
 
         const App = () => {
-            const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('notary_user_profile')));
+            const [user, setUser] = useState(() => safeParse(localStorage.getItem('notary_user_profile'), null));
             const [currentView, setCurrentView] = useState(user ? 'dashboard' : 'landing');
             const [appointments, setAppointments] = useState([]);
             const [credentials, setCredentials] = useState([]);
