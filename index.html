@@ -19,11 +19,6 @@
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Merriweather:wght@300;400;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
-    
     <!-- Utilities -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
@@ -59,9 +54,8 @@
     </script>
 
     <style>
-        body { font-family: 'Merriweather', serif; background-color: #f3f4f6; }
-        h1, h2, h3, h4, h5, h6, button, .font-sans { font-family: 'Poppins', sans-serif; }
-        
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Courier+Prime&display=swap');
+        body { font-family: 'Inter', sans-serif; background-color: #f3f4f6; }
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
         
@@ -132,10 +126,6 @@
             border-bottom-right-radius: 10px;
             z-index: 10;
         }
-        
-        /* Notary Gold Accent */
-        .text-notary-gold { color: #fbbf24; }
-        .bg-notary-gold { background-color: #fbbf24; }
     </style>
 </head>
 <body>
@@ -300,11 +290,6 @@
                         <form onSubmit={handleSave} className="space-y-4">
                             <input className="w-full p-2 border rounded" placeholder="Your Name" value={data.name || ''} onChange={e => setData({...data, name: e.target.value})} />
                             <input className="w-full p-2 border rounded" placeholder="Business Name" value={data.businessName || ''} onChange={e => setData({...data, businessName: e.target.value})} />
-                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Gemini API Key (Optional)</label>
-                                <input className="w-full p-2 border rounded font-mono text-sm" type="password" placeholder="AI Key for Smart Fill" value={data.apiKey || ''} onChange={e => { setData({...data, apiKey: e.target.value}); localStorage.setItem('gemini_api_key', e.target.value); }} />
-                                <p className="text-xs text-gray-400 mt-1">Required for AI features to work fully.</p>
-                            </div>
                             <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">Save Profile</button>
                             <button type="button" onClick={onClose} className="w-full text-gray-500 py-2">Cancel</button>
                         </form>
@@ -681,370 +666,12 @@
                                 </div>
                             </div>
                         </div>
-                        <div className="text-center mt-16 text-xs text-slate-500 border-t border-slate-700 pt-8 mx-6">
+                        <div className="text-center mt-16 text-xs text-slate-500 border-t border-slate-800 pt-8 mx-6">
                             &copy; 2026 NotaryOS Inc. All rights reserved.
                         </div>
                     </div>
                 </div>
             );
-        };
-
-        // 2. Auth Screen (Redesigned + Terms) - Restored
-        const AuthScreen = ({ onAuth, onBack }) => {
-            const [isLogin, setIsLogin] = useState(true);
-            const [formData, setFormData] = useState({ name: '', email: '', password: '' });
-            const [showTermsModal, setShowTermsModal] = useState(false);
-            const [error, setError] = useState('');
-
-            const handleAuth = (e) => {
-                e.preventDefault();
-                setError('');
-                onAuth({ id: '1', name: isLogin ? 'User' : formData.name, email: formData.email, plan: 'free' });
-            };
-            
-            const handleGoogleAuth = async () => { try { const provider = new firebase.auth.GoogleAuthProvider(); await firebase.auth().signInWithPopup(provider); } catch (err) { setError(err.message); } };
-
-            return (
-                <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-inter">
-                    {showTermsModal && <TermsModal onClose={() => setShowTermsModal(false)} onAccept={() => setShowTermsModal(false)} />}
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex overflow-hidden min-h-[600px] animate-fade-in">
-                        <div className="w-1/2 bg-slate-900 text-white p-12 hidden md:flex flex-col justify-center relative overflow-hidden"><button onClick={onBack} className="absolute top-8 left-8 text-slate-400 hover:text-white flex items-center gap-2 text-sm font-medium z-20"><i className="fas fa-arrow-left"></i> Back</button><div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl"></div><div className="absolute -bottom-20 -left-20 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl"></div><div className="relative z-10"><div className="mb-6"><div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-2xl mb-4 shadow-lg shadow-blue-500/30"><i className="fas fa-user-tie"></i></div><h1 className="text-4xl font-bold mb-2">NotaryOS</h1><p className="text-blue-200 text-lg">The Operating System for Modern Notaries.</p></div><div className="space-y-4 mt-8"><div className="flex items-center gap-3"><i className="fas fa-check-circle text-emerald-400 text-xl"></i><span className="font-medium">Business Management Suite</span></div><div className="flex items-center gap-3"><i className="fas fa-check-circle text-emerald-400 text-xl"></i><span className="font-medium">AI-Powered Compliance Coach</span></div><div className="flex items-center gap-3"><i className="fas fa-check-circle text-emerald-400 text-xl"></i><span className="font-medium">50-State Law Database</span></div></div></div></div>
-                        <div className="w-full md:w-1/2 p-12 flex flex-col justify-center"><div className="max-w-sm mx-auto w-full"><h2 className="text-3xl font-bold text-slate-900 mb-8">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>{error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-xs">{error}</div>}<form onSubmit={handleAuth} className="space-y-5">{!isLogin && (<div><label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wide">Full Name</label><input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} placeholder="Jane Doe" /></div>)}<div><label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wide">Email Address</label><input type="email" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={formData.email} onChange={e=>setFormData({...formData, email: e.target.value})} placeholder="name@example.com" /></div><div><label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wide">Password</label><input type="password" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-xl tracking-widest" value={formData.password} onChange={e=>setFormData({...formData, password: e.target.value})} placeholder="••••••••" /></div><button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg shadow-md transition-all transform active:scale-95 mt-4">{isLogin ? 'Sign In' : 'Create Account'}</button></form><div className="relative flex py-6 items-center"><div className="flex-grow border-t border-slate-200"></div><span className="flex-shrink-0 mx-4 text-slate-400 text-xs font-medium uppercase">OR</span><div className="flex-grow border-t border-slate-200"></div></div><button className="w-full bg-white border border-slate-200 text-slate-700 font-bold py-3.5 rounded-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm"><i className="fab fa-google text-red-500 text-lg"></i><span>Continue with Google</span></button><div className="mt-8 text-center text-sm text-slate-500">{isLogin ? "New to NotaryOS?" : "Already have an account?"} <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 font-bold hover:underline ml-1">{isLogin ? 'Create Account' : 'Log In'}</button></div>
-                            <div className="mt-8 pt-4 border-t border-slate-100 text-xs text-center text-slate-400">
-                                By continuing, you agree to our 
-                                <button onClick={() => setShowTermsModal(true)} className="underline cursor-pointer hover:text-slate-600 ml-1">Terms of Service</button>.
-                            </div>
-                        </div></div>
-                    </div>
-                </div>
-            );
-        };
-
-        const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout, userName, userPlan, onSettings }) => {
-            const [isCollapsed, setIsCollapsed] = useState(false);
-            const menuItems = [
-                { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', color: 'text-blue-400' },
-                { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule', color: 'text-green-400' },
-                { id: 'clients', icon: 'fa-address-book', label: 'Clients', color: 'text-pink-400' },
-                { id: 'journal', icon: 'fa-book', label: 'Journal', color: 'text-purple-400' },
-                { id: 'finances', icon: 'fa-wallet', label: 'Finances', color: 'text-emerald-400' },
-                { id: 'credentials', icon: 'fa-id-card', label: 'Credentials', color: 'text-orange-400' },
-                { id: 'trainer', icon: 'fa-robot', label: 'AI Trainer', color: 'text-indigo-400', isPro: true },
-                { id: 'admin', icon: 'fa-shield-alt', label: 'Admin', color: 'text-red-500' }
-            ];
-
-            return (
-                <>
-                    <div className={`fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden ${isOpen ? 'block' : 'hidden'}`} onClick={onClose}></div>
-                    <div className={`fixed inset-y-0 left-0 bg-slate-900 text-white z-50 transform transition-all duration-300 ease-in-out lg:static lg:flex lg:flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${isCollapsed ? 'w-20' : 'w-64'} lg:translate-x-0`}>
-                        <div className="p-4 flex justify-between items-center border-b border-slate-700 h-16">
-                            {!isCollapsed && <span className="font-bold text-xl">NotaryOS</span>}
-                            <button onClick={() => setIsCollapsed(!isCollapsed)} className="hidden lg:block text-gray-400 hover:text-white"><i className={`fas ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'}`}></i></button>
-                            <button onClick={onClose} className="lg:hidden text-gray-400"><i className="fas fa-times"></i></button>
-                        </div>
-                        <nav className="flex-1 p-2 space-y-2 overflow-y-auto">
-                            {menuItems.map(item => (
-                                <button key={item.id} onClick={() => { setView(item.id); onClose(); }} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors hover:bg-slate-800 ${currentView === item.id ? 'bg-blue-600 text-white' : 'text-gray-400'} ${isCollapsed ? 'justify-center' : ''}`} title={item.label}>
-                                    <i className={`fas ${item.icon} text-lg ${currentView !== item.id ? item.color : ''}`}></i>
-                                    {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
-                                </button>
-                            ))}
-                        </nav>
-                        <div className="p-4 border-t border-slate-700">
-                             <button onClick={onSettings} className={`w-full flex items-center gap-3 px-3 py-2 mb-2 hover:bg-slate-800 rounded transition-colors group ${isCollapsed ? 'justify-center' : ''}`}>
-                                <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-blue-300 flex-shrink-0">{userName ? userName.substring(0,2).toUpperCase() : 'US'}</div>
-                                {!isCollapsed && (
-                                    <div className="flex-1 overflow-hidden text-left">
-                                        <p className="text-xs font-bold truncate group-hover:text-white">{userName || 'User'}</p>
-                                        <p className="text-[10px] text-slate-400 capitalize">{userPlan} Plan</p>
-                                    </div>
-                                )}
-                                {!isCollapsed && <i className="fas fa-cog text-slate-500 group-hover:text-white ml-auto"></i>}
-                            </button>
-                             <button onClick={onLogout} className={`w-full flex items-center gap-2 text-red-400 hover:text-white ${isCollapsed ? 'justify-center' : ''}`}><i className="fas fa-sign-out-alt"></i> {!isCollapsed && "Logout"}</button>
-                        </div>
-                    </div>
-                </>
-            );
-        };
-
-        const MobileNav = ({ setView, onOpenMenu }) => (
-            <div className="md:hidden fixed bottom-0 w-full bg-white border-t p-2 flex justify-around z-30 safe-area-pb shadow-lg">
-                <button onClick={() => setView('dashboard')}><i className="fas fa-home text-blue-500 text-xl"></i></button>
-                <button onClick={() => setView('schedule')}><i className="fas fa-calendar-alt text-green-500 text-xl"></i></button>
-                <button onClick={() => setView('addAppointment')} className="-mt-8 bg-blue-600 text-white rounded-full p-3 shadow-lg"><i className="fas fa-plus text-xl"></i></button>
-                <button onClick={() => setView('trainer')}><i className="fas fa-robot text-indigo-500 text-xl"></i></button>
-                <button onClick={onOpenMenu}><i className="fas fa-bars text-gray-500 text-xl"></i></button>
-            </div>
-        );
-
-        const Header = ({ title }) => (
-            <div className="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-20">
-                <h2 className="font-bold text-gray-800 text-lg">{title}</h2>
-                <div className="flex gap-3">
-                    <button className="text-gray-400"><i className="fas fa-bell"></i></button>
-                </div>
-            </div>
-        );
-
-        // --- CORE MODULES ---
-        
-        // CLIENTS MODULE
-        const Clients = () => {
-            const [clients, setClients] = useState([]);
-            const [showForm, setShowForm] = useState(false);
-            useEffect(() => { DataManager.get('notary_clients').then(setClients); }, []);
-            const handleSave = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await DataManager.save('notary_clients', { id: Date.now().toString(), name: fd.get('name'), phone: fd.get('phone'), email: fd.get('email'), address: fd.get('address'), notes: fd.get('notes') }); setShowForm(false); setClients(await DataManager.get('notary_clients')); showToast("Client Saved"); };
-            const handleDelete = async (id) => { await DataManager.delete('notary_clients', id); setClients(await DataManager.get('notary_clients')); showToast("Client Deleted", 'error'); };
-            
-            return (
-                <div className="p-6 pb-24">
-                     <div className="flex justify-between mb-4"><h3 className="font-bold text-lg text-gray-800">Client Directory</h3><button onClick={()=>setShowForm(true)} className="bg-pink-600 text-white px-3 py-1 rounded">Add</button></div>
-                    {showForm && <form onSubmit={handleSave} className="bg-white p-4 rounded shadow mb-4"><input name="name" placeholder="Name" className="w-full border p-2 mb-2 rounded" required /><input name="phone" placeholder="Phone" className="w-full border p-2 mb-2 rounded" /><button className="bg-pink-600 text-white px-4 py-2 rounded">Save</button></form>}
-                    <div className="space-y-3">
-                        {clients.length === 0 ? (
-                            <EmptyState 
-                                icon="fa-address-book"
-                                title="No Clients Yet"
-                                description="Start building your digital rolodex. Add your first client to keep their details handy for future signings."
-                                actionLabel="Add Client"
-                                onAction={() => setShowForm(true)}
-                                colorClass="text-pink-600"
-                                bgClass="bg-pink-50"
-                            />
-                        ) : clients.map(c => <div key={c.id} className="bg-white p-3 rounded shadow"><div className="flex justify-between"><b>{c.name}</b><button onClick={() => handleDelete(c.id)} className="text-red-500"><i className="fas fa-trash"></i></button></div><p className="text-sm text-gray-500">{c.phone}</p></div>)}
-                    </div>
-                </div>
-            );
-        };
-
-        // Feature #1: Income Chart
-        const IncomeChart = ({ appointments }) => {
-            const canvasRef = useRef(null);
-            
-            useEffect(() => {
-                if (!canvasRef.current) return;
-                const ctx = canvasRef.current.getContext('2d');
-                
-                // Group by Month
-                const monthlyData = {};
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-                months.forEach(m => monthlyData[m] = 0);
-                
-                appointments.forEach(a => {
-                    const date = new Date(a.date);
-                    const m = date.toLocaleString('default', { month: 'short' });
-                    if(monthlyData[m] !== undefined) monthlyData[m] += parseFloat(a.fee || 0);
-                });
-
-                const chart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: months,
-                        datasets: [{
-                            label: 'Income',
-                            data: Object.values(monthlyData),
-                            borderColor: '#4F46E5',
-                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
-                    }
-                });
-                
-                return () => chart.destroy();
-            }, [appointments]);
-
-            return <div className="h-24 w-full"><canvas ref={canvasRef}></canvas></div>;
-        };
-
-        const Dashboard = ({ appointments, credentials, setView, isCloud }) => {
-            const today = new Date().toISOString().split('T')[0];
-            const safeAppointments = Array.isArray(appointments) ? appointments : [];
-            const todaysJobs = safeAppointments.filter(a => a.date === today);
-            
-            const safeCredentials = Array.isArray(credentials) ? credentials : [];
-            const expiringCreds = safeCredentials.filter(c => { 
-                const exp = new Date(c.expiry); 
-                return Math.ceil((exp - new Date()) / (1000 * 60 * 60 * 24)) <= 60; 
-            });
-            const monthlyIncome = safeAppointments.filter(a => a.status === 'Paid').reduce((sum, a) => sum + parseFloat(a.fee || 0), 0);
-
-            return (
-                <div className="p-6 space-y-6 pb-24">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden"><div className="absolute right-0 top-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4"></div><div className="relative"><div className="text-gray-500 text-xs font-bold uppercase mb-1">Monthly Income</div><div className="text-2xl font-bold text-gray-800">${monthlyIncome.toFixed(2)}</div>
-                            <IncomeChart appointments={safeAppointments} />
-                        </div></div>
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden"><div className="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4"></div><div className="relative"><div className="text-gray-500 text-xs font-bold uppercase mb-1">Today's Jobs</div><div className="text-2xl font-bold text-gray-800">{todaysJobs.length}</div></div></div>
-                        <div onClick={() => setView('credentials')} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50 relative overflow-hidden"><div className={`absolute right-0 top-0 w-24 h-24 rounded-bl-full -mr-4 -mt-4 ${expiringCreds.length > 0 ? 'bg-red-50' : 'bg-gray-50'}`}></div><div className="relative"><div className="text-gray-500 text-xs font-bold uppercase mb-1">Compliance Alerts</div><div className={`text-2xl font-bold ${expiringCreds.length > 0 ? 'text-red-600' : 'text-green-600'}`}>{expiringCreds.length}</div></div></div>
-                    </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-800 mb-4">Today's Agenda</h3>
-                        {todaysJobs.length === 0 ? <EmptyState icon="fa-calendar-day" title="No jobs today" description="Schedule clear. Good day for marketing or training!" actionLabel="Add Job" onAction={() => setView('addAppointment')} colorClass="text-blue-600" bgClass="bg-blue-50" /> : <div className="space-y-3">{todaysJobs.map(j => <div key={j.id} className="bg-white p-4 rounded shadow">{j.clientName}</div>)}</div>}
-                    </div>
-                </div>
-            );
-        };
-
-        const AppointmentForm = ({ onSave, onCancel }) => {
-            const [formData, setFormData] = useState({ clientName: '', date: '', time: '', fee: '', status: 'Scheduled' });
-            const [magicInput, setMagicInput] = useState('');
-            const handleSmartFill = () => { if(magicInput.includes('John')) { setFormData({...formData, clientName: 'John Doe', date: '2023-12-01', time: '14:00', fee: '150'}); showToast("Form Filled by AI"); } else alert("API Key Needed"); };
-            const handleSubmit = (e) => { e.preventDefault(); onSave({...formData, id: Date.now().toString()}); showToast("Appointment Scheduled"); };
-
-            return (
-                <div className="p-6 pb-24 max-w-2xl mx-auto">
-                    <div className="bg-white rounded-2xl shadow p-6">
-                        <h3 className="font-bold text-lg mb-4">New Appointment</h3>
-                        <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
-                            <label className="text-xs font-bold text-blue-600 uppercase block mb-2"><i className="fas fa-magic"></i> Smart Fill</label>
-                            <div className="flex gap-2"><input value={magicInput} onChange={e=>setMagicInput(e.target.value)} className="flex-1 p-2 border rounded text-sm" placeholder="e.g. Loan signing with John tomorrow..." /><button onClick={handleSmartFill} className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold">Fill</button></div>
-                        </div>
-                        <form onSubmit={handleSubmit} className="space-y-4">
-                            <input className="w-full p-3 border rounded-xl" placeholder="Client Name" value={formData.clientName} onChange={e=>setFormData({...formData, clientName: e.target.value})} required />
-                            <div className="grid grid-cols-2 gap-4"><input type="date" className="w-full p-3 border rounded-xl" value={formData.date} onChange={e=>setFormData({...formData, date: e.target.value})} /><input type="time" className="w-full p-3 border rounded-xl" value={formData.time} onChange={e=>setFormData({...formData, time: e.target.value})} /></div>
-                            <input className="w-full p-3 border rounded-xl" type="number" placeholder="Fee ($)" value={formData.fee} onChange={e=>setFormData({...formData, fee: e.target.value})} />
-                            <div className="flex gap-3"><button type="button" onClick={onCancel} className="flex-1 py-3 bg-gray-100 rounded-xl">Cancel</button><button type="submit" className="flex-1 py-3 bg-blue-600 text-white rounded-xl">Save</button></div>
-                        </form>
-                    </div>
-                </div>
-            );
-        };
-
-        const Schedule = ({ appointments, setView }) => {
-            const [viewMode, setViewMode] = useState('list');
-            const safeAppointments = Array.isArray(appointments) ? appointments : [];
-            const CalendarView = () => <div className="bg-white p-8 rounded-2xl shadow text-center text-gray-400">Calendar View</div>;
-            return (
-                <div className="p-6 pb-24">
-                    <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-lg">Schedule</h3><div className="bg-gray-200 p-1 rounded-lg flex"><button onClick={()=>setViewMode('list')} className={`px-3 py-1 text-xs font-bold rounded-md ${viewMode==='list'?'bg-white shadow':''}`}>List</button><button onClick={()=>setViewMode('calendar')} className={`px-3 py-1 text-xs font-bold rounded-md ${viewMode==='calendar'?'bg-white shadow':''}`}>Calendar</button></div></div>
-                    {viewMode === 'calendar' ? <CalendarView /> : (
-                        <div className="space-y-3">
-                            {safeAppointments.length === 0 ? <EmptyState icon="fa-calendar-alt" title="Schedule Empty" description="Add your first signing." actionLabel="Add" onAction={() => setView('addAppointment')} colorClass="text-green-600" bgClass="bg-green-50" /> : safeAppointments.sort((a,b) => new Date(a.date) - new Date(b.date)).map(job => (
-                                <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><div onClick={() => {}} className="cursor-pointer"><div className="flex justify-between items-start mb-2"><div><span className="text-xs font-bold text-gray-400 uppercase">{job.type}</span><h4 className="font-bold text-gray-800 text-lg">{job.clientName}</h4></div><span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase status-${job.status.toLowerCase()}`}>{job.status}</span></div><div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mt-3 pt-3 border-t border-gray-50"><div className="flex items-center gap-2"><i className="far fa-calendar-alt text-blue-400"></i> {job.date} {job.time}</div><div className="text-right font-bold text-gray-800">${job.fee}</div></div></div></div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-            );
-        };
-
-        const Journal = ({ user, onUpgrade }) => {
-            const [entries, setEntries] = useState([]);
-            const [showForm, setShowForm] = useState(false);
-            useEffect(() => { DataManager.get('notary_journal').then(setEntries); }, []);
-            const handleSave = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await DataManager.save('notary_journal', { id: Date.now().toString(), date: fd.get('date'), signer: fd.get('signer'), docType: fd.get('docType'), fee: fd.get('fee') }); setShowForm(false); setEntries(await DataManager.get('notary_journal')); showToast("Entry Logged"); };
-            const handleExport = () => { if (user.plan !== 'pro') { onUpgrade(); return; } if (window.jspdf) PDFGenerator.createReport("Notary Journal", ["Date", "Signer", "Doc", "Fee"], entries.map(e => [e.date, e.signer, e.docType, `$${e.fee}`]), "journal.pdf"); };
-            return (<div className="p-6 pb-24"><div className="flex justify-between items-center mb-6"><div className="flex gap-2"><h3 className="text-lg font-bold text-gray-800">Journal</h3><button onClick={handleExport} className="text-gray-400 hover:text-blue-600"><i className="fas fa-file-export"></i></button></div><button onClick={() => setShowForm(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Log</button></div>{showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6"><form onSubmit={handleSave} className="space-y-4"><input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" /><input required name="signer" type="text" placeholder="Signer" className="w-full p-3 bg-gray-50 border rounded-xl" /><div className="flex gap-2"><button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 rounded-lg">Cancel</button><button type="submit" className="flex-1 bg-purple-600 text-white rounded-lg">Save</button></div></form></div>}<div className="space-y-3">{entries.length === 0 ? <EmptyState icon="fa-book" title="Journal Empty" description="Log your notarial acts." actionLabel="Log" onAction={()=>setShowForm(true)} colorClass="text-purple-600" bgClass="bg-purple-50" /> : entries.map(e => <div key={e.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><h4>{e.signer}</h4><p className="text-xs text-gray-500">{e.docType}</p></div>)}</div></div>);
-        };
-
-        const Finances = () => {
-            const [activeTab, setActiveTab] = useState('expenses');
-            const [expenses, setExpenses] = useState([]);
-            const [mileage, setMileage] = useState([]);
-            const [showForm, setShowForm] = useState(false);
-             useEffect(() => { const load = async () => { setExpenses(await DataManager.get('notary_expenses')); setMileage(await DataManager.get('notary_mileage')); }; load(); }, []);
-            const handleSave = async (e) => { e.preventDefault(); const formData = new FormData(e.target); if (activeTab === 'expenses') { await DataManager.save('notary_expenses', { id: Date.now().toString(), date: formData.get('date'), category: formData.get('category'), desc: formData.get('desc'), amount: formData.get('amount') }); setExpenses(await DataManager.get('notary_expenses')); } else { await DataManager.save('notary_mileage', { id: Date.now().toString(), date: formData.get('date'), start: formData.get('start'), end: formData.get('end'), miles: formData.get('miles') }); setMileage(await DataManager.get('notary_mileage')); } setShowForm(false); showToast("Record Saved"); };
-            const handleExport = () => { if (activeTab === 'expenses') PDFGenerator.createReport("Expense Report", ["Date", "Category", "Description", "Amount"], expenses.map(e => [e.date, e.category, e.desc, `-$${e.amount}`]), "expenses.pdf"); else PDFGenerator.createReport("Mileage Log", ["Date", "Start", "End", "Miles"], mileage.map(m => [m.date, m.start, m.end, `${m.miles} mi`]), "mileage.pdf"); };
-            return (
-                <div className="p-6 pb-24">
-                    <div className="bg-white p-1 rounded-xl flex mb-6 border border-gray-200 shadow-sm"><button onClick={() => setActiveTab('expenses')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'expenses' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-500'}`}>Expenses</button><button onClick={() => setActiveTab('mileage')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'mileage' ? 'bg-blue-50 text-blue-700' : 'text-gray-500'}`}>Mileage</button></div>
-                    <div className="flex justify-between items-center mb-6"><div><p className="text-xs text-gray-500 uppercase font-bold">Total</p><p className="text-2xl font-bold text-gray-800">{activeTab === 'expenses' ? `$${expenses.reduce((s, i) => s + parseFloat(i.amount||0), 0).toFixed(2)}` : `${mileage.reduce((s, i) => s + parseFloat(i.miles||0), 0)} mi`}</p></div><div className="flex gap-2"><button onClick={handleExport} className="bg-white text-gray-500 border w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-file-export"></i></button><button onClick={() => setShowForm(true)} className="bg-gray-900 text-white w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-plus"></i></button></div></div>
-                    {showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6"><form onSubmit={handleSave} className="space-y-4"><input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" />{activeTab === 'expenses' ? <><input name="category" placeholder="Category" className="w-full p-3 border rounded-xl" /><input name="desc" placeholder="Description" className="w-full p-3 border rounded-xl" /><input name="amount" placeholder="Amount" className="w-full p-3 border rounded-xl" /></> : <><input name="start" placeholder="Start" className="w-full p-3 border rounded-xl" /><input name="end" placeholder="End" className="w-full p-3 border rounded-xl" /><input name="miles" placeholder="Miles" className="w-full p-3 border rounded-xl" /></>}<button className="w-full bg-gray-900 text-white py-3 rounded-lg">Save</button></form></div>}
-                    
-                    <div className="space-y-3">
-                        {activeTab === 'expenses' && expenses.length === 0 ? (
-                            <EmptyState 
-                                icon="fa-receipt"
-                                title="No Expenses Logged"
-                                description="Track your business spending for tax time. Add your first expense."
-                                actionLabel="Log Expense"
-                                onAction={() => setShowForm(true)}
-                                colorClass="text-emerald-600"
-                                bgClass="bg-emerald-50"
-                            />
-                        ) : activeTab === 'mileage' && mileage.length === 0 ? (
-                            <EmptyState 
-                                icon="fa-road"
-                                title="No Mileage Logged"
-                                description="Don't miss out on tax deductions. Track the miles you drive for work."
-                                actionLabel="Log Mileage"
-                                onAction={() => setShowForm(true)}
-                                colorClass="text-blue-600"
-                                bgClass="bg-blue-50"
-                            />
-                        ) : (
-                            activeTab === 'expenses' ? expenses.map(e => <div key={e.id} className="bg-white p-3 rounded shadow"><span>{e.desc}</span></div>) : mileage.map(m => <div key={m.id} className="bg-white p-3 rounded shadow"><span>{m.start} to {m.end}</span></div>)
-                        )}
-                    </div>
-                </div>
-            );
-        };
-        
-        const Credentials = ({ onUpdate }) => {
-            const [creds, setCreds] = useState([]);
-            const [showForm, setShowForm] = useState(false);
-            useEffect(() => { DataManager.get('notary_credentials').then(setCreds); }, []);
-            const handleSave = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await DataManager.save('notary_credentials', { id: Date.now().toString(), name: fd.get('name'), expiry: fd.get('expiry') }); setShowForm(false); setCreds(await DataManager.get('notary_credentials')); showToast("Credential Saved"); };
-            const handleDelete = async (id) => { await DataManager.delete('notary_credentials', id); setCreds(await DataManager.get('notary_credentials')); showToast("Credential Deleted", 'error'); };
-            
-            return (
-                <div className="p-6 pb-24">
-                    <div className="flex justify-between mb-4"><h3 className="font-bold">Credentials</h3><button onClick={()=>setShowForm(true)} className="bg-indigo-600 text-white px-3 py-1 rounded">Add</button></div>
-                    {showForm && <form onSubmit={handleSave} className="bg-white p-4 rounded shadow mb-4"><input name="name" placeholder="Name" className="w-full border p-2 mb-2 rounded" /><input name="expiry" type="date" className="w-full border p-2 mb-2 rounded" /><button className="bg-indigo-600 text-white px-4 py-2 rounded">Save</button></form>}
-                    <div className="space-y-3">
-                        {creds.length === 0 ? (
-                            <EmptyState 
-                                icon="fa-id-card"
-                                title="No Credentials"
-                                description="Keep track of your commission, bond, and insurance. We'll alert you before they expire."
-                                actionLabel="Add Credential"
-                                onAction={() => setShowForm(true)}
-                                colorClass="text-orange-600"
-                                bgClass="bg-orange-50"
-                            />
-                        ) : creds.map(c => <div key={c.id} className="bg-white p-3 rounded shadow flex justify-between"><div><b>{c.name}</b><br/><span className="text-sm text-gray-500">{c.expiry}</span></div><button onClick={()=>handleDelete(c.id)} className="text-red-500">Delete</button></div>)}
-                    </div>
-                </div>
-            );
-        };
-        
-        const TrainerModule = ({ stateDB, courseMods, user, onUpgrade }) => { const [selectedStateKey, setSelectedStateKey] = useState('CA'); const [mode, setMode] = useState('study'); const [messages, setMessages] = useState([{ role: 'assistant', content: "Hello! I am your AI Mentor. Ask me anything about notary laws." }]); const [input, setInput] = useState(''); const [loading, setLoading] = useState(false); const scrollRef = useRef(null); useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]); const sendMessage = async () => { if (!input.trim()) return; const newMsgs = [...messages, { role: 'user', content: input }]; setMessages(newMsgs); setInput(''); setLoading(true); setTimeout(() => { setMessages([...newMsgs, { role: 'assistant', content: "This is a simulated AI response. Please configure your API Key." }]); setLoading(false); }, 800); }; return (<div className="flex flex-col h-full bg-white relative pb-20 md:pb-0"><div className="border-b px-4 py-3 flex justify-between items-center bg-gray-50"><select value={selectedStateKey} onChange={e => setSelectedStateKey(e.target.value)} className="bg-white border rounded p-1">{Object.keys(stateDB).map(k => <option key={k} value={k}>{stateDB[k].state}</option>)}</select><div className="flex gap-2"><button onClick={() => setMode('study')} className={`px-2 py-1 text-xs rounded ${mode==='study' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Study</button><button onClick={() => setMode('course')} className={`px-2 py-1 text-xs rounded ${mode==='course' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Course</button><button onClick={() => setMode('sim')} className={`px-2 py-1 text-xs rounded ${mode==='sim' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Sim</button></div></div><div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4">{messages.map((m, i) => <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] p-3 rounded-lg text-sm ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>{m.content}</div></div>)}{loading && <div className="text-xs text-gray-400 ml-4">Thinking...</div>}<div ref={scrollRef} /></div><div className="p-4 border-t bg-white flex gap-2 pb-24 md:pb-4 safe-area-pb"><input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} placeholder="Ask AI..." className="flex-1 p-2 border rounded" /><button onClick={sendMessage} className="bg-blue-600 text-white px-4 rounded">Send</button></div></div>); };
-        
-        const AdminPanel = ({ stateDB }) => { 
-            const [activeTab, setActiveTab] = useState('states'); 
-            const [selectedState, setSelectedState] = useState('CA'); 
-            
-            return (
-                <div className="p-6 pb-24">
-                    <div className="bg-red-50 border border-red-200 rounded p-4 mb-4"><h3 className="font-bold text-red-800">Admin Panel</h3></div>
-                    <div className="flex gap-2 mb-4">
-                        <button onClick={()=>setActiveTab('states')} className={`px-3 py-1 rounded ${activeTab==='states'?'bg-indigo-100 text-indigo-800':''}`}>States</button>
-                        <button onClick={()=>setActiveTab('curriculum')} className={`px-3 py-1 rounded ${activeTab==='curriculum'?'bg-indigo-100 text-indigo-800':''}`}>Curriculum</button>
-                    </div>
-                    {activeTab === 'states' ? (
-                        <div className="bg-white p-4 rounded shadow border">
-                            <select className="w-full border p-2 mb-4" value={selectedState} onChange={e=>setSelectedState(e.target.value)}>
-                                {Object.keys(stateDB).map(k=><option key={k} value={k}>{stateDB[k].state}</option>)}
-                            </select>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-500">Fees (Ack)</label>
-                                <input className="w-full border p-2 rounded" defaultValue={stateDB[selectedState].fees.acknowledgment} />
-                                <button className="bg-indigo-600 text-white px-4 py-2 rounded w-full">Save Changes</button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div className="bg-white p-4 rounded shadow border"><p>Curriculum Editor Placeholder</p></div>
-                    )}
-                </div>
-            ); 
         };
 
         const App = () => {
@@ -1058,6 +685,13 @@
             const [showSettings, setShowSettings] = useState(false);
             const [showOnboarding, setShowOnboarding] = useState(false);
             const [showAIModal, setShowAIModal] = useState(false); 
+            
+            // ADMIN STATE
+            const [stateDB, setStateDB] = useState(() => JSON.parse(localStorage.getItem('notary_state_db')) || STATE_DATABASE);
+            const [courseMods, setCourseMods] = useState(() => JSON.parse(localStorage.getItem('notary_course_mods')) || COURSE_MODULES);
+
+            const handleUpdateStateDB = (newDB) => { setStateDB(newDB); localStorage.setItem('notary_state_db', JSON.stringify(newDB)); };
+            const handleUpdateCourseMods = (newMods) => { setCourseMods(newMods); localStorage.setItem('notary_course_mods', JSON.stringify(newMods)); };
 
             useEffect(() => {
                 DataManager.get('notary_appointments').then(setAppointments);
