@@ -238,6 +238,15 @@
                 doc.autoTable({ startY: 80, head: [['Description', 'Date', 'Amount']], body: [[appt.type || 'Notary Service', appt.date, `$${appt.fee}`]], theme: 'grid', headStyles: { fillColor: primaryColor } });
                 const finalY = doc.lastAutoTable.finalY + 10;
                 doc.setFontSize(12); doc.text(`Total Due: $${appt.fee}`, 160, finalY, { align: 'right' });
+                
+                // --- BUSINESS LOGO/SEAL IF UPLOADED ---
+                // Simplified for demo: Using text fallback if no image logic, but showing where it would go
+                if(user.logoUrl) {
+                    try {
+                        doc.addImage(user.logoUrl, 'PNG', 20, 5, 30, 30); // Placeholder coords
+                    } catch(e) { console.log("Image error", e); }
+                }
+
                 doc.save(`invoice_${appt.clientName}.pdf`);
                 showToast("Invoice Downloaded");
             },
@@ -292,14 +301,47 @@
 
         const SettingsModal = ({ user, onClose, onSave }) => {
             const [data, setData] = useState(user || {});
+            
+            // Handle logo upload simulation
+            const handleLogoUpload = (e) => {
+                const file = e.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        setData({ ...data, logoUrl: reader.result }); // Save base64 string
+                    };
+                    reader.readAsDataURL(file);
+                }
+            };
+
             const handleSave = (e) => { e.preventDefault(); onSave(data); onClose(); showToast("Profile Updated"); };
+            
             return (
                 <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm z-[100]">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 font-sans">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 font-sans max-h-[90vh] overflow-y-auto">
                         <h3 className="font-bold text-lg mb-4">Business Profile</h3>
                         <form onSubmit={handleSave} className="space-y-4">
-                            <input className="w-full p-2 border rounded" placeholder="Your Name" value={data.name || ''} onChange={e => setData({...data, name: e.target.value})} />
-                            <input className="w-full p-2 border rounded" placeholder="Business Name" value={data.businessName || ''} onChange={e => setData({...data, businessName: e.target.value})} />
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Your Name</label>
+                                <input className="w-full p-2 border rounded" placeholder="Your Name" value={data.name || ''} onChange={e => setData({...data, name: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Business Name</label>
+                                <input className="w-full p-2 border rounded" placeholder="Business Name" value={data.businessName || ''} onChange={e => setData({...data, businessName: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Business Logo / Seal</label>
+                                <div className="flex items-center gap-4">
+                                    {data.logoUrl && <img src={data.logoUrl} alt="Logo Preview" className="w-12 h-12 object-contain border rounded" />}
+                                    <input type="file" accept="image/*" onChange={handleLogoUpload} className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                                </div>
+                                <p className="text-xs text-gray-400 mt-1">Used on invoices and reports.</p>
+                            </div>
+                             <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Gemini API Key (Optional)</label>
+                                <input className="w-full p-2 border rounded font-mono text-sm" type="password" placeholder="AI Key for Smart Fill" value={data.apiKey || ''} onChange={e => { setData({...data, apiKey: e.target.value}); localStorage.setItem('gemini_api_key', e.target.value); }} />
+                                <p className="text-xs text-gray-400 mt-1">Required for AI features to work fully.</p>
+                            </div>
                             <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">Save Profile</button>
                             <button type="button" onClick={onClose} className="w-full text-gray-500 py-2">Cancel</button>
                         </form>
@@ -394,7 +436,7 @@
 
             return (
                 <div className="min-h-screen landing-bg text-white font-inter flex flex-col relative overflow-hidden">
-                    <div className="w-full p-6 flex justify-between items-center z-20 container mx-auto bg-slate-900/80 backdrop-blur-md sticky top-0 border-b border-slate-800/50">
+                    <div className="w-full p-6 flex justify-between items-center z-20 container mx-auto bg-slate-900/80 backdrop-blur-md border-b border-slate-800/50">
                         <div className="flex items-center gap-2">
                             <i className="fas fa-file-signature text-xl text-teal-400"></i>
                             <h1 className="text-xl font-bold tracking-tight font-sans">NotaryOS</h1>
@@ -684,7 +726,7 @@
             );
         };
 
-        // 2. Auth Screen (Redesigned + Terms) - Restored
+        // 2. Auth Screen (Redesigned + Terms)
         const AuthScreen = ({ onAuth, onBack }) => {
             const [isLogin, setIsLogin] = useState(true);
             const [formData, setFormData] = useState({ name: '', email: '', password: '' });
@@ -774,7 +816,7 @@
         );
 
         const Header = ({ title }) => (
-            <div className="bg-white border-b p-4 flex justify-between items-center sticky top-0 z-20">
+            <div className="bg-white border-b p-4 flex justify-between items-center z-20">
                 <h2 className="font-bold text-gray-800 text-lg">{title}</h2>
                 <div className="flex gap-3">
                     <button className="text-gray-400"><i className="fas fa-bell"></i></button>
@@ -1043,8 +1085,10 @@
         };
 
         const App = () => {
+            // Fix #3: Initialize currentView based on user existence to prevent loop
             const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('notary_user_profile')));
-            const [currentView, setCurrentView] = useState('landing');
+            const [currentView, setCurrentView] = useState(user ? 'dashboard' : 'landing');
+            
             const [appointments, setAppointments] = useState([]);
             const [credentials, setCredentials] = useState([]);
             const [showMobileMenu, setShowMobileMenu] = useState(false);
