@@ -86,6 +86,24 @@
             background-color: #0f172a; /* Dark Slate 900 */
             background-image: radial-gradient(circle at 100% 0%, #1e293b 0%, #0f172a 50%);
         }
+        
+        /* Visual elements for landing page */
+        .visual-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+        .visual-card:hover {
+            transform: translateY(-5px);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+
+        /* AI Hero Glow */
+        .ai-glow-box {
+            box-shadow: 0 0 20px rgba(124, 58, 237, 0.3), 0 0 60px rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(124, 58, 237, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -169,6 +187,7 @@
             }
         };
 
+        // --- PDF GENERATORS ---
         const PDFGenerator = {
             createInvoice: (appt, user) => {
                 if (!window.jspdf) { showToast("PDF Library Loading...", 'error'); return; }
@@ -180,6 +199,7 @@
                 doc.setFontSize(10); doc.setTextColor(100); doc.text(`ID: ${appt.id.substring(0,8)}`, 160, 26); doc.text(`Date: ${new Date().toLocaleDateString()}`, 160, 31);
                 doc.setFontSize(12); doc.setTextColor(0); doc.text(businessName.toUpperCase(), 20, 20);
                 doc.setFontSize(10); doc.setTextColor(100); doc.text(user.phone || "", 20, 26); doc.text(user.email || "", 20, 31);
+                if(user.address) doc.text(user.address, 20, 36);
                 doc.setTextColor(0); doc.text("BILL TO:", 20, 55); 
                 doc.setFontSize(14); doc.text(appt.clientName, 20, 62); 
                 doc.setFontSize(10); doc.text(appt.location, 20, 68);
@@ -207,64 +227,28 @@
 
         // --- COMPONENTS ---
 
-        // 1. Feature #1: Income Chart
-        const IncomeChart = ({ appointments }) => {
-            const canvasRef = useRef(null);
-            
-            useEffect(() => {
-                if (!canvasRef.current) return;
-                const ctx = canvasRef.current.getContext('2d');
-                
-                // Group by Month
-                const monthlyData = {};
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-                months.forEach(m => monthlyData[m] = 0);
-                
-                appointments.forEach(a => {
-                    const date = new Date(a.date);
-                    const m = date.toLocaleString('default', { month: 'short' });
-                    if(monthlyData[m] !== undefined) monthlyData[m] += parseFloat(a.fee || 0);
-                });
-
-                const chart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: months,
-                        datasets: [{
-                            label: 'Income',
-                            data: Object.values(monthlyData),
-                            borderColor: '#4F46E5',
-                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                            fill: true,
-                            tension: 0.4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
-                    }
-                });
-                
-                return () => chart.destroy();
-            }, [appointments]);
-
-            return <div className="h-24 w-full"><canvas ref={canvasRef}></canvas></div>;
-        };
-
-        const TermsModal = ({ onAccept }) => (
-            <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-                <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
-                    <h2 className="text-xl font-bold mb-4">Terms of Service</h2>
-                    <p className="text-sm text-gray-600 mb-4">NotaryOS is a management tool, not legal advice.</p>
-                    <button onClick={onAccept} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl">I Agree</button>
+        // 1. Modals & Helpers
+        const TermsModal = ({ onClose }) => (
+            <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm z-[100]">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-fade-in">
+                    <div className="flex justify-between items-center mb-4 border-b pb-4">
+                        <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2"><i className="fas fa-balance-scale text-blue-600"></i> Terms of Service</h2>
+                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times"></i></button>
+                    </div>
+                    <div className="text-sm text-gray-600 mb-6 space-y-3 max-h-[60vh] overflow-y-auto">
+                        <p className="font-bold">Last Updated: February 2026</p>
+                        <p><strong>1. Acceptance of Terms:</strong> By accessing and using NotaryOS, you accept and agree to be bound by the terms and provision of this agreement.</p>
+                        <p><strong>2. Not Legal Advice:</strong> NotaryOS is a management and educational tool. The AI Trainer provides information based on general data. This tool does not constitute legal advice. Always verify with your official state handbook.</p>
+                        <p><strong>3. User Responsibility:</strong> You are responsible for all notarial acts performed. NotaryOS is not liable for any errors, omissions, or legal actions resulting from your use of this software.</p>
+                        <p><strong>4. Data Privacy:</strong> In this version, business data is stored locally on your device unless Cloud Sync is explicitly enabled.</p>
+                    </div>
+                    <button onClick={onClose} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors">I Understand & Agree</button>
                 </div>
             </div>
         );
 
         const PricingModal = ({ onClose, onUpgrade }) => (
-            <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+            <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm z-[100]">
                 <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center">
                     <h2 className="text-2xl font-bold mb-2">Upgrade to Pro</h2>
                     <p className="text-gray-500 mb-6">Unlock Unlimited AI, Cloud Sync & PDF Invoices.</p>
@@ -278,7 +262,7 @@
             const [data, setData] = useState(user || {});
             const handleSave = (e) => { e.preventDefault(); onSave(data); onClose(); showToast("Profile Updated"); };
             return (
-                <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+                <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm z-[100]">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6">
                         <h3 className="font-bold text-lg mb-4">Business Profile</h3>
                         <form onSubmit={handleSave} className="space-y-4">
@@ -344,155 +328,190 @@
             </div>
         );
 
-        const LandingPage = ({ onNavigate }) => (
-            <div className="min-h-screen landing-bg text-white font-inter flex flex-col relative overflow-hidden">
-                {/* Nav */}
-                <div className="w-full p-6 flex justify-between items-center z-20 container mx-auto">
-                    <div className="flex items-center gap-2">
-                        <i className="fas fa-user-tie text-xl"></i>
-                        <h1 className="text-xl font-bold tracking-tight">NotaryOS</h1>
-                    </div>
-                    <button onClick={onNavigate} className="text-gray-300 hover:text-white font-medium text-sm transition-colors">Log In</button>
-                </div>
-
-                {/* Hero */}
-                <div className="flex-1 flex flex-col justify-center items-center text-center px-6 relative z-10">
-                    <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight tracking-tight max-w-4xl">
-                        The Operating System<br/>
-                        for <span className="text-blue-400">Modern Notaries</span>.
-                    </h1>
-                    <p className="text-lg text-slate-400 mb-10 max-w-2xl leading-relaxed">
-                        Manage appointments, track compliance, generate invoices, and train with an AI expert. All in one place.
-                    </p>
-                    <button onClick={onNavigate} className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3.5 rounded-lg font-bold text-sm shadow-lg shadow-blue-500/30 transition-all transform hover:-translate-y-1">
-                        Start Free Trial
-                    </button>
-                </div>
-                
-                {/* Feature Grid (Below Fold) */}
-                <div className="bg-white py-24 w-full">
-                    <div className="max-w-5xl mx-auto px-6">
-                        <div className="text-center mb-16">
-                            <h3 className="text-2xl font-bold text-slate-900 mb-3">Everything you need to run your business</h3>
-                            <p className="text-slate-500 max-w-2xl mx-auto text-sm">Stop using spreadsheets and sticky notes. NotaryOS brings your entire workflow into one secure, compliant dashboard.</p>
-                        </div>
-                        <div className="grid md:grid-cols-3 gap-8">
-                            <div className="p-6 rounded-2xl border border-slate-100 hover:shadow-lg transition-shadow">
-                                <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center mb-4"><i className="fas fa-calendar-check"></i></div>
-                                <h4 className="font-bold text-slate-900 mb-2">Smart Scheduling</h4>
-                                <p className="text-slate-500 text-xs leading-relaxed">Track appointments, set reminders, and generate PDF invoices instantly. Never miss a signing.</p>
-                            </div>
-                            <div className="p-6 rounded-2xl border border-slate-100 hover:shadow-lg transition-shadow">
-                                <div className="w-10 h-10 bg-purple-100 text-purple-600 rounded-lg flex items-center justify-center mb-4"><i className="fas fa-robot"></i></div>
-                                <h4 className="font-bold text-slate-900 mb-2">AI Compliance Coach</h4>
-                                <p className="text-slate-500 text-xs leading-relaxed">A strict AI mentor trained on 50-state laws. Ask questions, roleplay scenarios, and stay compliant.</p>
-                            </div>
-                            <div className="p-6 rounded-2xl border border-slate-100 hover:shadow-lg transition-shadow">
-                                <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-lg flex items-center justify-center mb-4"><i className="fas fa-cloud"></i></div>
-                                <h4 className="font-bold text-slate-900 mb-2">Cloud Sync <span className="text-[10px] bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-full ml-1">LIVE</span></h4>
-                                <p className="text-slate-500 text-xs leading-relaxed">Start on your laptop, finish on your phone. Your data is encrypted and synced in real-time.</p>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="text-center mt-16 text-xs text-slate-400">&copy; 2024 NotaryOS Inc.</div>
-                </div>
-            </div>
-        );
-
-        // 2. Auth Screen (Redesigned)
-        const AuthScreen = ({ onAuth, onBack }) => {
-            const [isLogin, setIsLogin] = useState(true);
-            const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+        const LandingPage = ({ onNavigate }) => {
+            const [demoQuestion, setDemoQuestion] = useState("");
+            const [demoResponse, setDemoResponse] = useState(null);
             
-            const handleAuth = (e) => {
+            const handleDemoAsk = (e) => {
                 e.preventDefault();
-                // Simple pass-through for demo, in real app handle Firebase
-                onAuth({ id: '1', name: isLogin ? 'User' : formData.name, email: formData.email, plan: 'free' });
+                setDemoResponse("loading");
+                setTimeout(() => {
+                    setDemoResponse("In California, the maximum fee for a jurat is $15 per signature, including the oath or affirmation. Always check the latest handbook!");
+                }, 1500);
             };
 
             return (
-                <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-inter">
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex overflow-hidden min-h-[600px] animate-fade-in">
-                        {/* Left Side - Dark Branding */}
-                        <div className="w-1/2 bg-slate-900 text-white p-12 hidden md:flex flex-col justify-center relative overflow-hidden">
-                            <button onClick={onBack} className="absolute top-8 left-8 text-slate-400 hover:text-white flex items-center gap-2 text-sm font-medium z-20"><i className="fas fa-arrow-left"></i> Back</button>
-                            <div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl"></div>
-                            <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl"></div>
-                            
-                            <div className="relative z-10">
-                                <div className="mb-6">
-                                    <div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-2xl mb-4 shadow-lg shadow-blue-500/30">
-                                        <i className="fas fa-user-tie"></i>
-                                    </div>
-                                    <h1 className="text-4xl font-bold mb-2">NotaryOS</h1>
-                                    <p className="text-blue-200 text-lg">The Operating System for Modern Notaries.</p>
-                                </div>
-                                
-                                <div className="space-y-4 mt-8">
-                                    <div className="flex items-center gap-3">
-                                        <i className="fas fa-check-circle text-emerald-400 text-xl"></i>
-                                        <span className="font-medium">Business Management Suite</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <i className="fas fa-check-circle text-emerald-400 text-xl"></i>
-                                        <span className="font-medium">AI-Powered Compliance Coach</span>
-                                    </div>
-                                    <div className="flex items-center gap-3">
-                                        <i className="fas fa-check-circle text-emerald-400 text-xl"></i>
-                                        <span className="font-medium">50-State Law Database</span>
-                                    </div>
-                                </div>
-                            </div>
+                <div className="min-h-screen landing-bg text-white font-inter flex flex-col relative overflow-hidden">
+                    <div className="w-full p-6 flex justify-between items-center z-20 container mx-auto">
+                        <div className="flex items-center gap-2">
+                            <i className="fas fa-file-signature text-xl text-blue-400"></i>
+                            <h1 className="text-xl font-bold tracking-tight">NotaryOS</h1>
                         </div>
+                        <button onClick={onNavigate} className="text-gray-300 hover:text-white font-medium text-sm transition-colors border border-gray-600 hover:border-gray-400 px-4 py-2 rounded-lg">Log In</button>
+                    </div>
 
-                        {/* Right Side - Form */}
-                        <div className="w-full md:w-1/2 p-12 flex flex-col justify-center">
-                            <div className="max-w-sm mx-auto w-full">
-                                <h2 className="text-3xl font-bold text-slate-900 mb-8">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>
-                                
-                                <form onSubmit={handleAuth} className="space-y-5">
-                                    {!isLogin && (
-                                        <div>
-                                            <label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wide">Full Name</label>
-                                            <input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} placeholder="Jane Doe" />
-                                        </div>
-                                    )}
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wide">Email Address</label>
-                                        <input type="email" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={formData.email} onChange={e=>setFormData({...formData, email: e.target.value})} placeholder="name@example.com" />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wide">Password</label>
-                                        <input type="password" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-xl tracking-widest" value={formData.password} onChange={e=>setFormData({...formData, password: e.target.value})} placeholder="••••••••" />
-                                    </div>
-                                    
-                                    <button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg shadow-md transition-all transform active:scale-95 mt-4">
-                                        {isLogin ? 'Sign In' : 'Create Account'}
+                    <div className="flex-1 flex flex-col justify-center items-center text-center px-6 relative z-10 py-20">
+                        <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight tracking-tight max-w-5xl drop-shadow-2xl">
+                            The Operating System<br/>
+                            for <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">Modern Notaries</span>.
+                        </h1>
+                        <p className="text-lg text-slate-300 mb-10 max-w-2xl leading-relaxed">
+                            Manage appointments, track compliance, generate invoices, and train with an AI expert. All in one place.
+                        </p>
+                        <button onClick={onNavigate} className="bg-blue-600 hover:bg-blue-700 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-xl shadow-blue-500/20 transition-all transform hover:-translate-y-1">
+                            Start Free Trial
+                        </button>
+                    </div>
+                    
+                    {/* NEW AI Hero Feature Section */}
+                    <div className="w-full bg-slate-900/50 border-y border-slate-800 py-20 relative overflow-hidden">
+                        <div className="absolute top-0 left-0 w-full h-full bg-blue-500/5 blur-[100px] pointer-events-none"></div>
+                        <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center relative z-10">
+                            <div className="text-left">
+                                <div className="inline-block bg-purple-900/30 text-purple-300 px-3 py-1 rounded-full text-xs font-bold mb-4 border border-purple-500/30">
+                                    NEW: AI COMPLIANCE COACH
+                                </div>
+                                <h2 className="text-3xl md:text-4xl font-bold mb-4 leading-tight">
+                                    Your personal compliance expert, <span className="text-purple-400">available 24/7.</span>
+                                </h2>
+                                <p className="text-slate-400 text-lg mb-8 leading-relaxed">
+                                    Not just software—it's a mentor. Get instant answers to state-specific questions, fee limits, and ID rules without searching through a 100-page handbook.
+                                </p>
+                                <form onSubmit={handleDemoAsk} className="relative">
+                                    <input 
+                                        type="text" 
+                                        placeholder="e.g. What's the fee for a jurat in California?" 
+                                        className="w-full bg-slate-800 border border-slate-700 rounded-xl py-4 px-6 text-white focus:outline-none focus:border-purple-500 focus:ring-1 focus:ring-purple-500 transition-all shadow-lg"
+                                        value={demoQuestion}
+                                        onChange={(e) => setDemoQuestion(e.target.value)}
+                                    />
+                                    <button type="submit" className="absolute right-2 top-2 bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-bold text-sm transition-colors">
+                                        Ask AI
                                     </button>
                                 </form>
-
-                                <div className="relative flex py-6 items-center">
-                                    <div className="flex-grow border-t border-slate-200"></div>
-                                    <span className="flex-shrink-0 mx-4 text-slate-400 text-xs font-medium uppercase">OR</span>
-                                    <div className="flex-grow border-t border-slate-200"></div>
+                            </div>
+                            
+                            <div className="ai-glow-box bg-slate-800/80 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl relative">
+                                <div className="flex items-center gap-3 mb-6 border-b border-slate-700 pb-4">
+                                    <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white"><i className="fas fa-robot"></i></div>
+                                    <div>
+                                        <h4 className="font-bold text-white">NotaryOS AI</h4>
+                                        <div className="flex items-center gap-1.5">
+                                            <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                            <span className="text-xs text-slate-400">Online Now</span>
+                                        </div>
+                                    </div>
                                 </div>
-
-                                <button className="w-full bg-white border border-slate-200 text-slate-700 font-bold py-3.5 rounded-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm">
-                                    <i className="fab fa-google text-red-500 text-lg"></i>
-                                    <span>Continue with Google</span>
-                                </button>
-
-                                <div className="mt-8 text-center text-sm text-slate-500">
-                                    {isLogin ? "New to NotaryOS?" : "Already have an account?"} 
-                                    <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 font-bold hover:underline ml-1">
-                                        {isLogin ? 'Create Account' : 'Log In'}
-                                    </button>
-                                </div>
-                                <div className="mt-8 pt-4 border-t border-slate-100 text-xs text-center text-slate-400">
-                                    By continuing, you agree to our <span className="underline cursor-pointer hover:text-slate-600">Terms of Service</span>.
+                                
+                                <div className="space-y-4">
+                                    <div className="flex justify-end">
+                                        <div className="bg-blue-600 text-white px-4 py-3 rounded-2xl rounded-tr-none text-sm max-w-[80%] shadow-md">
+                                            What's the fee for a jurat in California?
+                                        </div>
+                                    </div>
+                                    
+                                    {(demoResponse || true) && (
+                                        <div className="flex justify-start">
+                                             <div className="bg-slate-700 text-slate-200 px-4 py-3 rounded-2xl rounded-tl-none text-sm max-w-[90%] shadow-md border border-slate-600">
+                                                {demoResponse === "loading" ? (
+                                                    <div className="flex gap-1.5 py-1">
+                                                        <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"></span>
+                                                        <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-100"></span>
+                                                        <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce delay-200"></span>
+                                                    </div>
+                                                ) : (
+                                                    demoResponse || "That depends on your state laws. For California, the maximum fee for a jurat is $15 per signature, including the oath or affirmation."
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         </div>
+                    </div>
+                    
+                    {/* Pricing Section */}
+                    <div className="bg-slate-900 py-24 w-full border-t border-slate-800">
+                        <div className="max-w-6xl mx-auto px-6">
+                            <div className="text-center mb-16">
+                                <h3 className="text-3xl font-bold text-white mb-4">Simple, Transparent Pricing</h3>
+                                <p className="text-slate-400">Everything you need to grow your business.</p>
+                            </div>
+                            <div className="grid md:grid-cols-3 gap-8">
+                                {/* Free Plan */}
+                                <div className="visual-card p-8 rounded-2xl flex flex-col bg-slate-800 border border-slate-700">
+                                    <h4 className="text-xl font-bold text-white mb-2">Starter</h4>
+                                    <div className="text-4xl font-bold text-white mb-6">$0<span className="text-sm text-slate-400 font-normal">/mo</span></div>
+                                    <ul className="space-y-3 mb-8 text-slate-300 text-sm flex-1">
+                                        <li className="flex gap-2"><i className="fas fa-check text-green-400"></i> 5 Appointments/mo</li>
+                                        <li className="flex gap-2"><i className="fas fa-check text-green-400"></i> Basic Journal</li>
+                                        <li className="flex gap-2"><i className="fas fa-check text-green-400"></i> Local Storage Only</li>
+                                    </ul>
+                                    <button onClick={onNavigate} className="w-full py-3 rounded-xl border border-slate-600 text-white hover:bg-slate-700 transition-colors">Get Started</button>
+                                </div>
+                                
+                                {/* Pro Plan */}
+                                <div className="visual-card p-8 rounded-2xl flex flex-col relative border-blue-500 bg-slate-800">
+                                    <div className="absolute top-0 right-0 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl">POPULAR</div>
+                                    <h4 className="text-xl font-bold text-white mb-2">Pro</h4>
+                                    <div className="text-4xl font-bold text-white mb-6">$19<span className="text-sm text-slate-400 font-normal">/mo</span></div>
+                                    <ul className="space-y-3 mb-8 text-slate-300 text-sm flex-1">
+                                        <li className="flex gap-2"><i className="fas fa-check text-blue-400"></i> Unlimited Appointments</li>
+                                        <li className="flex gap-2"><i className="fas fa-check text-blue-400"></i> Cloud Sync & Backups</li>
+                                        <li className="flex gap-2"><i className="fas fa-check text-blue-400"></i> AI Compliance Coach</li>
+                                        <li className="flex gap-2"><i className="fas fa-check text-blue-400"></i> PDF Invoicing</li>
+                                    </ul>
+                                    <button onClick={onNavigate} className="w-full py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors font-bold shadow-lg shadow-blue-500/20">Start 7-Day Trial</button>
+                                </div>
+
+                                {/* Enterprise */}
+                                <div className="visual-card p-8 rounded-2xl flex flex-col bg-slate-800 border border-slate-700">
+                                    <h4 className="text-xl font-bold text-white mb-2">Agency</h4>
+                                    <div className="text-4xl font-bold text-white mb-6">$49<span className="text-sm text-slate-400 font-normal">/mo</span></div>
+                                    <ul className="space-y-3 mb-8 text-slate-300 text-sm flex-1">
+                                        <li className="flex gap-2"><i className="fas fa-check text-green-400"></i> Everything in Pro</li>
+                                        <li className="flex gap-2"><i className="fas fa-check text-green-400"></i> Multi-User Support</li>
+                                        <li className="flex gap-2"><i className="fas fa-check text-green-400"></i> API Access</li>
+                                        <li className="flex gap-2"><i className="fas fa-check text-green-400"></i> Priority Support</li>
+                                    </ul>
+                                    <button className="w-full py-3 rounded-xl border border-slate-600 text-white hover:bg-slate-700 transition-colors">Contact Sales</button>
+                                </div>
+                            </div>
+                        </div>
+                        <div className="text-center mt-16 text-xs text-slate-500 border-t border-slate-800 pt-8 mx-6">
+                            &copy; 2026 NotaryOS Inc. All rights reserved.
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        // 2. Auth Screen (Redesigned + Terms)
+        const AuthScreen = ({ onAuth, onBack }) => {
+            const [isLogin, setIsLogin] = useState(true);
+            const [formData, setFormData] = useState({ name: '', email: '', password: '' });
+            const [showTermsModal, setShowTermsModal] = useState(false);
+            const [error, setError] = useState('');
+
+            const handleAuth = (e) => {
+                e.preventDefault();
+                setError('');
+                onAuth({ id: '1', name: isLogin ? 'User' : formData.name, email: formData.email, plan: 'free' });
+            };
+            
+            const handleGoogleAuth = async () => { try { const provider = new firebase.auth.GoogleAuthProvider(); await firebase.auth().signInWithPopup(provider); } catch (err) { setError(err.message); } };
+
+            return (
+                <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-inter">
+                    {showTermsModal && <TermsModal onClose={() => setShowTermsModal(false)} onAccept={() => setShowTermsModal(false)} />}
+                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex overflow-hidden min-h-[600px] animate-fade-in">
+                        <div className="w-1/2 bg-slate-900 text-white p-12 hidden md:flex flex-col justify-center relative overflow-hidden"><button onClick={onBack} className="absolute top-8 left-8 text-slate-400 hover:text-white flex items-center gap-2 text-sm font-medium z-20"><i className="fas fa-arrow-left"></i> Back</button><div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl"></div><div className="absolute -bottom-20 -left-20 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl"></div><div className="relative z-10"><div className="mb-6"><div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-2xl mb-4 shadow-lg shadow-blue-500/30"><i className="fas fa-user-tie"></i></div><h1 className="text-4xl font-bold mb-2">NotaryOS</h1><p className="text-blue-200 text-lg">The Operating System for Modern Notaries.</p></div><div className="space-y-4 mt-8"><div className="flex items-center gap-3"><i className="fas fa-check-circle text-emerald-400 text-xl"></i><span className="font-medium">Business Management Suite</span></div><div className="flex items-center gap-3"><i className="fas fa-check-circle text-emerald-400 text-xl"></i><span className="font-medium">AI-Powered Compliance Coach</span></div><div className="flex items-center gap-3"><i className="fas fa-check-circle text-emerald-400 text-xl"></i><span className="font-medium">50-State Law Database</span></div></div></div></div>
+                        <div className="w-full md:w-1/2 p-12 flex flex-col justify-center"><div className="max-w-sm mx-auto w-full"><h2 className="text-3xl font-bold text-slate-900 mb-8">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>{error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-xs">{error}</div>}<form onSubmit={handleAuth} className="space-y-5">{!isLogin && (<div><label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wide">Full Name</label><input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} placeholder="Jane Doe" /></div>)}<div><label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wide">Email Address</label><input type="email" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={formData.email} onChange={e=>setFormData({...formData, email: e.target.value})} placeholder="name@example.com" /></div><div><label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wide">Password</label><input type="password" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-xl tracking-widest" value={formData.password} onChange={e=>setFormData({...formData, password: e.target.value})} placeholder="••••••••" /></div><button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg shadow-md transition-all transform active:scale-95 mt-4">{isLogin ? 'Sign In' : 'Create Account'}</button></form><div className="relative flex py-6 items-center"><div className="flex-grow border-t border-slate-200"></div><span className="flex-shrink-0 mx-4 text-slate-400 text-xs font-medium uppercase">OR</span><div className="flex-grow border-t border-slate-200"></div></div><button className="w-full bg-white border border-slate-200 text-slate-700 font-bold py-3.5 rounded-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm"><i className="fab fa-google text-red-500 text-lg"></i><span>Continue with Google</span></button><div className="mt-8 text-center text-sm text-slate-500">{isLogin ? "New to NotaryOS?" : "Already have an account?"} <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 font-bold hover:underline ml-1">{isLogin ? 'Create Account' : 'Log In'}</button></div>
+                            <div className="mt-8 pt-4 border-t border-slate-100 text-xs text-center text-slate-400">
+                                By continuing, you agree to our 
+                                <button onClick={() => setShowTermsModal(true)} className="underline cursor-pointer hover:text-slate-600 ml-1">Terms of Service</button>.
+                            </div>
+                        </div></div>
                     </div>
                 </div>
             );
@@ -572,7 +591,7 @@
             const [clients, setClients] = useState([]);
             const [showForm, setShowForm] = useState(false);
             useEffect(() => { DataManager.get('notary_clients').then(setClients); }, []);
-            const handleSave = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await DataManager.save('notary_clients', { id: Date.now().toString(), name: fd.get('name'), phone: fd.get('phone'), email: fd.get('email') }); setShowForm(false); setClients(await DataManager.get('notary_clients')); showToast("Client Saved"); };
+            const handleSave = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await DataManager.save('notary_clients', { id: Date.now().toString(), name: fd.get('name'), phone: fd.get('phone'), email: fd.get('email'), address: fd.get('address'), notes: fd.get('notes') }); setShowForm(false); setClients(await DataManager.get('notary_clients')); showToast("Client Saved"); };
             const handleDelete = async (id) => { await DataManager.delete('notary_clients', id); setClients(await DataManager.get('notary_clients')); showToast("Client Deleted", 'error'); };
             
             return (
@@ -594,6 +613,52 @@
                     </div>
                 </div>
             );
+        };
+
+        // Feature #1: Income Chart
+        const IncomeChart = ({ appointments }) => {
+            const canvasRef = useRef(null);
+            
+            useEffect(() => {
+                if (!canvasRef.current) return;
+                const ctx = canvasRef.current.getContext('2d');
+                
+                // Group by Month
+                const monthlyData = {};
+                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+                months.forEach(m => monthlyData[m] = 0);
+                
+                appointments.forEach(a => {
+                    const date = new Date(a.date);
+                    const m = date.toLocaleString('default', { month: 'short' });
+                    if(monthlyData[m] !== undefined) monthlyData[m] += parseFloat(a.fee || 0);
+                });
+
+                const chart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: months,
+                        datasets: [{
+                            label: 'Income',
+                            data: Object.values(monthlyData),
+                            borderColor: '#4F46E5',
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            fill: true,
+                            tension: 0.4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: { legend: { display: false } },
+                        scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
+                    }
+                });
+                
+                return () => chart.destroy();
+            }, [appointments]);
+
+            return <div className="h-24 w-full"><canvas ref={canvasRef}></canvas></div>;
         };
 
         const Dashboard = ({ appointments, credentials, setView, isCloud }) => {
@@ -753,7 +818,14 @@
         const AdminPanel = ({ stateDB }) => { 
             const [activeTab, setActiveTab] = useState('states'); 
             const [selectedState, setSelectedState] = useState('CA'); 
-            
+            const [editStateData, setEditStateData] = useState(stateDB[selectedState]);
+
+            useEffect(() => { setEditStateData(stateDB[selectedState]); }, [selectedState, stateDB]);
+
+            const handleStateSave = () => {
+                alert(`Saved changes for ${editStateData.state}`);
+            };
+
             return (
                 <div className="p-6 pb-24">
                     <div className="bg-red-50 border border-red-200 rounded p-4 mb-4"><h3 className="font-bold text-red-800">Admin Panel</h3></div>
@@ -762,15 +834,17 @@
                         <button onClick={()=>setActiveTab('curriculum')} className={`px-3 py-1 rounded ${activeTab==='curriculum'?'bg-indigo-100 text-indigo-800':''}`}>Curriculum</button>
                     </div>
                     {activeTab === 'states' ? (
-                        <div className="bg-white p-4 rounded shadow border">
-                            <select className="w-full border p-2 mb-4" value={selectedState} onChange={e=>setSelectedState(e.target.value)}>
-                                {Object.keys(stateDB).map(k=><option key={k} value={k}>{stateDB[k].state}</option>)}
-                            </select>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-500">Fees (Ack)</label>
-                                <input className="w-full border p-2 rounded" defaultValue={stateDB[selectedState].fees.acknowledgment} />
-                                <button className="bg-indigo-600 text-white px-4 py-2 rounded w-full">Save Changes</button>
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 space-y-6">
+                            <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Select Jurisdiction</label><select className="w-full border border-gray-200 p-3 rounded-lg bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none font-medium text-gray-700" value={selectedState} onChange={e=>setSelectedState(e.target.value)}>{Object.keys(stateDB).map(k=><option key={k} value={k}>{stateDB[k].state}</option>)}</select></div>
+                            <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">Specialized Services (Loan/Apostille/Marriage)</label><textarea className="w-full h-32 border border-gray-200 p-3 rounded-lg font-mono text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none" value={JSON.stringify(editStateData.specialized || {}, null, 4)} onChange={e => { try { const parsed = JSON.parse(e.target.value); setEditStateData({...editStateData, specialized: parsed}); } catch(e){} }}></textarea></div>
+                            <div className="grid grid-cols-3 gap-4">
+                                <div><label className="block text-xs font-bold text-gray-400 uppercase mb-1">Ack Fee</label><div className="relative"><span className="absolute left-3 top-2.5 text-gray-400">$</span><input className="w-full pl-6 p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" value={editStateData.fees.acknowledgment.replace('$','')} onChange={e => setEditStateData({...editStateData, fees: {...editStateData.fees, acknowledgment: e.target.value}})} /></div></div>
+                                <div><label className="block text-xs font-bold text-gray-400 uppercase mb-1">Jurat Fee</label><div className="relative"><span className="absolute left-3 top-2.5 text-gray-400">$</span><input className="w-full pl-6 p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" value={editStateData.fees.jurat.replace('$','')} onChange={e => setEditStateData({...editStateData, fees: {...editStateData.fees, jurat: e.target.value}})} /></div></div>
+                                <div><label className="block text-xs font-bold text-gray-400 uppercase mb-1">Oath Fee</label><div className="relative"><span className="absolute left-3 top-2.5 text-gray-400">$</span><input className="w-full pl-6 p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" value={editStateData.fees.oath ? editStateData.fees.oath.replace('$','') : '0.00'} onChange={e => setEditStateData({...editStateData, fees: {...editStateData.fees, oath: e.target.value}})} /></div></div>
                             </div>
+                            <div><label className="block text-xs font-bold text-gray-500 uppercase mb-2">ID Rules</label><textarea className="w-full h-20 border border-gray-200 p-3 rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none" value={editStateData.id_requirements.credible_witnesses} onChange={e => setEditStateData({...editStateData, id_requirements: {...editStateData.id_requirements, credible_witnesses: e.target.value}})}></textarea></div>
+                            <div><label className="block text-xs font-bold text-red-500 uppercase mb-2">Red Flags</label><div className="bg-red-50 p-3 rounded-lg border border-red-100"><textarea className="w-full h-16 bg-transparent border-none text-red-800 text-sm focus:ring-0 resize-none outline-none" value={editStateData.red_flags.join(', ')} onChange={e => setEditStateData({...editStateData, red_flags: e.target.value.split(', ')})}></textarea></div></div>
+                            <button onClick={handleStateSave} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transition-all transform active:scale-95 text-sm uppercase tracking-wide">Save Changes</button>
                         </div>
                     ) : (
                         <div className="bg-white p-4 rounded shadow border"><p>Curriculum Editor Placeholder</p></div>
@@ -844,7 +918,7 @@
                     case 'finances': return <Finances />;
                     case 'credentials': return <Credentials onUpdate={handleRefresh} />;
                     case 'trainer': return <TrainerModule stateDB={STATE_DATABASE} courseMods={COURSE_MODULES} user={user} onUpgrade={()=>{}} />;
-                    case 'admin': return <AdminPanel stateDB={STATE_DATABASE} />;
+                    case 'admin': return <AdminPanel stateDB={STATE_DATABASE} onUpdateStateDB={()=>{}} />;
                     default: return <div>Not found</div>;
                 }
             };
@@ -857,7 +931,7 @@
                     <ToastContainer />
                     <button onClick={() => setShowAIModal(true)} className="fab-ai bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:bg-indigo-700 transition-transform transform hover:scale-110"><i className="fas fa-robot text-2xl"></i></button>
                     {showAIModal && <AIHelperModal onClose={() => setShowAIModal(false)} />}
-                    {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={()=>{}} />}
+                    {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={handleUpgrade} />}
                     {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} onSave={handleUpdateProfile} />}
                     {showOnboarding && <OnboardingTour onComplete={() => { localStorage.setItem('notary_onboarded', 'true'); setShowOnboarding(false); }} />}
                     
@@ -873,7 +947,7 @@
                         onSettings={() => setShowSettings(true)}
                     />
                     <main className="flex-1 flex flex-col h-screen md:ml-64 relative bg-gray-50">
-                        <Header title={currentView} />
+                        <Header title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} isCloud={isCloudConnected} />
                         <div className="flex-1 overflow-y-auto relative">{renderView()}</div>
                         <MobileNav currentView={currentView} setView={setCurrentView} onOpenMenu={() => setShowMobileMenu(true)} />
                     </main>
