@@ -228,22 +228,6 @@
             }
         };
 
-        const encryptPayload = (value) => {
-            try {
-                return btoa(unescape(encodeURIComponent(value)));
-            } catch (err) {
-                return null;
-            }
-        };
-
-        const decryptPayload = (value) => {
-            try {
-                return decodeURIComponent(escape(atob(value)));
-            } catch (err) {
-                return null;
-            }
-        };
-
         // --- PDF GENERATORS ---
         const PDFGenerator = {
             createInvoice: (appt, user) => {
