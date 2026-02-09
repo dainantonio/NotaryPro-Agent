@@ -1366,13 +1366,101 @@
             const [expenses, setExpenses] = useState([]);
             const [mileage, setMileage] = useState([]);
             const [showForm, setShowForm] = useState(false);
+            const [currentTrip, setCurrentTrip] = useState(null);
+            const [locationStatus, setLocationStatus] = useState('');
              useEffect(() => { const load = async () => { setExpenses(await DataManager.get('notary_expenses')); setMileage(await DataManager.get('notary_mileage')); }; load(); }, []);
+            useEffect(() => { setCurrentTrip(JSON.parse(localStorage.getItem('notary_active_trip') || 'null')); }, []);
             const handleSave = async (e) => { e.preventDefault(); const formData = new FormData(e.target); if (activeTab === 'expenses') { await DataManager.save('notary_expenses', { id: Date.now().toString(), date: formData.get('date'), category: formData.get('category'), desc: formData.get('desc'), amount: formData.get('amount') }); setExpenses(await DataManager.get('notary_expenses')); } else { await DataManager.save('notary_mileage', { id: Date.now().toString(), date: formData.get('date'), start: formData.get('start'), end: formData.get('end'), miles: formData.get('miles') }); setMileage(await DataManager.get('notary_mileage')); } setShowForm(false); showToast("Record Saved"); };
             const handleExport = () => { if (activeTab === 'expenses') PDFGenerator.createReport("Expense Report", ["Date", "Category", "Description", "Amount"], expenses.map(e => [e.date, e.category, e.desc, `-$${e.amount}`]), "expenses.pdf"); else PDFGenerator.createReport("Mileage Log", ["Date", "Start", "End", "Miles"], mileage.map(m => [m.date, m.start, m.end, `${m.miles} mi`]), "mileage.pdf"); };
+            const haversineMiles = (start, end) => {
+                const toRad = (value) => (value * Math.PI) / 180;
+                const R = 3958.8;
+                const dLat = toRad(end.lat - start.lat);
+                const dLng = toRad(end.lng - start.lng);
+                const lat1 = toRad(start.lat);
+                const lat2 = toRad(end.lat);
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+                return 2 * R * Math.asin(Math.sqrt(a));
+            };
+            const getPosition = () => new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocation unavailable'));
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                    (err) => reject(err),
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            });
+
+            const handleStartTrip = async () => {
+                setLocationStatus('Requesting GPS...');
+                try {
+                    const coords = await getPosition();
+                    const startTrip = { id: Date.now().toString(), start: coords, startTime: new Date().toISOString() };
+                    localStorage.setItem('notary_active_trip', JSON.stringify(startTrip));
+                    setCurrentTrip(startTrip);
+                    setLocationStatus('Trip started. Tracking mileage.');
+                    showToast("Trip Started");
+                } catch (err) {
+                    setLocationStatus('Unable to access GPS. Please enable location permissions.');
+                    showToast("GPS Error", "error");
+                }
+            };
+
+            const handleEndTrip = async () => {
+                if (!currentTrip) return;
+                setLocationStatus('Calculating mileage...');
+                try {
+                    const coords = await getPosition();
+                    const distance = haversineMiles(currentTrip.start, coords);
+                    const entry = {
+                        id: currentTrip.id,
+                        date: new Date().toISOString().split('T')[0],
+                        start: `${currentTrip.start.lat.toFixed(4)}, ${currentTrip.start.lng.toFixed(4)}`,
+                        end: `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`,
+                        miles: distance.toFixed(2),
+                        startTime: currentTrip.startTime,
+                        endTime: new Date().toISOString()
+                    };
+                    await DataManager.save('notary_mileage', entry);
+                    setMileage(await DataManager.get('notary_mileage'));
+                    localStorage.removeItem('notary_active_trip');
+                    setCurrentTrip(null);
+                    setLocationStatus(`Trip saved • ${distance.toFixed(2)} mi`);
+                    showToast("Trip Saved");
+                } catch (err) {
+                    setLocationStatus('Unable to access GPS. Try again.');
+                    showToast("GPS Error", "error");
+                }
+            };
             return (
                 <div className="p-6 pb-24">
                     <div className="bg-white p-1 rounded-xl flex mb-6 border border-gray-200 shadow-sm"><button onClick={() => setActiveTab('expenses')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'expenses' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-500'}`}>Expenses</button><button onClick={() => setActiveTab('mileage')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'mileage' ? 'bg-blue-50 text-blue-700' : 'text-gray-500'}`}>Mileage</button></div>
                     <div className="flex justify-between items-center mb-6"><div><p className="text-xs text-gray-500 uppercase font-bold">Total</p><p className="text-2xl font-bold text-gray-800">{activeTab === 'expenses' ? `$${expenses.reduce((s, i) => s + parseFloat(i.amount||0), 0).toFixed(2)}` : `${mileage.reduce((s, i) => s + parseFloat(i.miles||0), 0)} mi`}</p></div><div className="flex gap-2"><button onClick={handleExport} className="bg-white text-gray-500 border w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-file-export"></i></button><button onClick={() => setShowForm(true)} className="bg-gray-900 text-white w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-plus"></i></button></div></div>
+                    {activeTab === 'mileage' && (
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                <div>
+                                    <p className="text-xs font-bold text-blue-600 uppercase">Smart Mileage Tracker</p>
+                                    <h4 className="text-lg font-semibold text-gray-800">Start & end trips with GPS</h4>
+                                    <p className="text-sm text-gray-500">Tap Start Trip to capture your location, then End Trip when you arrive. We'll log the mileage automatically.</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={handleStartTrip} disabled={!!currentTrip} className={`px-4 py-2 rounded-lg text-sm font-semibold ${currentTrip ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white'}`}>Start Trip</button>
+                                    <button onClick={handleEndTrip} disabled={!currentTrip} className={`px-4 py-2 rounded-lg text-sm font-semibold ${currentTrip ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}>End Trip</button>
+                                </div>
+                            </div>
+                            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+                                <span className={`px-3 py-1 rounded-full ${currentTrip ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                                    {currentTrip ? 'Trip in progress' : 'No active trip'}
+                                </span>
+                                {currentTrip && <span className="text-gray-500">Started {new Date(currentTrip.startTime).toLocaleTimeString()}</span>}
+                                {locationStatus && <span className="text-gray-500">{locationStatus}</span>}
+                            </div>
+                        </div>
+                    )}
                     {showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6"><form onSubmit={handleSave} className="space-y-4"><input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" />{activeTab === 'expenses' ? <><input name="category" placeholder="Category" className="w-full p-3 border rounded-xl" /><input name="desc" placeholder="Description" className="w-full p-3 border rounded-xl" /><input name="amount" placeholder="Amount" className="w-full p-3 border rounded-xl" /></> : <><input name="start" placeholder="Start" className="w-full p-3 border rounded-xl" /><input name="end" placeholder="End" className="w-full p-3 border rounded-xl" /><input name="miles" placeholder="Miles" className="w-full p-3 border rounded-xl" /></>}<button className="w-full bg-gray-900 text-white py-3 rounded-lg">Save</button></form></div>}
                     
                     <div className="space-y-3">
