@@ -853,20 +853,13 @@
                     <div className="py-24 bg-slate-900 w-full border-t border-slate-800 font-sans">
                         <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
                             <div className="order-2 md:order-1">
-                                <div
-                                    ref={carouselRef}
-                                    className="overflow-x-auto scrollbar-hide pb-3 -mx-2 px-2 snap-x snap-mandatory phone-flow-carousel cursor-grab active:cursor-grabbing"
-                                    onMouseDown={handleCarouselMouseDown}
-                                    onMouseMove={handleCarouselMouseMove}
-                                    onMouseUp={handleCarouselMouseUp}
-                                    onMouseLeave={handleCarouselMouseUp}
-                                >
-                                    <div className="flex gap-5 phone-flow-track">
+                                <div className="overflow-x-auto scrollbar-hide pb-3 -mx-2 px-2 snap-x snap-mandatory">
+                                    <div className="flex gap-5 w-max">
                                         <div className="phone-mockup min-w-[280px] w-[280px] h-[560px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4 relative">
                                                 <div className="flex justify-between items-center mb-6">
-                                                    <h3 className="font-bold text-lg text-gray-800">1. Schedule</h3>
+                                                    <h3 className="font-bold text-lg text-gray-800">Today</h3>
                                                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xs font-bold">JD</div>
                                                 </div>
                                                 <div className="space-y-3">
@@ -901,7 +894,7 @@
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4">
                                                 <div className="flex justify-between items-center mb-6">
-                                                    <h3 className="font-bold text-lg text-gray-800">2. Signing Log</h3>
+                                                    <h3 className="font-bold text-lg text-gray-800">Journal</h3>
                                                     <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">Synced</span>
                                                 </div>
                                                 <div className="space-y-3">
@@ -929,7 +922,7 @@
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4">
                                                 <div className="flex justify-between items-center mb-6">
-                                                    <h3 className="font-bold text-lg text-gray-800">3. Get Paid</h3>
+                                                    <h3 className="font-bold text-lg text-gray-800">Payments</h3>
                                                     <button className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">Send Invoice</button>
                                                 </div>
                                                 <div className="space-y-3">
@@ -957,13 +950,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div className="mt-3 flex items-center justify-between gap-3">
-                                    <p className="text-xs text-slate-400 text-center md:text-left">Swipe left/right on mobile, or drag/click arrows on desktop to follow the full mobile signing flow.</p>
-                                    <div className="hidden md:flex items-center gap-2 shrink-0">
-                                        <button onClick={() => scrollPhoneFlow(-1)} className="w-8 h-8 rounded-full border border-slate-600 text-slate-300 hover:text-white hover:border-slate-400"><i className="fas fa-chevron-left"></i></button>
-                                        <button onClick={() => scrollPhoneFlow(1)} className="w-8 h-8 rounded-full border border-slate-600 text-slate-300 hover:text-white hover:border-slate-400"><i className="fas fa-chevron-right"></i></button>
-                                    </div>
-                                </div>
+                                <p className="text-xs text-slate-400 mt-3 text-center md:text-left">Swipe horizontally to preview the complete mobile workflow.</p>
                             </div>
                             <div className="order-1 md:order-2">
                                 <h3 className="text-3xl font-bold text-white mb-6">Run your business from your pocket.</h3>
