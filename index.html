@@ -368,8 +368,13 @@
             <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm z-[100]">
                 <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center font-sans">
                     <h2 className="text-2xl font-bold mb-2">Upgrade to Pro</h2>
-                    <p className="text-gray-500 mb-6">Unlock Unlimited AI, Cloud Sync & PDF Invoices.</p>
-                    <button onClick={onUpgrade} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold mb-2">Get Pro - $19/mo</button>
+                    <p className="text-gray-500 mb-6">Unlock Unlimited AI, secure audit capture, payment processing, and client portal access.</p>
+                    <div className="space-y-2 text-left text-sm text-gray-600 bg-gray-50 rounded-xl p-3 mb-4">
+                        <p><i className="fas fa-check text-emerald-600 mr-2"></i>Pro: AI Trainer, Payments, Client Portal, Audit Capture</p>
+                        <p><i className="fas fa-check text-indigo-600 mr-2"></i>Team: Agency mode with assignments & master calendar</p>
+                    </div>
+                    <button onClick={() => onUpgrade('pro')} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold mb-2">Get Pro - $19/mo</button>
+                    <button onClick={() => onUpgrade('team')} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold mb-2">Get Team - $49/mo</button>
                     <button onClick={onClose} className="text-gray-400 text-sm">Close</button>
                 </div>
             </div>
@@ -480,16 +485,29 @@
             </div>
         );
 
-        const OnboardingTour = ({ onComplete }) => (
-            <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl p-8 text-center max-w-sm font-sans">
-                    <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🚀</div>
-                    <h2 className="text-2xl font-bold mb-2">Welcome to NotaryOS</h2>
-                    <p className="text-gray-500 mb-6">Your all-in-one business operating system. Manage appointments, journals, and clients in one place.</p>
-                    <button onClick={onComplete} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg">Get Started</button>
+        const OnboardingTour = ({ onComplete }) => {
+            const [selectedRole, setSelectedRole] = useState('solo');
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-8 text-center max-w-md font-sans">
+                        <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🚀</div>
+                        <h2 className="text-2xl font-bold mb-2">Welcome to NotaryOS</h2>
+                        <p className="text-gray-500 mb-6">Choose your setup so we can tailor features and guidance.</p>
+                        <div className="grid grid-cols-1 gap-3 mb-6 text-left">
+                            <button onClick={() => setSelectedRole('solo')} className={`p-3 rounded-xl border ${selectedRole === 'solo' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+                                <p className="font-semibold text-gray-800">Solo Notary</p>
+                                <p className="text-xs text-gray-500">Best for independent mobile notaries.</p>
+                            </button>
+                            <button onClick={() => setSelectedRole('agency')} className={`p-3 rounded-xl border ${selectedRole === 'agency' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200'}`}>
+                                <p className="font-semibold text-gray-800">Agency / Team</p>
+                                <p className="text-xs text-gray-500">Manage multiple notaries and assignments.</p>
+                            </button>
+                        </div>
+                        <button onClick={() => onComplete(selectedRole)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg">Continue</button>
+                    </div>
                 </div>
-            </div>
-        );
+            );
+        };
 
         const LandingPage = ({ onNavigate }) => {
             const [activeTab, setActiveTab] = useState('before');
@@ -812,7 +830,7 @@
             const handleAuth = (e) => {
                 e.preventDefault();
                 setError('');
-                onAuth({ id: '1', name: isLogin ? 'User' : formData.name, email: formData.email, plan: 'free' });
+                onAuth({ id: '1', name: isLogin ? 'User' : formData.name, email: formData.email, plan: 'free', role: 'solo' });
             };
             
             const handleGoogleAuth = async () => { try { const provider = new firebase.auth.GoogleAuthProvider(); await firebase.auth().signInWithPopup(provider); } catch (err) { setError(err.message); } };
@@ -833,7 +851,7 @@
             );
         };
 
-        const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout, userName, userPlan, onSettings }) => {
+        const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout, userName, userPlan, userRole, onSettings, onUpgrade }) => {
             const [isCollapsed, setIsCollapsed] = useState(false);
             const menuItems = [
                 { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', color: 'text-blue-400' },
@@ -858,12 +876,16 @@
                             <button onClick={onClose} className="lg:hidden text-gray-400"><i className="fas fa-times"></i></button>
                         </div>
                         <nav className="flex-1 p-2 space-y-2 overflow-y-auto">
-                            {menuItems.map(item => (
-                                <button key={item.id} onClick={() => { setView(item.id); onClose(); }} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors hover:bg-slate-800 ${currentView === item.id ? 'bg-blue-600 text-white' : 'text-gray-400'} ${isCollapsed ? 'justify-center' : ''}`} title={item.label}>
-                                    <i className={`fas ${item.icon} text-lg ${currentView !== item.id ? item.color : ''}`}></i>
-                                    {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
-                                </button>
-                            ))}
+                            {menuItems.map(item => {
+                                const locked = item.access && !hasFeatureAccess({ plan: userPlan, role: userRole }, item.access);
+                                return (
+                                    <button key={item.id} onClick={() => { if (locked) onUpgrade(); else { setView(item.id); onClose(); } }} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors hover:bg-slate-800 ${currentView === item.id ? 'bg-blue-600 text-white' : 'text-gray-400'} ${isCollapsed ? 'justify-center' : ''}`} title={locked ? `${item.label} (Upgrade required)` : item.label}>
+                                        <i className={`fas ${item.icon} text-lg ${currentView !== item.id ? item.color : ''}`}></i>
+                                        {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
+                                        {!isCollapsed && locked && <i className="fas fa-lock text-[10px] ml-auto text-amber-300"></i>}
+                                    </button>
+                                );
+                            })}
                         </nav>
                         <div className="p-4 border-t border-slate-700">
                              <button onClick={onSettings} className={`w-full flex items-center gap-3 px-3 py-2 mb-2 hover:bg-slate-800 rounded transition-colors group ${isCollapsed ? 'justify-center' : ''}`}>
@@ -1926,6 +1948,7 @@
             const [showSettings, setShowSettings] = useState(false);
             const [showOnboarding, setShowOnboarding] = useState(false);
             const [showAIModal, setShowAIModal] = useState(false); 
+            const [showWhatsNew, setShowWhatsNew] = useState(() => !!user && !localStorage.getItem('notary_whats_new_seen_v2'));
 
             useEffect(() => {
                 DataManager.get('notary_appointments').then(setAppointments);
@@ -1945,6 +1968,7 @@
                 setUser(profile);
                 setCurrentView('dashboard');
                 if (!localStorage.getItem('notary_onboarded')) setShowOnboarding(true);
+                if (!localStorage.getItem('notary_whats_new_seen_v2')) setShowWhatsNew(true);
                 showToast("Welcome Back!");
             };
 
@@ -1954,7 +1978,30 @@
                 setCurrentView('landing');
             };
 
-            const handleUpgrade = () => { const upgraded = { ...user, plan: 'pro' }; setUser(upgraded); localStorage.setItem('notary_user_profile', JSON.stringify(upgraded)); setShowPricing(false); showToast("Upgrade Successful!"); };
+            const handleUpgrade = (targetPlan = 'pro') => {
+                const upgraded = {
+                    ...user,
+                    plan: targetPlan,
+                    role: targetPlan === 'team' ? 'agency' : (user?.role || 'solo')
+                };
+                setUser(upgraded);
+                localStorage.setItem('notary_user_profile', JSON.stringify(upgraded));
+                setShowPricing(false);
+                showToast("Upgrade Successful!");
+            };
+
+            const handleOnboardingComplete = (selectedRole) => {
+                const nextUser = {
+                    ...(user || {}),
+                    role: selectedRole,
+                    plan: selectedRole === 'agency' ? ((user?.plan === 'team') ? 'team' : 'free') : (user?.plan || 'free')
+                };
+                setUser(nextUser);
+                localStorage.setItem('notary_user_profile', JSON.stringify(nextUser));
+                localStorage.setItem('notary_onboarded', 'true');
+                setShowOnboarding(false);
+                if (selectedRole === 'agency' && !hasFeatureAccess(nextUser, 'agency')) setShowPricing(true);
+            };
 
             const handleSaveAppt = async (appt) => {
                 await DataManager.save('notary_appointments', appt);
@@ -2018,7 +2065,18 @@
                     {showAIModal && <AIHelperModal onClose={() => setShowAIModal(false)} />}
                     {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={handleUpgrade} />}
                     {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} onSave={handleUpdateProfile} />}
-                    {showOnboarding && <OnboardingTour onComplete={() => { localStorage.setItem('notary_onboarded', 'true'); setShowOnboarding(false); }} />}
+                    {showOnboarding && <OnboardingTour onComplete={handleOnboardingComplete} />}
+                    {showWhatsNew && (
+                        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[92%] bg-white border border-blue-100 rounded-2xl shadow-xl p-4 font-sans">
+                            <div className="flex items-start justify-between gap-3">
+                                <div>
+                                    <p className="text-xs font-bold uppercase text-blue-600">What's New</p>
+                                    <p className="text-sm text-gray-600 mt-1">Payments, Client Portal, Smart Mileage, Audit Journal Capture, and Team Mode are now available by plan.</p>
+                                </div>
+                                <button onClick={() => { localStorage.setItem('notary_whats_new_seen_v2', 'true'); setShowWhatsNew(false); }} className="text-gray-400"><i className="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                    )}
                     
                     <Sidebar 
                         currentView={currentView} 
@@ -2028,6 +2086,7 @@
                         onLogout={handleLogout} 
                         userName={user.name} 
                         userPlan={user.plan} 
+                        userRole={user.role || 'solo'}
                         onUpgrade={() => setShowPricing(true)} 
                         onSettings={() => setShowSettings(true)}
                     />
