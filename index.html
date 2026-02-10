@@ -200,20 +200,20 @@
                 return { success: false, data: localData };
             },
             saveLocal: (key, item) => {
-                const list = JSON.parse(localStorage.getItem(key) || '[]');
+                const list = safeParse(localStorage.getItem(key), []);
                 const index = list.findIndex(i => i.id === item.id);
                 if (index >= 0) list[index] = item; else list.push(item);
                 localStorage.setItem(key, JSON.stringify(list));
                 return list;
             },
-            getLocal: (key) => JSON.parse(localStorage.getItem(key) || '[]'),
+            getLocal: (key) => safeParse(localStorage.getItem(key), []),
              delete: async (collectionName, id) => {
                 const localData = DataManager.deleteLocal(collectionName, id);
                 if (DataManager.isCloud()) { try { await firebase.firestore().collection(collectionName).doc(id).delete(); } catch(e) {} }
                 return localData;
             },
             deleteLocal: (key, id) => {
-                const list = JSON.parse(localStorage.getItem(key) || '[]');
+                const list = safeParse(localStorage.getItem(key), []);
                 const newList = list.filter(i => i.id !== id);
                 localStorage.setItem(key, JSON.stringify(newList));
                 return newList;
