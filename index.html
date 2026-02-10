@@ -221,6 +221,28 @@
             );
         };
 
+        // --- HELPER FUNCTIONS ---
+        // Added simple feature access check to prevent undefined errors
+        const hasFeatureAccess = (user, feature) => {
+            if (!user) return false;
+            if (user.role === 'agency') return true;
+            if (user.plan === 'pro' || user.plan === 'team') return true;
+            
+            // Basic logic for free tier
+            if (feature === 'agency' && user.role !== 'agency') return false;
+            if (feature === 'trainer' && user.plan !== 'pro' && user.plan !== 'team') return false;
+            
+            return true;
+        };
+
+        // Added mock encryption/decryption to prevent ReferenceErrors in Journal
+        const encryptPayload = (str) => {
+            try { return btoa(str); } catch (e) { return str; }
+        };
+        const decryptPayload = (str) => {
+            try { return atob(str); } catch (e) { return str; }
+        };
+
         // --- DATA MANAGER ---
         const DataManager = {
             isCloud: () => typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser !== null,
@@ -494,7 +516,7 @@
 
                 const apiKey = localStorage.getItem('gemini_api_key');
                 if (!apiKey) {
-                     setTimeout(() => {
+                      setTimeout(() => {
                         setMessages([...newMsgs, { role: 'assistant', content: "Please add your API Key in Settings to enable AI responses." }]);
                         setLoading(false);
                     }, 800);
@@ -929,9 +951,9 @@
                                 const locked = item.access && !hasFeatureAccess({ plan: userPlan, role: userRole }, item.access);
                                 return (
                                     <button key={item.id} onClick={() => { if (locked) onUpgrade(); else { setView(item.id); onClose(); } }} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors hover:bg-slate-800 ${currentView === item.id ? 'bg-blue-600 text-white' : 'text-gray-400'} ${isCollapsed ? 'justify-center' : ''}`} title={locked ? `${item.label} (Upgrade required)` : item.label}>
-                                        <i className={`fas ${item.icon} text-lg ${currentView !== item.id ? item.color : ''}`}></i>
-                                        {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
-                                        {!isCollapsed && locked && <i className="fas fa-lock text-[10px] ml-auto text-amber-300"></i>}
+                                            <i className={`fas ${item.icon} text-lg ${currentView !== item.id ? item.color : ''}`}></i>
+                                            {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
+                                            {!isCollapsed && locked && <i className="fas fa-lock text-[10px] ml-auto text-amber-300"></i>}
                                     </button>
                                 );
                             })}
@@ -967,7 +989,7 @@
             </div>
         );
 
-        const Header = ({ title }) => {
+        const Header = ({ title, isCloud, onNotify, onSyncNow }) => {
             const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
             useEffect(() => {
                 const onOnline = () => setIsOnline(true);
@@ -984,8 +1006,11 @@
                     <h2 className="font-bold text-gray-800 text-lg">{title}</h2>
                     <div className="flex gap-2 items-center">
                         <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100"><i className="fas fa-shield-alt"></i> Trusted Workflow</span>
-                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full border ${isOnline ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}><i className={`fas ${isOnline ? 'fa-cloud' : 'fa-cloud-slash'}`}></i>{isOnline ? 'Sync Online' : 'Offline Mode'}</span>
-                        <button className="text-gray-400"><i className="fas fa-bell"></i></button>
+                        <button onClick={onSyncNow} className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full border ${isOnline ? 'bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>
+                            <i className={`fas ${isOnline ? 'fa-cloud' : 'fa-cloud-slash'}`}></i>
+                            {isOnline ? 'Sync Online' : 'Offline Mode'}
+                        </button>
+                        <button onClick={onNotify} className="text-gray-400 hover:text-blue-600"><i className="fas fa-bell"></i></button>
                     </div>
                 </div>
             );
@@ -1170,7 +1195,7 @@
                     setFormData({...formData, clientName: 'John Doe', date: '2026-12-01', time: '14:00', fee: '150'});
                     showToast("Form Filled (Demo Mode)");
                 } else {
-                     alert("Please add your Gemini API Key in Settings for real AI extraction, or type 'John' to see the demo.");
+                      alert("Please add your Gemini API Key in Settings for real AI extraction, or type 'John' to see the demo.");
                 }
             };
 
@@ -2130,7 +2155,6 @@
             const handleSaveAppt = async (appt) => {
                 await DataManager.save('notary_appointments', appt);
                 setAppointments(await DataManager.get('notary_appointments'));
-                setEditingAppointment(null);
                 setCurrentView('schedule');
                 showToast("Appointment Saved");
             };
@@ -2152,6 +2176,18 @@
             const handleRefresh = async () => {
                  setAppointments(await DataManager.get('notary_appointments'));
                  setCredentials(await DataManager.get('notary_credentials'));
+            };
+
+            // FIX: Added missing handleNotify function to prevent ReferenceError
+            const handleNotify = () => {
+                showToast("No new notifications", "success");
+            };
+
+            // FIX: Added missing handleSyncNow function to prevent ReferenceError
+            const handleSyncNow = async () => {
+                showToast("Syncing data...");
+                await handleRefresh();
+                showToast("Sync complete", "success");
             };
 
             const renderView = () => {
