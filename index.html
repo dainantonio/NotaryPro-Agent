@@ -657,6 +657,42 @@
             const dragStateRef = React.useRef({ isDragging: false, startX: 0, scrollLeft: 0 });
 
             const hoursSaved = Math.round((weeklyAppts * adminMins * 52) / 60);
+
+            const scrollPhoneFlow = (direction = 1) => {
+                const el = flowScrollRef.current;
+                if (!el) return;
+                el.scrollBy({ left: direction * 320, behavior: 'smooth' });
+            };
+
+            const handleFlowPointerDown = (e) => {
+                const el = flowScrollRef.current;
+                if (!el) return;
+                dragStateRef.current = {
+                    isDown: true,
+                    startX: e.clientX,
+                    scrollLeft: el.scrollLeft
+                };
+            };
+
+            const handleFlowPointerMove = (e) => {
+                const el = flowScrollRef.current;
+                if (!el || !dragStateRef.current.isDown) return;
+                const walk = (e.clientX - dragStateRef.current.startX) * 1.15;
+                el.scrollLeft = dragStateRef.current.scrollLeft - walk;
+            };
+
+            const handleFlowPointerUp = () => {
+                dragStateRef.current.isDown = false;
+            };
+
+            const handleFlowWheel = (e) => {
+                const el = flowScrollRef.current;
+                if (!el) return;
+                if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                    e.preventDefault();
+                    el.scrollLeft += e.deltaY;
+                }
+            };
             const dollarsSaved = (hoursSaved * 50).toLocaleString();
 
             const handleDemoAsk = (e) => {
