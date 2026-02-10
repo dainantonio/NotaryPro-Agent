@@ -306,6 +306,24 @@
             try { return atob(str); } catch (e) { return str; }
         };
 
+        const safeStorageGet = (key, fallback = null) => {
+            try {
+                const value = localStorage.getItem(key);
+                return value === null ? fallback : value;
+            } catch (e) {
+                return fallback;
+            }
+        };
+
+        const safeStorageSet = (key, value) => {
+            try {
+                localStorage.setItem(key, value);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        };
+
         // --- DATA MANAGER ---
         const DataManager = {
             isCloud: () => typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser !== null,
@@ -2312,7 +2330,7 @@
         };
 
         const App = () => {
-            const [user, setUser] = useState(() => safeParse(localStorage.getItem('notary_user_profile'), null));
+            const [user, setUser] = useState(() => safeParse(safeStorageGet('notary_user_profile', null), null));
             const [currentView, setCurrentView] = useState(user ? 'dashboard' : 'landing');
             const [appointments, setAppointments] = useState([]);
             const [credentials, setCredentials] = useState([]);
@@ -2492,12 +2510,20 @@
             );
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(
-            <AppErrorBoundary>
-                <App />
-            </AppErrorBoundary>
-        );
+        try {
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(
+                <AppErrorBoundary>
+                    <App />
+                </AppErrorBoundary>
+            );
+        } catch (e) {
+            const mount = document.getElementById('root');
+            if (mount) {
+                mount.innerHTML = `<div style="min-height:100vh;display:grid;place-items:center;padding:24px;font-family:sans-serif;background:#f8fafc;color:#0f172a;"><div style="max-width:520px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:20px;box-shadow:0 10px 25px rgba(2,6,23,.08);"><h2 style="margin:0 0 8px;font-size:20px;">NotaryOS failed to load</h2><p style="margin:0 0 10px;color:#475569;">A browser/runtime issue prevented startup. Refresh the page or clear site data and retry.</p><p style="margin:0;color:#64748b;font-size:12px;word-break:break-word;">${(e && e.message) ? e.message : 'Unknown startup error'}</p></div></div>`;
+            }
+            console.error('Root render failure:', e);
+        }
     </script>
 </body>
 </html>
