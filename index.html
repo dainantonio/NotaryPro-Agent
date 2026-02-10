@@ -180,6 +180,17 @@
             z-index: 10;
         }
 
+        .phone-flow-carousel {
+            -webkit-overflow-scrolling: touch;
+            overscroll-behavior-x: contain;
+            touch-action: pan-x;
+            scroll-behavior: smooth;
+        }
+
+        .phone-flow-track {
+            width: max-content;
+        }
+
         /* Notary Gold Accent */
         .text-notary-gold { color: #fbbf24; }
         .bg-notary-gold { background-color: #fbbf24; }
@@ -913,20 +924,20 @@
                             <div className="order-1 md:order-2">
                                 <h3 className="text-3xl font-bold text-white mb-6">Run your business from your pocket.</h3>
                                 <p className="text-slate-400 text-lg mb-8 leading-relaxed">
-                                    Mobile notaries are constantly on the road. NotaryOS is designed to work flawlessly on your phone, so you can manage your schedule, log journal entries, and send invoices between appointments.
+                                    From booking to signature capture to final payout, NotaryOS mirrors how real mobile appointments happen. Start with your daily schedule, complete ID/journal checks at the table, then send and track payment before you drive to the next stop.
                                 </p>
                                 <ul className="space-y-4">
                                     <li className="flex items-center gap-3 text-slate-300">
                                         <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs"><i className="fas fa-mobile-alt"></i></div>
-                                        Responsive design fits any screen
+                                        1) Confirm today's route and appointment details
                                     </li>
                                     <li className="flex items-center gap-3 text-slate-300">
                                         <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs"><i className="fas fa-map-marker-alt"></i></div>
-                                        Access client addresses instantly
+                                        2) Capture signer details and journal proof on site
                                     </li>
                                     <li className="flex items-center gap-3 text-slate-300">
                                         <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs"><i className="fas fa-bell"></i></div>
-                                        Real-time notifications
+                                        3) Send invoice and track paid/pending status instantly
                                     </li>
                                 </ul>
                             </div>
