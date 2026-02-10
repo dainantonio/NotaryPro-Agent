@@ -277,36 +277,6 @@
             }
         };
 
-        const encryptPayload = (value) => {
-            try {
-                return btoa(unescape(encodeURIComponent(value)));
-            } catch (err) {
-                return null;
-            }
-        };
-
-        const decryptPayload = (value) => {
-            try {
-                return decodeURIComponent(escape(atob(value)));
-            } catch (err) {
-                return null;
-            }
-        };
-
-        const hasFeatureAccess = (user, featureKey) => {
-            if (!user) return false;
-            const plan = user.plan || 'free';
-            const role = user.role || 'solo';
-            const rules = {
-                trainer: plan === 'pro' || plan === 'team',
-                portal: plan === 'pro' || plan === 'team',
-                agency: role === 'agency' && plan === 'team',
-                payments: plan === 'pro' || plan === 'team',
-                auditCapture: plan === 'pro' || plan === 'team'
-            };
-            return rules[featureKey] ?? true;
-        };
-
         // --- PDF GENERATORS ---
         const PDFGenerator = {
             createInvoice: (appt, user) => {
@@ -936,12 +906,12 @@
                 { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', color: 'text-blue-400' },
                 { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule', color: 'text-green-400' },
                 { id: 'clients', icon: 'fa-address-book', label: 'Clients', color: 'text-pink-400' },
-                { id: 'portal', icon: 'fa-door-open', label: 'Client Portal', color: 'text-cyan-400', access: 'portal' },
+                { id: 'portal', icon: 'fa-door-open', label: 'Client Portal', color: 'text-cyan-400' },
                 { id: 'journal', icon: 'fa-book', label: 'Journal', color: 'text-purple-400' },
                 { id: 'finances', icon: 'fa-wallet', label: 'Finances', color: 'text-emerald-400' },
                 { id: 'credentials', icon: 'fa-id-card', label: 'Credentials', color: 'text-orange-400' },
-                { id: 'agency', icon: 'fa-building', label: 'Agency', color: 'text-sky-400', access: 'agency' },
-                { id: 'trainer', icon: 'fa-robot', label: 'AI Trainer', color: 'text-indigo-400', access: 'trainer' },
+                { id: 'agency', icon: 'fa-building', label: 'Agency', color: 'text-sky-400' },
+                { id: 'trainer', icon: 'fa-robot', label: 'AI Trainer', color: 'text-indigo-400', isPro: true },
                 { id: 'admin', icon: 'fa-shield-alt', label: 'Admin', color: 'text-red-500' }
             ];
 
@@ -984,25 +954,20 @@
             );
         };
 
-        const MobileNav = ({ currentView, setView, onOpenMenu }) => {
-            const NavButton = ({ id, icon, label, onClick }) => (
-                <button onClick={onClick || (() => setView(id))} className={`flex flex-col items-center justify-center gap-1 px-2 py-1 rounded-lg min-w-[56px] ${currentView === id ? 'text-blue-600 bg-blue-50' : 'text-slate-400'}`}>
-                    <i className={`fas ${icon} text-base`}></i>
-                    <span className="text-[10px] font-semibold">{label}</span>
-                </button>
-            );
-            return (
-                <div className="md:hidden fixed bottom-0 w-full bg-white/85 border-t border-slate-200 p-2 flex justify-around items-end z-30 safe-area-pb shadow backdrop-blur">
-                    <NavButton id="dashboard" icon="fa-home" label="Home" />
-                    <NavButton id="schedule" icon="fa-calendar-alt" label="Schedule" />
-                    <button onClick={() => setView('addAppointment')} className="-mt-7 bg-blue-600 text-white rounded-full w-14 h-14 shadow-xl border-4 border-white active:scale-95 transition-transform"><i className="fas fa-plus text-xl"></i></button>
-                    <NavButton id="trainer" icon="fa-robot" label="AI" />
-                    <NavButton icon="fa-bars" label="Menu" onClick={onOpenMenu} />
-                </div>
-            );
-        };
+        const MobileNav = ({ setView, onOpenMenu }) => (
+            <div className="md:hidden fixed bottom-0 w-full bg-white/70 border-t border-slate-200/70 p-2 flex justify-around z-30 safe-area-pb shadow-sm backdrop-blur">
+                <button onClick={() => setView('dashboard')}><i className="fas fa-home text-slate-400 text-lg"></i></button>
+                <button onClick={() => setView('schedule')}><i className="fas fa-calendar-alt text-slate-400 text-lg"></i></button>
+                
+                {/* IMPROVED FAB/ADD BUTTON FOR MOBILE */}
+                <button onClick={() => setView('addAppointment')} className="-mt-8 bg-blue-600 text-white rounded-full p-4 shadow-xl border-4 border-white active:scale-95 transition-transform"><i className="fas fa-plus text-2xl"></i></button>
+                
+                <button onClick={() => setView('trainer')}><i className="fas fa-robot text-slate-400 text-lg"></i></button>
+                <button onClick={onOpenMenu}><i className="fas fa-bars text-slate-400 text-lg"></i></button>
+            </div>
+        );
 
-        const Header = ({ title, onNotify, onSyncNow }) => {
+        const Header = ({ title }) => {
             const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
             useEffect(() => {
                 const onOnline = () => setIsOnline(true);
@@ -1019,8 +984,8 @@
                     <h2 className="font-bold text-gray-800 text-lg">{title}</h2>
                     <div className="flex gap-2 items-center">
                         <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100"><i className="fas fa-shield-alt"></i> Trusted Workflow</span>
-                        <button onClick={onSyncNow} className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full border ${isOnline ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}><i className={`fas ${isOnline ? 'fa-cloud' : 'fa-cloud-slash'}`}></i>{isOnline ? 'Sync Online' : 'Offline Mode'}</button>
-                        <button onClick={onNotify} className="text-gray-400"><i className="fas fa-bell"></i></button>
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full border ${isOnline ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}><i className={`fas ${isOnline ? 'fa-cloud' : 'fa-cloud-slash'}`}></i>{isOnline ? 'Sync Online' : 'Offline Mode'}</span>
+                        <button className="text-gray-400"><i className="fas fa-bell"></i></button>
                     </div>
                 </div>
             );
@@ -1230,10 +1195,9 @@
             );
         };
 
-        const Schedule = ({ appointments, setView, onMarkPaid, onGenerateInvoice, onQuickJournal, onEditAppointment, user }) => {
+        const Schedule = ({ appointments, setView, onMarkPaid }) => {
             const [viewMode, setViewMode] = useState('list');
             const [paymentTarget, setPaymentTarget] = useState(null);
-            const [signerModeTarget, setSignerModeTarget] = useState(null);
             const safeAppointments = Array.isArray(appointments) ? appointments : [];
             const CalendarView = () => {
                 const now = new Date();
@@ -1289,18 +1253,12 @@
                                             <div className="text-right font-bold text-gray-800">${job.fee}</div>
                                         </div>
                                     </div>
-                                    {job.status !== 'Paid' && hasFeatureAccess(user, 'payments') && (
+                                    {job.status !== 'Paid' && (
                                         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
                                             <span className="text-xs font-semibold text-slate-400 uppercase">Payment</span>
                                             <button onClick={() => setPaymentTarget(job)} className="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-semibold">Take Payment</button>
                                         </div>
                                     )}
-                                    <div className="mt-3 flex flex-wrap gap-2">
-                                        <button onClick={() => setSignerModeTarget(job)} className="px-3 py-2 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700">Signer Mode</button>
-                                        <button onClick={() => onQuickJournal(job)} className="px-3 py-2 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700">Quick Journal</button>
-                                        <button onClick={() => onGenerateInvoice(job)} className="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">Invoice PDF</button>
-                                        <button onClick={() => onEditAppointment(job)} className="px-3 py-2 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700">Edit</button>
-                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -1315,36 +1273,9 @@
                             }}
                         />
                     )}
-                    {signerModeTarget && (
-                        <SignerModeModal
-                            appointment={signerModeTarget}
-                            onClose={() => setSignerModeTarget(null)}
-                            onQuickJournal={() => { onQuickJournal(signerModeTarget); setSignerModeTarget(null); }}
-                        />
-                    )}
                 </div>
             );
         };
-
-        const SignerModeModal = ({ appointment, onClose, onQuickJournal }) => (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 font-sans">
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <p className="text-xs font-bold uppercase text-indigo-600">Signer Mode</p>
-                            <h4 className="text-lg font-bold text-gray-800">{appointment.clientName}</h4>
-                        </div>
-                        <button onClick={onClose} className="text-gray-400"><i className="fas fa-times"></i></button>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <button onClick={onQuickJournal} className="bg-purple-600 text-white rounded-xl py-4 text-sm font-semibold"><i className="fas fa-book mr-2"></i>Quick Journal</button>
-                        <button onClick={onClose} className="bg-blue-600 text-white rounded-xl py-4 text-sm font-semibold"><i className="fas fa-id-card mr-2"></i>ID Capture</button>
-                        <button onClick={onClose} className="bg-emerald-600 text-white rounded-xl py-4 text-sm font-semibold"><i className="fas fa-signature mr-2"></i>Signature Pad</button>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-4">Designed for high-stress ceremonies: only the critical steps are visible.</p>
-                </div>
-            </div>
-        );
 
         const PaymentModal = ({ appointment, onClose, onPaid }) => {
             const handlePayLink = () => {
@@ -1514,7 +1445,7 @@
                                     <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
                                         <h4 className="text-lg font-semibold text-gray-800 mb-3">Your Upcoming Appointments</h4>
                                         {portalAppointments.length === 0 ? (
-                                            <EmptyState
+                                            <EmptyState 
                                                 icon="fa-calendar-check"
                                                 title="No upcoming appointments"
                                                 description="Your notary will update your schedule here once it is booked."
@@ -1545,7 +1476,7 @@
                                     <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
                                         <h4 className="text-lg font-semibold text-gray-800 mb-3">Completed Invoices</h4>
                                         {portalAppointments.filter(appt => ['Completed', 'Paid'].includes(appt.status)).length === 0 ? (
-                                            <EmptyState
+                                            <EmptyState 
                                                 icon="fa-file-invoice"
                                                 title="No invoices yet"
                                                 description="After your appointment is completed, invoices will appear here for download."
@@ -1648,19 +1579,13 @@
             const [idCapture, setIdCapture] = useState(null);
             const [idPreview, setIdPreview] = useState('');
             const [selectedEntry, setSelectedEntry] = useState(null);
-            const [editingEntry, setEditingEntry] = useState(null);
-            useEffect(() => {
-                if (quickEntry) {
-                    setShowForm(true);
-                }
-            }, [quickEntry]);
             useEffect(() => { DataManager.get('notary_journal').then(setEntries); }, []);
             const handleSave = async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
                 const encryptedId = idCapture ? encryptPayload(idCapture) : null;
                 await DataManager.save('notary_journal', {
-                    id: editingEntry?.id || Date.now().toString(),
+                    id: Date.now().toString(),
                     date: fd.get('date'),
                     signer: fd.get('signer'),
                     docType: fd.get('docType'),
@@ -1668,11 +1593,10 @@
                     idCapture: encryptedId
                 });
                 setShowForm(false);
-                setEditingEntry(null);
                 setIdCapture(null);
                 setIdPreview('');
                 setEntries(await DataManager.get('notary_journal'));
-                showToast(editingEntry ? "Entry Updated" : "Entry Logged");
+                showToast("Entry Logged");
             };
             const handleIdUpload = (file) => {
                 if (!file) {
@@ -1701,19 +1625,19 @@
                     {showForm && (
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
                             <form onSubmit={handleSave} className="space-y-4">
-                                <input required name="date" type="date" defaultValue={editingEntry?.date || quickEntry?.date || ''} className="w-full p-3 bg-gray-50 border rounded-xl" />
-                                <input required name="signer" type="text" defaultValue={editingEntry?.signer || quickEntry?.signer || ''} placeholder="Signer" className="w-full p-3 bg-gray-50 border rounded-xl" />
-                                <input name="docType" type="text" defaultValue={editingEntry?.docType || quickEntry?.docType || ''} placeholder="Document Type" className="w-full p-3 bg-gray-50 border rounded-xl" />
-                                <input name="fee" type="number" defaultValue={editingEntry?.fee || quickEntry?.fee || ''} placeholder="Fee" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input required name="signer" type="text" placeholder="Signer" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input name="docType" type="text" placeholder="Document Type" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input name="fee" type="number" placeholder="Fee" className="w-full p-3 bg-gray-50 border rounded-xl" />
                                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
                                     <label className="text-xs font-bold text-slate-500 uppercase block">Audit-Proof Capture (ID/Thumbprint)</label>
                                     <input type="file" accept="image/*" capture="environment" onChange={(e) => handleIdUpload(e.target.files?.[0])} className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200" />
                                     {idPreview && <img src={idPreview} alt="ID capture preview" className="w-full max-h-48 object-contain rounded-lg border border-slate-200" />}
-                                    <p className="text-xs text-slate-400">Captured image is obfuscated and stored on this device only. For production compliance, use encrypted cloud storage with key management.</p>
+                                    <p className="text-xs text-slate-400">Captured image is stored locally with light encryption for audit review.</p>
                                 </div>
                                 <div className="flex gap-2">
-                                    <button type="button" onClick={() => { setShowForm(false); setEditingEntry(null); }} className="flex-1 bg-gray-100 rounded-lg">Cancel</button>
-                                    <button type="submit" onClick={() => onQuickEntryUsed?.()} className="flex-1 bg-purple-600 text-white rounded-lg">{editingEntry ? 'Update' : 'Save'}</button>
+                                    <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 rounded-lg">Cancel</button>
+                                    <button type="submit" className="flex-1 bg-purple-600 text-white rounded-lg">Save</button>
                                 </div>
                             </form>
                         </div>
@@ -1730,12 +1654,9 @@
                                             <h4 className="font-semibold text-gray-800">{e.signer}</h4>
                                             <p className="text-xs text-gray-500">{e.docType || 'Notarial Entry'}</p>
                                         </div>
-                                        <div className="flex gap-2 items-center">
-                                            <button onClick={() => { setEditingEntry(e); setShowForm(true); }} className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Edit</button>
-                                            {e.idCapture && (
-                                                <button onClick={() => setSelectedEntry({ ...e, decrypted })} className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">View Capture</button>
-                                            )}
-                                        </div>
+                                        {e.idCapture && (
+                                            <button onClick={() => setSelectedEntry({ ...e, decrypted })} className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">View Capture</button>
+                                        )}
                                     </div>
                                     {e.fee && <p className="text-xs text-gray-400 mt-2">Fee: ${e.fee}</p>}
                                 </div>
@@ -1996,7 +1917,7 @@
                                 )}
                                 <div className="space-y-3">
                                     {team.length === 0 ? (
-                                        <EmptyState
+                                        <EmptyState 
                                             icon="fa-users"
                                             title="No team members yet"
                                             description="Add your first notary to start assigning jobs."
@@ -2026,7 +1947,7 @@
                                 <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
                                     <h4 className="text-lg font-semibold text-gray-800 mb-3">Master Calendar</h4>
                                     {activeAppointments.length === 0 ? (
-                                        <EmptyState
+                                        <EmptyState 
                                             icon="fa-calendar-alt"
                                             title="No appointments scheduled"
                                             description="Once appointments are booked, they'll show here for assignment."
@@ -2079,7 +2000,7 @@
                 </div>
             );
         };
-
+        
         const Credentials = ({ onUpdate }) => {
             const [creds, setCreds] = useState([]);
             const [showForm, setShowForm] = useState(false);
@@ -2150,10 +2071,8 @@
             const [showPricing, setShowPricing] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
             const [showOnboarding, setShowOnboarding] = useState(false);
-            const [showAIModal, setShowAIModal] = useState(false);
+            const [showAIModal, setShowAIModal] = useState(false); 
             const [showWhatsNew, setShowWhatsNew] = useState(() => !!user && !localStorage.getItem('notary_whats_new_seen_v2'));
-            const [quickJournalEntry, setQuickJournalEntry] = useState(null);
-            const [editingAppointment, setEditingAppointment] = useState(null);
 
             useEffect(() => {
                 DataManager.get('notary_appointments').then(setAppointments);
@@ -2216,20 +2135,6 @@
                 showToast("Appointment Saved");
             };
 
-            const handleEditAppointment = (appt) => {
-                setEditingAppointment(appt);
-                setCurrentView('addAppointment');
-            };
-
-            const handleNotify = () => {
-                showToast("Notifications are working (demo).", "success");
-            };
-
-            const handleSyncNow = async () => {
-                await handleRefresh();
-                showToast(navigator.onLine ? "Sync complete" : "Saved offline. Will sync when online.", "success");
-            };
-
             const handleMarkPaid = async (appt) => {
                 const updated = { ...appt, status: 'Paid' };
                 await DataManager.save('notary_appointments', updated);
@@ -2243,21 +2148,7 @@
                 setAppointments(await DataManager.get('notary_appointments'));
                 showToast("Payment Recorded");
             };
-
-            const handleGenerateInvoice = (appt) => {
-                PDFGenerator.createInvoice(appt, user);
-            };
-
-            const handleQuickJournal = (appt) => {
-                setQuickJournalEntry({
-                    date: appt.date || new Date().toISOString().split('T')[0],
-                    signer: appt.clientName || '',
-                    docType: appt.type || 'Notary Service',
-                    fee: appt.fee || ''
-                });
-                setCurrentView('journal');
-            };
-
+            
             const handleRefresh = async () => {
                  setAppointments(await DataManager.get('notary_appointments'));
                  setCredentials(await DataManager.get('notary_credentials'));
@@ -2268,15 +2159,15 @@
                     case 'landing': return <LandingPage onNavigate={() => setCurrentView('auth')} />;
                     case 'auth': return <AuthScreen onAuth={handleLogin} onBack={() => setCurrentView('landing')} />;
                     case 'dashboard': return <Dashboard appointments={appointments} credentials={credentials} setView={setCurrentView} isCloud={isCloudConnected} />;
-                    case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onMarkPaid={handleMarkPaid} onGenerateInvoice={handleGenerateInvoice} onQuickJournal={handleQuickJournal} onEditAppointment={handleEditAppointment} user={user} />;
-                    case 'addAppointment': return <AppointmentForm initialData={editingAppointment} onSave={handleSaveAppt} onCancel={() => { setEditingAppointment(null); setCurrentView('schedule'); }} />;
+                    case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onMarkPaid={handleMarkPaid} />;
+                    case 'addAppointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => setCurrentView('schedule')} />;
                     case 'clients': return <Clients />;
-                    case 'portal': return hasFeatureAccess(user, 'portal') ? <ClientPortal user={user} appointments={appointments} /> : <div className="p-6"><EmptyState icon="fa-door-open" title="Client Portal is a Pro feature" description="Upgrade to Pro to enable secure client logins and e-sign workflows." actionLabel="Upgrade" onAction={() => setShowPricing(true)} colorClass="text-cyan-600" bgClass="bg-cyan-50" /></div>;
-                    case 'journal': return <Journal user={user} onUpgrade={() => setShowPricing(true)} quickEntry={quickJournalEntry} onQuickEntryUsed={() => setQuickJournalEntry(null)} />;
+                    case 'portal': return <ClientPortal user={user} appointments={appointments} />;
+                    case 'journal': return <Journal user={user} onUpgrade={()=>{}} />;
                     case 'finances': return <Finances />;
                     case 'credentials': return <Credentials onUpdate={handleRefresh} />;
-                    case 'agency': return hasFeatureAccess(user, 'agency') ? <AgencyManagement appointments={appointments} /> : <div className="p-6"><EmptyState icon="fa-building" title="Team Mode requires Team plan" description="Upgrade to Team to manage multiple notaries and assignments." actionLabel="Upgrade" onAction={() => setShowPricing(true)} colorClass="text-sky-600" bgClass="bg-sky-50" /></div>;
-                    case 'trainer': return hasFeatureAccess(user, 'trainer') ? <TrainerModule stateDB={STATE_DATABASE} courseMods={COURSE_MODULES} user={user} onUpgrade={()=>setShowPricing(true)} /> : <div className="p-6"><EmptyState icon="fa-robot" title="AI Trainer is a Pro feature" description="Upgrade to Pro for compliance coaching and simulations." actionLabel="Upgrade" onAction={() => setShowPricing(true)} colorClass="text-indigo-600" bgClass="bg-indigo-50" /></div>;
+                    case 'agency': return <AgencyManagement appointments={appointments} />;
+                    case 'trainer': return <TrainerModule stateDB={STATE_DATABASE} courseMods={COURSE_MODULES} user={user} onUpgrade={()=>{}} />;
                     case 'admin': return <AdminPanel stateDB={STATE_DATABASE} onUpdateStateDB={()=>{}} />;
                     default: return <div>Not found</div>;
                 }
@@ -2311,17 +2202,17 @@
                             </div>
                         </div>
                     )}
-
-                    <Sidebar
-                        currentView={currentView}
-                        setView={setCurrentView}
-                        isOpen={showMobileMenu}
-                        onClose={() => setShowMobileMenu(false)}
-                        onLogout={handleLogout}
-                        userName={user?.name}
-                        userPlan={user?.plan || 'free'}
-                        userRole={user?.role || 'solo'}
-                        onUpgrade={() => setShowPricing(true)}
+                    
+                    <Sidebar 
+                        currentView={currentView} 
+                        setView={setCurrentView} 
+                        isOpen={showMobileMenu} 
+                        onClose={() => setShowMobileMenu(false)} 
+                        onLogout={handleLogout} 
+                        userName={user.name} 
+                        userPlan={user.plan} 
+                        userRole={user.role || 'solo'}
+                        onUpgrade={() => setShowPricing(true)} 
                         onSettings={() => setShowSettings(true)}
                     />
                     <main className="flex-1 flex flex-col h-screen md:ml-64 relative bg-gray-50">
