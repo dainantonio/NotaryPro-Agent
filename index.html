@@ -59,8 +59,54 @@
     </script>
 
     <style>
-        body { font-family: 'Merriweather', serif; background-color: #f8fafc; }
+        :root {
+            --app-bg: #f8fafc;
+            --surface-bg: #ffffff;
+            --surface-muted: #eef2ff;
+            --text-primary: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --accent-color: #4f46e5;
+            --accent-hover: #4338ca;
+            --accent-soft: #e0e7ff;
+        }
+
+        body[data-theme='midnight'] {
+            --app-bg: #020617;
+            --surface-bg: #0f172a;
+            --surface-muted: #1e293b;
+            --text-primary: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: #334155;
+            --accent-color: #38bdf8;
+            --accent-hover: #0ea5e9;
+            --accent-soft: #082f49;
+        }
+
+        body[data-theme='sunset'] {
+            --app-bg: #fff7ed;
+            --surface-bg: #fffbeb;
+            --surface-muted: #ffedd5;
+            --text-primary: #7c2d12;
+            --text-muted: #9a3412;
+            --border-color: #fdba74;
+            --accent-color: #ea580c;
+            --accent-hover: #c2410c;
+            --accent-soft: #fed7aa;
+        }
+
+        body { font-family: 'Merriweather', serif; background-color: var(--app-bg); color: var(--text-primary); transition: background-color .25s ease, color .25s ease; }
         h1, h2, h3, h4, h5, h6, button, .font-sans { font-family: 'Poppins', sans-serif; }
+
+        .theme-app-bg { background-color: var(--app-bg) !important; }
+        .theme-surface { background-color: var(--surface-bg) !important; }
+        .theme-surface-muted { background-color: var(--surface-muted) !important; }
+        .theme-text { color: var(--text-primary) !important; }
+        .theme-text-muted { color: var(--text-muted) !important; }
+        .theme-border { border-color: var(--border-color) !important; }
+        .theme-accent-btn { background-color: var(--accent-color) !important; color: #fff !important; border: 1px solid transparent; }
+        .theme-accent-btn:hover { background-color: var(--accent-hover) !important; }
+        .theme-pill { background-color: var(--accent-soft) !important; color: var(--accent-color) !important; border-color: var(--accent-color) !important; }
 
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
@@ -990,7 +1036,26 @@
             </div>
         );
 
-        const Header = ({ title, isCloud, onNotify, onSyncNow }) => {
+        const ThemeToggle = ({ theme, setTheme }) => {
+            const themes = [
+                { value: 'default', label: 'Classic' },
+                { value: 'midnight', label: 'Midnight' },
+                { value: 'sunset', label: 'Sunset' }
+            ];
+
+            return (
+                <div className="fixed top-4 right-4 z-50">
+                    <div className="theme-surface theme-border border rounded-xl shadow-md px-3 py-2">
+                        <label htmlFor="theme-select" className="text-[10px] font-bold uppercase tracking-wide theme-text-muted">Theme</label>
+                        <select id="theme-select" value={theme} onChange={e => setTheme(e.target.value)} className="mt-1 text-xs theme-surface theme-text theme-border border rounded-lg px-2 py-1 focus:outline-none">
+                            {themes.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
+                        </select>
+                    </div>
+                </div>
+            );
+        };
+
+        const Header = ({ title, onNotify, onSyncNow }) => {
             const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
             useEffect(() => {
                 const onOnline = () => setIsOnline(true);
@@ -1003,15 +1068,15 @@
                 };
             }, []);
             return (
-                <div className="bg-white border-b p-4 flex justify-between items-center z-20">
-                    <h2 className="font-bold text-gray-800 text-lg">{title}</h2>
+                <div className="theme-surface theme-border border-b p-4 flex justify-between items-center z-20">
+                    <h2 className="font-bold theme-text text-lg">{title}</h2>
                     <div className="flex gap-2 items-center">
-                        <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100"><i className="fas fa-shield-alt"></i> Trusted Workflow</span>
-                        <button onClick={onSyncNow} className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full border ${isOnline ? 'bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>
+                        <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full theme-pill border"><i className="fas fa-shield-alt"></i> Trusted Workflow</span>
+                        <button onClick={onSyncNow} className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full border ${isOnline ? 'theme-pill' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>
                             <i className={`fas ${isOnline ? 'fa-cloud' : 'fa-cloud-slash'}`}></i>
                             {isOnline ? 'Sync Online' : 'Offline Mode'}
                         </button>
-                        <button onClick={onNotify} className="text-gray-400 hover:text-blue-600"><i className="fas fa-bell"></i></button>
+                        <button onClick={onNotify} className="theme-text-muted hover:opacity-80"><i className="fas fa-bell"></i></button>
                     </div>
                 </div>
             );
@@ -2099,12 +2164,18 @@
             const [showOnboarding, setShowOnboarding] = useState(false);
             const [showAIModal, setShowAIModal] = useState(false); 
             const [showWhatsNew, setShowWhatsNew] = useState(() => !!user && !localStorage.getItem('notary_whats_new_seen_v2'));
+            const [theme, setTheme] = useState(() => localStorage.getItem('notary_theme') || 'default');
 
             useEffect(() => {
                 DataManager.get('notary_appointments').then(setAppointments);
                 DataManager.get('notary_credentials').then(setCredentials);
                 if (user && !localStorage.getItem('notary_onboarded')) setShowOnboarding(true);
             }, [user]);
+
+            useEffect(() => {
+                document.body.setAttribute('data-theme', theme);
+                localStorage.setItem('notary_theme', theme);
+            }, [theme]);
 
             const handleUpdateProfile = (updatedData) => {
                 const newUser = { ...user, ...updatedData };
@@ -2210,12 +2281,13 @@
                 }
             };
 
-            if (!user && currentView !== 'landing' && currentView !== 'auth') { return <LandingPage onNavigate={() => setCurrentView('auth')} />; }
-            if (currentView === 'landing' || currentView === 'auth') return renderView();
+            if (!user && currentView !== 'landing' && currentView !== 'auth') { return <><ThemeToggle theme={theme} setTheme={setTheme} /><LandingPage onNavigate={() => setCurrentView('auth')} /></>; }
+            if (currentView === 'landing' || currentView === 'auth') return <><ThemeToggle theme={theme} setTheme={setTheme} />{renderView()}</>;
 
             return (
-                <div className="flex h-screen overflow-hidden font-sans">
+                <div className="flex h-screen overflow-hidden font-sans theme-app-bg">
                     <ToastContainer />
+                    <ThemeToggle theme={theme} setTheme={setTheme} />
 
                     {/* Hide FAB on Trainer Page to avoid overlap/redundancy */}
                     {currentView !== 'trainer' && (
@@ -2252,8 +2324,8 @@
                         onUpgrade={() => setShowPricing(true)} 
                         onSettings={() => setShowSettings(true)}
                     />
-                    <main className="flex-1 flex flex-col h-screen md:ml-64 relative bg-gray-50">
-                        <Header title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} isCloud={isCloudConnected} onNotify={handleNotify} onSyncNow={handleSyncNow} />
+                    <main className="flex-1 flex flex-col h-screen md:ml-64 relative theme-app-bg">
+                        <Header title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} onNotify={handleNotify} onSyncNow={handleSyncNow} />
                         <div className="flex-1 overflow-y-auto relative">{renderView()}</div>
                         <MobileNav currentView={currentView} setView={setCurrentView} onOpenMenu={() => setShowMobileMenu(true)} />
                     </main>
