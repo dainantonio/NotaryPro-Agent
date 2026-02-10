@@ -228,36 +228,6 @@
             }
         };
 
-        const encryptPayload = (value) => {
-            try {
-                return btoa(unescape(encodeURIComponent(value)));
-            } catch (err) {
-                return null;
-            }
-        };
-
-        const decryptPayload = (value) => {
-            try {
-                return decodeURIComponent(escape(atob(value)));
-            } catch (err) {
-                return null;
-            }
-        };
-
-        const hasFeatureAccess = (user, featureKey) => {
-            if (!user) return false;
-            const plan = user.plan || 'free';
-            const role = user.role || 'solo';
-            const rules = {
-                trainer: plan === 'pro' || plan === 'team',
-                portal: plan === 'pro' || plan === 'team',
-                agency: role === 'agency' && plan === 'team',
-                payments: plan === 'pro' || plan === 'team',
-                auditCapture: plan === 'pro' || plan === 'team'
-            };
-            return rules[featureKey] ?? true;
-        };
-
         // --- PDF GENERATORS ---
         const PDFGenerator = {
             createInvoice: (appt, user) => {
@@ -887,12 +857,12 @@
                 { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', color: 'text-blue-400' },
                 { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule', color: 'text-green-400' },
                 { id: 'clients', icon: 'fa-address-book', label: 'Clients', color: 'text-pink-400' },
-                { id: 'portal', icon: 'fa-door-open', label: 'Client Portal', color: 'text-cyan-400', access: 'portal' },
+                { id: 'portal', icon: 'fa-door-open', label: 'Client Portal', color: 'text-cyan-400' },
                 { id: 'journal', icon: 'fa-book', label: 'Journal', color: 'text-purple-400' },
                 { id: 'finances', icon: 'fa-wallet', label: 'Finances', color: 'text-emerald-400' },
                 { id: 'credentials', icon: 'fa-id-card', label: 'Credentials', color: 'text-orange-400' },
-                { id: 'agency', icon: 'fa-building', label: 'Agency', color: 'text-sky-400', access: 'agency' },
-                { id: 'trainer', icon: 'fa-robot', label: 'AI Trainer', color: 'text-indigo-400', access: 'trainer' },
+                { id: 'agency', icon: 'fa-building', label: 'Agency', color: 'text-sky-400' },
+                { id: 'trainer', icon: 'fa-robot', label: 'AI Trainer', color: 'text-indigo-400', isPro: true },
                 { id: 'admin', icon: 'fa-shield-alt', label: 'Admin', color: 'text-red-500' }
             ];
 
@@ -1150,10 +1120,9 @@
             );
         };
 
-        const Schedule = ({ appointments, setView, onMarkPaid, onGenerateInvoice, onQuickJournal, user }) => {
+        const Schedule = ({ appointments, setView, onMarkPaid }) => {
             const [viewMode, setViewMode] = useState('list');
             const [paymentTarget, setPaymentTarget] = useState(null);
-            const [signerModeTarget, setSignerModeTarget] = useState(null);
             const safeAppointments = Array.isArray(appointments) ? appointments : [];
             const CalendarView = () => <div className="bg-white p-8 rounded-2xl shadow text-center text-gray-400">Calendar View</div>;
             return (
@@ -1176,17 +1145,12 @@
                                             <div className="text-right font-bold text-gray-800">${job.fee}</div>
                                         </div>
                                     </div>
-                                    {job.status !== 'Paid' && hasFeatureAccess(user, 'payments') && (
+                                    {job.status !== 'Paid' && (
                                         <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
                                             <span className="text-xs font-semibold text-slate-400 uppercase">Payment</span>
                                             <button onClick={() => setPaymentTarget(job)} className="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-semibold">Take Payment</button>
                                         </div>
                                     )}
-                                    <div className="mt-3 flex flex-wrap gap-2">
-                                        <button onClick={() => setSignerModeTarget(job)} className="px-3 py-2 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700">Signer Mode</button>
-                                        <button onClick={() => onQuickJournal(job)} className="px-3 py-2 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700">Quick Journal</button>
-                                        <button onClick={() => onGenerateInvoice(job)} className="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">Invoice PDF</button>
-                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -1201,36 +1165,9 @@
                             }}
                         />
                     )}
-                    {signerModeTarget && (
-                        <SignerModeModal
-                            appointment={signerModeTarget}
-                            onClose={() => setSignerModeTarget(null)}
-                            onQuickJournal={() => { onQuickJournal(signerModeTarget); setSignerModeTarget(null); }}
-                        />
-                    )}
                 </div>
             );
         };
-
-        const SignerModeModal = ({ appointment, onClose, onQuickJournal }) => (
-            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 font-sans">
-                    <div className="flex items-center justify-between mb-4">
-                        <div>
-                            <p className="text-xs font-bold uppercase text-indigo-600">Signer Mode</p>
-                            <h4 className="text-lg font-bold text-gray-800">{appointment.clientName}</h4>
-                        </div>
-                        <button onClick={onClose} className="text-gray-400"><i className="fas fa-times"></i></button>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <button onClick={onQuickJournal} className="bg-purple-600 text-white rounded-xl py-4 text-sm font-semibold"><i className="fas fa-book mr-2"></i>Quick Journal</button>
-                        <button onClick={onClose} className="bg-blue-600 text-white rounded-xl py-4 text-sm font-semibold"><i className="fas fa-id-card mr-2"></i>ID Capture</button>
-                        <button onClick={onClose} className="bg-emerald-600 text-white rounded-xl py-4 text-sm font-semibold"><i className="fas fa-signature mr-2"></i>Signature Pad</button>
-                    </div>
-                    <p className="text-xs text-gray-500 mt-4">Designed for high-stress ceremonies: only the critical steps are visible.</p>
-                </div>
-            </div>
-        );
 
         const PaymentModal = ({ appointment, onClose, onPaid }) => {
             const handlePayLink = () => {
@@ -1534,11 +1471,6 @@
             const [idCapture, setIdCapture] = useState(null);
             const [idPreview, setIdPreview] = useState('');
             const [selectedEntry, setSelectedEntry] = useState(null);
-            useEffect(() => {
-                if (quickEntry) {
-                    setShowForm(true);
-                }
-            }, [quickEntry]);
             useEffect(() => { DataManager.get('notary_journal').then(setEntries); }, []);
             const handleSave = async (e) => {
                 e.preventDefault();
@@ -1585,19 +1517,19 @@
                     {showForm && (
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
                             <form onSubmit={handleSave} className="space-y-4">
-                                <input required name="date" type="date" defaultValue={quickEntry?.date || ''} className="w-full p-3 bg-gray-50 border rounded-xl" />
-                                <input required name="signer" type="text" defaultValue={quickEntry?.signer || ''} placeholder="Signer" className="w-full p-3 bg-gray-50 border rounded-xl" />
-                                <input name="docType" type="text" defaultValue={quickEntry?.docType || ''} placeholder="Document Type" className="w-full p-3 bg-gray-50 border rounded-xl" />
-                                <input name="fee" type="number" defaultValue={quickEntry?.fee || ''} placeholder="Fee" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input required name="signer" type="text" placeholder="Signer" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input name="docType" type="text" placeholder="Document Type" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input name="fee" type="number" placeholder="Fee" className="w-full p-3 bg-gray-50 border rounded-xl" />
                                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
                                     <label className="text-xs font-bold text-slate-500 uppercase block">Audit-Proof Capture (ID/Thumbprint)</label>
                                     <input type="file" accept="image/*" capture="environment" onChange={(e) => handleIdUpload(e.target.files?.[0])} className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200" />
                                     {idPreview && <img src={idPreview} alt="ID capture preview" className="w-full max-h-48 object-contain rounded-lg border border-slate-200" />}
-                                    <p className="text-xs text-slate-400">Captured image is obfuscated and stored on this device only. For production compliance, use encrypted cloud storage with key management.</p>
+                                    <p className="text-xs text-slate-400">Captured image is stored locally with light encryption for audit review.</p>
                                 </div>
                                 <div className="flex gap-2">
                                     <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 rounded-lg">Cancel</button>
-                                    <button type="submit" onClick={() => onQuickEntryUsed?.()} className="flex-1 bg-purple-600 text-white rounded-lg">Save</button>
+                                    <button type="submit" className="flex-1 bg-purple-600 text-white rounded-lg">Save</button>
                                 </div>
                             </form>
                         </div>
@@ -2032,7 +1964,6 @@
             const [showOnboarding, setShowOnboarding] = useState(false);
             const [showAIModal, setShowAIModal] = useState(false); 
             const [showWhatsNew, setShowWhatsNew] = useState(() => !!user && !localStorage.getItem('notary_whats_new_seen_v2'));
-            const [quickJournalEntry, setQuickJournalEntry] = useState(null);
 
             useEffect(() => {
                 DataManager.get('notary_appointments').then(setAppointments);
@@ -2107,20 +2038,6 @@
                 setAppointments(await DataManager.get('notary_appointments'));
                 showToast("Payment Recorded");
             };
-
-            const handleGenerateInvoice = (appt) => {
-                PDFGenerator.createInvoice(appt, user);
-            };
-
-            const handleQuickJournal = (appt) => {
-                setQuickJournalEntry({
-                    date: appt.date || new Date().toISOString().split('T')[0],
-                    signer: appt.clientName || '',
-                    docType: appt.type || 'Notary Service',
-                    fee: appt.fee || ''
-                });
-                setCurrentView('journal');
-            };
             
             const handleRefresh = async () => {
                  setAppointments(await DataManager.get('notary_appointments'));
@@ -2132,15 +2049,15 @@
                     case 'landing': return <LandingPage onNavigate={() => setCurrentView('auth')} />;
                     case 'auth': return <AuthScreen onAuth={handleLogin} onBack={() => setCurrentView('landing')} />;
                     case 'dashboard': return <Dashboard appointments={appointments} credentials={credentials} setView={setCurrentView} isCloud={isCloudConnected} />;
-                    case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onMarkPaid={handleMarkPaid} onGenerateInvoice={handleGenerateInvoice} onQuickJournal={handleQuickJournal} user={user} />;
+                    case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onMarkPaid={handleMarkPaid} />;
                     case 'addAppointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => setCurrentView('schedule')} />;
                     case 'clients': return <Clients />;
-                    case 'portal': return hasFeatureAccess(user, 'portal') ? <ClientPortal user={user} appointments={appointments} /> : <div className="p-6"><EmptyState icon="fa-door-open" title="Client Portal is a Pro feature" description="Upgrade to Pro to enable secure client logins and e-sign workflows." actionLabel="Upgrade" onAction={() => setShowPricing(true)} colorClass="text-cyan-600" bgClass="bg-cyan-50" /></div>;
-                    case 'journal': return <Journal user={user} onUpgrade={() => setShowPricing(true)} quickEntry={quickJournalEntry} onQuickEntryUsed={() => setQuickJournalEntry(null)} />;
+                    case 'portal': return <ClientPortal user={user} appointments={appointments} />;
+                    case 'journal': return <Journal user={user} onUpgrade={()=>{}} />;
                     case 'finances': return <Finances />;
                     case 'credentials': return <Credentials onUpdate={handleRefresh} />;
-                    case 'agency': return hasFeatureAccess(user, 'agency') ? <AgencyManagement appointments={appointments} /> : <div className="p-6"><EmptyState icon="fa-building" title="Team Mode requires Team plan" description="Upgrade to Team to manage multiple notaries and assignments." actionLabel="Upgrade" onAction={() => setShowPricing(true)} colorClass="text-sky-600" bgClass="bg-sky-50" /></div>;
-                    case 'trainer': return hasFeatureAccess(user, 'trainer') ? <TrainerModule stateDB={STATE_DATABASE} courseMods={COURSE_MODULES} user={user} onUpgrade={()=>setShowPricing(true)} /> : <div className="p-6"><EmptyState icon="fa-robot" title="AI Trainer is a Pro feature" description="Upgrade to Pro for compliance coaching and simulations." actionLabel="Upgrade" onAction={() => setShowPricing(true)} colorClass="text-indigo-600" bgClass="bg-indigo-50" /></div>;
+                    case 'agency': return <AgencyManagement appointments={appointments} />;
+                    case 'trainer': return <TrainerModule stateDB={STATE_DATABASE} courseMods={COURSE_MODULES} user={user} onUpgrade={()=>{}} />;
                     case 'admin': return <AdminPanel stateDB={STATE_DATABASE} onUpdateStateDB={()=>{}} />;
                     default: return <div>Not found</div>;
                 }
