@@ -220,6 +220,44 @@
             }
         };
 
+        const safeParse = (value, fallback) => {
+            try {
+                return JSON.parse(value);
+            } catch (err) {
+                return fallback;
+            }
+        };
+
+        const encryptPayload = (value) => {
+            try {
+                return btoa(unescape(encodeURIComponent(value)));
+            } catch (err) {
+                return null;
+            }
+        };
+
+        const decryptPayload = (value) => {
+            try {
+                return decodeURIComponent(escape(atob(value)));
+            } catch (err) {
+                return null;
+            }
+        };
+
+        const hasFeatureAccess = (user, featureKey) => {
+            if (!user) return false;
+            const plan = user.plan || 'free';
+            const role = user.role || 'solo';
+            const rules = {
+                trainer: plan === 'pro' || plan === 'team',
+                portal: plan === 'pro' || plan === 'team',
+                agency: role === 'agency' && plan === 'team',
+                payments: plan === 'pro' || plan === 'team',
+                auditCapture: plan === 'pro' || plan === 'team'
+            };
+            return rules[featureKey] ?? true;
+        };
+
         // --- PDF GENERATORS ---
         const PDFGenerator = {
             createInvoice: (appt, user) => {
@@ -249,6 +287,21 @@
 
                 doc.save(`invoice_${appt.clientName}.pdf`);
                 showToast("Invoice Downloaded");
+            },
+            createSignedAgreement: ({ clientName, clientEmail, signature, signedAt, title, body }) => {
+                if (!window.jspdf) { showToast("PDF Library Loading...", 'error'); return; }
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.setFontSize(18); doc.text(title, 14, 20);
+                doc.setFontSize(10); doc.text(`Client: ${clientName}`, 14, 28);
+                doc.text(`Email: ${clientEmail}`, 14, 34);
+                doc.text(`Signed: ${new Date(signedAt).toLocaleString()}`, 14, 40);
+                doc.setFontSize(11);
+                doc.text(body, 14, 52, { maxWidth: 180 });
+                doc.setFontSize(12);
+                doc.text(`Signature: ${signature}`, 14, 120);
+                doc.save(`signed_${title.replace(/\s+/g, '_').toLowerCase()}.pdf`);
+                showToast("Signed Document Downloaded");
             },
             createReport: (title, columns, data, filename) => {
                 if (!window.jspdf) { showToast("PDF Library Loading...", 'error'); return; }
@@ -345,8 +398,13 @@
             <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm z-[100]">
                 <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center font-sans">
                     <h2 className="text-2xl font-bold mb-2">Upgrade to Pro</h2>
-                    <p className="text-gray-500 mb-6">Unlock Unlimited AI, Cloud Sync & PDF Invoices.</p>
-                    <button onClick={onUpgrade} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold mb-2">Get Pro - $19/mo</button>
+                    <p className="text-gray-500 mb-6">Unlock Unlimited AI, secure audit capture, payment processing, and client portal access.</p>
+                    <div className="space-y-2 text-left text-sm text-gray-600 bg-gray-50 rounded-xl p-3 mb-4">
+                        <p><i className="fas fa-check text-emerald-600 mr-2"></i>Pro: AI Trainer, Payments, Client Portal, Audit Capture</p>
+                        <p><i className="fas fa-check text-indigo-600 mr-2"></i>Team: Agency mode with assignments & master calendar</p>
+                    </div>
+                    <button onClick={() => onUpgrade('pro')} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold mb-2">Get Pro - $19/mo</button>
+                    <button onClick={() => onUpgrade('team')} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold mb-2">Get Team - $49/mo</button>
                     <button onClick={onClose} className="text-gray-400 text-sm">Close</button>
                 </div>
             </div>
@@ -457,16 +515,29 @@
             </div>
         );
 
-        const OnboardingTour = ({ onComplete }) => (
-            <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl p-8 text-center max-w-sm font-sans">
-                    <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🚀</div>
-                    <h2 className="text-2xl font-bold mb-2">Welcome to NotaryOS</h2>
-                    <p className="text-gray-500 mb-6">Your all-in-one business operating system. Manage appointments, journals, and clients in one place.</p>
-                    <button onClick={onComplete} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg">Get Started</button>
+        const OnboardingTour = ({ onComplete }) => {
+            const [selectedRole, setSelectedRole] = useState('solo');
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-8 text-center max-w-md font-sans">
+                        <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🚀</div>
+                        <h2 className="text-2xl font-bold mb-2">Welcome to NotaryOS</h2>
+                        <p className="text-gray-500 mb-6">Choose your setup so we can tailor features and guidance.</p>
+                        <div className="grid grid-cols-1 gap-3 mb-6 text-left">
+                            <button onClick={() => setSelectedRole('solo')} className={`p-3 rounded-xl border ${selectedRole === 'solo' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+                                <p className="font-semibold text-gray-800">Solo Notary</p>
+                                <p className="text-xs text-gray-500">Best for independent mobile notaries.</p>
+                            </button>
+                            <button onClick={() => setSelectedRole('agency')} className={`p-3 rounded-xl border ${selectedRole === 'agency' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200'}`}>
+                                <p className="font-semibold text-gray-800">Agency / Team</p>
+                                <p className="text-xs text-gray-500">Manage multiple notaries and assignments.</p>
+                            </button>
+                        </div>
+                        <button onClick={() => onComplete(selectedRole)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg">Continue</button>
+                    </div>
                 </div>
-            </div>
-        );
+            );
+        };
 
         const LandingPage = ({ onNavigate }) => {
             const [activeTab, setActiveTab] = useState('before');
@@ -789,7 +860,7 @@
             const handleAuth = (e) => {
                 e.preventDefault();
                 setError('');
-                onAuth({ id: '1', name: isLogin ? 'User' : formData.name, email: formData.email, plan: 'free' });
+                onAuth({ id: '1', name: isLogin ? 'User' : formData.name, email: formData.email, plan: 'free', role: 'solo' });
             };
             
             const handleGoogleAuth = async () => { try { const provider = new firebase.auth.GoogleAuthProvider(); await firebase.auth().signInWithPopup(provider); } catch (err) { setError(err.message); } };
@@ -810,16 +881,18 @@
             );
         };
 
-        const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout, userName, userPlan, onSettings }) => {
+        const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout, userName, userPlan, userRole, onSettings, onUpgrade }) => {
             const [isCollapsed, setIsCollapsed] = useState(false);
             const menuItems = [
                 { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', color: 'text-blue-400' },
                 { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule', color: 'text-green-400' },
                 { id: 'clients', icon: 'fa-address-book', label: 'Clients', color: 'text-pink-400' },
+                { id: 'portal', icon: 'fa-door-open', label: 'Client Portal', color: 'text-cyan-400', access: 'portal' },
                 { id: 'journal', icon: 'fa-book', label: 'Journal', color: 'text-purple-400' },
                 { id: 'finances', icon: 'fa-wallet', label: 'Finances', color: 'text-emerald-400' },
                 { id: 'credentials', icon: 'fa-id-card', label: 'Credentials', color: 'text-orange-400' },
-                { id: 'trainer', icon: 'fa-robot', label: 'AI Trainer', color: 'text-indigo-400', isPro: true },
+                { id: 'agency', icon: 'fa-building', label: 'Agency', color: 'text-sky-400', access: 'agency' },
+                { id: 'trainer', icon: 'fa-robot', label: 'AI Trainer', color: 'text-indigo-400', access: 'trainer' },
                 { id: 'admin', icon: 'fa-shield-alt', label: 'Admin', color: 'text-red-500' }
             ];
 
@@ -833,12 +906,16 @@
                             <button onClick={onClose} className="lg:hidden text-gray-400"><i className="fas fa-times"></i></button>
                         </div>
                         <nav className="flex-1 p-2 space-y-2 overflow-y-auto">
-                            {menuItems.map(item => (
-                                <button key={item.id} onClick={() => { setView(item.id); onClose(); }} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors hover:bg-slate-800 ${currentView === item.id ? 'bg-blue-600 text-white' : 'text-gray-400'} ${isCollapsed ? 'justify-center' : ''}`} title={item.label}>
-                                    <i className={`fas ${item.icon} text-lg ${currentView !== item.id ? item.color : ''}`}></i>
-                                    {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
-                                </button>
-                            ))}
+                            {menuItems.map(item => {
+                                const locked = item.access && !hasFeatureAccess({ plan: userPlan, role: userRole }, item.access);
+                                return (
+                                    <button key={item.id} onClick={() => { if (locked) onUpgrade(); else { setView(item.id); onClose(); } }} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors hover:bg-slate-800 ${currentView === item.id ? 'bg-blue-600 text-white' : 'text-gray-400'} ${isCollapsed ? 'justify-center' : ''}`} title={locked ? `${item.label} (Upgrade required)` : item.label}>
+                                        <i className={`fas ${item.icon} text-lg ${currentView !== item.id ? item.color : ''}`}></i>
+                                        {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
+                                        {!isCollapsed && locked && <i className="fas fa-lock text-[10px] ml-auto text-amber-300"></i>}
+                                    </button>
+                                );
+                            })}
                         </nav>
                         <div className="p-4 border-t border-slate-700">
                              <button onClick={onSettings} className={`w-full flex items-center gap-3 px-3 py-2 mb-2 hover:bg-slate-800 rounded transition-colors group ${isCollapsed ? 'justify-center' : ''}`}>
@@ -859,26 +936,41 @@
         };
 
         const MobileNav = ({ setView, onOpenMenu }) => (
-            <div className="md:hidden fixed bottom-0 w-full bg-white border-t p-2 flex justify-around z-30 safe-area-pb shadow-lg">
-                <button onClick={() => setView('dashboard')}><i className="fas fa-home text-blue-500 text-xl"></i></button>
-                <button onClick={() => setView('schedule')}><i className="fas fa-calendar-alt text-green-500 text-xl"></i></button>
+            <div className="md:hidden fixed bottom-0 w-full bg-white/70 border-t border-slate-200/70 p-2 flex justify-around z-30 safe-area-pb shadow-sm backdrop-blur">
+                <button onClick={() => setView('dashboard')}><i className="fas fa-home text-slate-400 text-lg"></i></button>
+                <button onClick={() => setView('schedule')}><i className="fas fa-calendar-alt text-slate-400 text-lg"></i></button>
                 
                 {/* IMPROVED FAB/ADD BUTTON FOR MOBILE */}
                 <button onClick={() => setView('addAppointment')} className="-mt-8 bg-blue-600 text-white rounded-full p-4 shadow-xl border-4 border-white active:scale-95 transition-transform"><i className="fas fa-plus text-2xl"></i></button>
                 
-                <button onClick={() => setView('trainer')}><i className="fas fa-robot text-indigo-500 text-xl"></i></button>
-                <button onClick={onOpenMenu}><i className="fas fa-bars text-gray-500 text-xl"></i></button>
+                <button onClick={() => setView('trainer')}><i className="fas fa-robot text-slate-400 text-lg"></i></button>
+                <button onClick={onOpenMenu}><i className="fas fa-bars text-slate-400 text-lg"></i></button>
             </div>
         );
 
-        const Header = ({ title }) => (
-            <div className="bg-white border-b p-4 flex justify-between items-center z-20">
-                <h2 className="font-bold text-gray-800 text-lg">{title}</h2>
-                <div className="flex gap-3">
-                    <button className="text-gray-400"><i className="fas fa-bell"></i></button>
+        const Header = ({ title }) => {
+            const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+            useEffect(() => {
+                const onOnline = () => setIsOnline(true);
+                const onOffline = () => setIsOnline(false);
+                window.addEventListener('online', onOnline);
+                window.addEventListener('offline', onOffline);
+                return () => {
+                    window.removeEventListener('online', onOnline);
+                    window.removeEventListener('offline', onOffline);
+                };
+            }, []);
+            return (
+                <div className="bg-white border-b p-4 flex justify-between items-center z-20">
+                    <h2 className="font-bold text-gray-800 text-lg">{title}</h2>
+                    <div className="flex gap-2 items-center">
+                        <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100"><i className="fas fa-shield-alt"></i> Trusted Workflow</span>
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full border ${isOnline ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}><i className={`fas ${isOnline ? 'fa-cloud' : 'fa-cloud-slash'}`}></i>{isOnline ? 'Sync Online' : 'Offline Mode'}</span>
+                        <button className="text-gray-400"><i className="fas fa-bell"></i></button>
+                    </div>
                 </div>
-            </div>
-        );
+            );
+        };
 
         // --- CORE MODULES ---
         
@@ -1058,8 +1150,10 @@
             );
         };
 
-        const Schedule = ({ appointments, setView }) => {
+        const Schedule = ({ appointments, setView, onMarkPaid, onGenerateInvoice, onQuickJournal, user }) => {
             const [viewMode, setViewMode] = useState('list');
+            const [paymentTarget, setPaymentTarget] = useState(null);
+            const [signerModeTarget, setSignerModeTarget] = useState(null);
             const safeAppointments = Array.isArray(appointments) ? appointments : [];
             const CalendarView = () => <div className="bg-white p-8 rounded-2xl shadow text-center text-gray-400">Calendar View</div>;
             return (
@@ -1068,21 +1162,487 @@
                     {viewMode === 'calendar' ? <CalendarView /> : (
                         <div className="space-y-3">
                             {safeAppointments.length === 0 ? <EmptyState icon="fa-calendar-alt" title="Schedule Empty" description="Add your first signing." actionLabel="Add" onAction={() => setView('addAppointment')} colorClass="text-green-600" bgClass="bg-green-50" /> : safeAppointments.sort((a,b) => new Date(a.date) - new Date(b.date)).map(job => (
-                                <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><div onClick={() => {}} className="cursor-pointer"><div className="flex justify-between items-start mb-2"><div><span className="text-xs font-bold text-gray-400 uppercase">{job.type}</span><h4 className="font-bold text-gray-800 text-lg">{job.clientName}</h4></div><span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase status-${job.status.toLowerCase()}`}>{job.status}</span></div><div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mt-3 pt-3 border-t border-gray-50"><div className="flex items-center gap-2"><i className="far fa-calendar-alt text-blue-400"></i> {job.date} {job.time}</div><div className="text-right font-bold text-gray-800">${job.fee}</div></div></div></div>
+                                <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                    <div onClick={() => {}} className="cursor-pointer">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <span className="text-xs font-bold text-gray-400 uppercase">{job.type}</span>
+                                                <h4 className="font-bold text-gray-800 text-lg">{job.clientName}</h4>
+                                            </div>
+                                            <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase status-${job.status.toLowerCase()}`}>{job.status}</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mt-3 pt-3 border-t border-gray-50">
+                                            <div className="flex items-center gap-2"><i className="far fa-calendar-alt text-blue-400"></i> {job.date} {job.time}</div>
+                                            <div className="text-right font-bold text-gray-800">${job.fee}</div>
+                                        </div>
+                                    </div>
+                                    {job.status !== 'Paid' && hasFeatureAccess(user, 'payments') && (
+                                        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+                                            <span className="text-xs font-semibold text-slate-400 uppercase">Payment</span>
+                                            <button onClick={() => setPaymentTarget(job)} className="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-semibold">Take Payment</button>
+                                        </div>
+                                    )}
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                        <button onClick={() => setSignerModeTarget(job)} className="px-3 py-2 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700">Signer Mode</button>
+                                        <button onClick={() => onQuickJournal(job)} className="px-3 py-2 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700">Quick Journal</button>
+                                        <button onClick={() => onGenerateInvoice(job)} className="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">Invoice PDF</button>
+                                    </div>
+                                </div>
                             ))}
+                        </div>
+                    )}
+                    {paymentTarget && (
+                        <PaymentModal
+                            appointment={paymentTarget}
+                            onClose={() => setPaymentTarget(null)}
+                            onPaid={async () => {
+                                await onMarkPaid(paymentTarget);
+                                setPaymentTarget(null);
+                            }}
+                        />
+                    )}
+                    {signerModeTarget && (
+                        <SignerModeModal
+                            appointment={signerModeTarget}
+                            onClose={() => setSignerModeTarget(null)}
+                            onQuickJournal={() => { onQuickJournal(signerModeTarget); setSignerModeTarget(null); }}
+                        />
+                    )}
+                </div>
+            );
+        };
+
+        const SignerModeModal = ({ appointment, onClose, onQuickJournal }) => (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 font-sans">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <p className="text-xs font-bold uppercase text-indigo-600">Signer Mode</p>
+                            <h4 className="text-lg font-bold text-gray-800">{appointment.clientName}</h4>
+                        </div>
+                        <button onClick={onClose} className="text-gray-400"><i className="fas fa-times"></i></button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <button onClick={onQuickJournal} className="bg-purple-600 text-white rounded-xl py-4 text-sm font-semibold"><i className="fas fa-book mr-2"></i>Quick Journal</button>
+                        <button onClick={onClose} className="bg-blue-600 text-white rounded-xl py-4 text-sm font-semibold"><i className="fas fa-id-card mr-2"></i>ID Capture</button>
+                        <button onClick={onClose} className="bg-emerald-600 text-white rounded-xl py-4 text-sm font-semibold"><i className="fas fa-signature mr-2"></i>Signature Pad</button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-4">Designed for high-stress ceremonies: only the critical steps are visible.</p>
+                </div>
+            </div>
+        );
+
+        const PaymentModal = ({ appointment, onClose, onPaid }) => {
+            const handlePayLink = () => {
+                if (STRIPE_PAYMENT_LINK) {
+                    window.open(STRIPE_PAYMENT_LINK, '_blank', 'noopener');
+                    showToast("Payment link opened");
+                } else {
+                    showToast("Add a Stripe payment link in configuration.", "error");
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 className="text-lg font-semibold text-gray-800">Collect Payment</h4>
+                                <p className="text-sm text-gray-500">Invoice for {appointment.clientName} • ${appointment.fee}</p>
+                            </div>
+                            <button onClick={onClose} className="text-gray-400"><i className="fas fa-times"></i></button>
+                        </div>
+                        <div className="space-y-3">
+                            <button onClick={onPaid} className="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2">
+                                <i className="fas fa-wifi"></i> Tap to Pay (Simulated)
+                            </button>
+                            <button onClick={handlePayLink} className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2">
+                                <i className="fas fa-link"></i> Send Stripe Payment Link
+                            </button>
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-500">
+                                Record payments here to automatically mark invoices as paid in the journal.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ClientPortal = ({ user, appointments }) => {
+            const [clients, setClients] = useState([]);
+            const [portalClient, setPortalClient] = useState(null);
+            const [loginData, setLoginData] = useState({ email: '', code: '' });
+            const [portalError, setPortalError] = useState('');
+            const [signatures, setSignatures] = useState([]);
+            const [activeDoc, setActiveDoc] = useState(null);
+            const [signatureInput, setSignatureInput] = useState('');
+            const [consentChecked, setConsentChecked] = useState(false);
+
+            useEffect(() => {
+                DataManager.get('notary_clients').then(setClients);
+                DataManager.get('notary_esignatures').then(setSignatures);
+            }, []);
+
+            const documents = [
+                {
+                    id: 'service-agreement',
+                    title: 'Service Agreement',
+                    description: 'Review the service scope, travel policies, and payment terms before your appointment.',
+                    body: 'By signing this service agreement, you confirm the appointment details, travel policies, and payment terms provided by your notary. You agree to pay the agreed fee upon completion of service and acknowledge cancellation policies communicated by the notary.'
+                },
+                {
+                    id: 'privacy-consent',
+                    title: 'Privacy & Communication Consent',
+                    description: 'Authorize appointment reminders and secure document handling.',
+                    body: 'By signing this consent, you authorize the notary to send appointment confirmations, reminders, and follow-ups to the contact information you provided. You acknowledge that your data will be handled securely and only used for the purposes of the notarial service.'
+                }
+            ];
+
+            const safeAppointments = Array.isArray(appointments) ? appointments : [];
+            const portalAppointments = portalClient
+                ? safeAppointments.filter(appt => appt.clientName?.toLowerCase().includes(portalClient.name.toLowerCase()))
+                : [];
+
+            const handlePortalLogin = (e) => {
+                e.preventDefault();
+                setPortalError('');
+                const client = clients.find(c => c.email?.toLowerCase() === loginData.email.toLowerCase());
+                if (!client) {
+                    setPortalError("We couldn't find a client profile with that email.");
+                    return;
+                }
+                const last4 = (client.phone || '').replace(/\D/g, '').slice(-4);
+                const accessCode = client.accessCode || last4;
+                if (!loginData.code || loginData.code !== accessCode) {
+                    setPortalError("Access code invalid. Please use your secure code or phone last four digits.");
+                    return;
+                }
+                setPortalClient(client);
+                showToast("Welcome to your secure portal!");
+            };
+
+            const handleSignDocument = async (doc) => {
+                if (!portalClient) return;
+                if (!signatureInput || !consentChecked) {
+                    showToast("Please type your full name and consent to sign.", "error");
+                    return;
+                }
+                const signedAt = new Date().toISOString();
+                const record = {
+                    id: `${doc.id}-${portalClient.email}`,
+                    clientEmail: portalClient.email,
+                    clientName: portalClient.name,
+                    documentId: doc.id,
+                    documentTitle: doc.title,
+                    signature: signatureInput,
+                    signedAt
+                };
+                await DataManager.save('notary_esignatures', record);
+                setSignatures(await DataManager.get('notary_esignatures'));
+                setSignatureInput('');
+                setConsentChecked(false);
+                setActiveDoc(null);
+                showToast("Document Signed");
+            };
+
+            const handleDownloadSigned = (doc) => {
+                const signatureRecord = signatures.find(s => s.documentId === doc.id && s.clientEmail === portalClient?.email);
+                if (!signatureRecord) return;
+                PDFGenerator.createSignedAgreement({
+                    clientName: signatureRecord.clientName,
+                    clientEmail: signatureRecord.clientEmail,
+                    signature: signatureRecord.signature,
+                    signedAt: signatureRecord.signedAt,
+                    title: doc.title,
+                    body: doc.body
+                });
+            };
+
+            return (
+                <div className="p-6 pb-24">
+                    <div className="max-w-5xl mx-auto space-y-6">
+                        <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                <div>
+                                    <h3 className="text-xl font-bold text-gray-900">Client Portal & E-Sign</h3>
+                                    <p className="text-sm text-gray-500">Securely review appointments, download invoices, and sign non-notarial documents.</p>
+                                </div>
+                                {portalClient && (
+                                    <div className="flex items-center gap-3 bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-sm">
+                                        <i className="fas fa-shield-alt"></i>
+                                        <span>Logged in as {portalClient.name}</span>
+                                        <button onClick={() => setPortalClient(null)} className="text-blue-600 font-semibold ml-2">Log out</button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {!portalClient ? (
+                            <div className="bg-white p-6 rounded-2xl shadow border border-gray-100 max-w-xl">
+                                <h4 className="text-lg font-semibold text-gray-800 mb-3">Client Secure Login</h4>
+                                <p className="text-sm text-gray-500 mb-4">Use your email and access code (or last 4 digits of your phone) to enter.</p>
+                                {portalError && <div className="bg-red-50 text-red-600 text-sm p-3 rounded mb-4">{portalError}</div>}
+                                <form onSubmit={handlePortalLogin} className="space-y-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Email</label>
+                                        <input type="email" className="w-full p-3 border rounded-xl" value={loginData.email} onChange={(e) => setLoginData({ ...loginData, email: e.target.value })} required />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Access Code</label>
+                                        <input type="text" className="w-full p-3 border rounded-xl" value={loginData.code} onChange={(e) => setLoginData({ ...loginData, code: e.target.value })} required />
+                                    </div>
+                                    <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold">Enter Portal</button>
+                                </form>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div className="lg:col-span-2 space-y-6">
+                                    <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
+                                        <h4 className="text-lg font-semibold text-gray-800 mb-3">Your Upcoming Appointments</h4>
+                                        {portalAppointments.length === 0 ? (
+                                            <EmptyState 
+                                                icon="fa-calendar-check"
+                                                title="No upcoming appointments"
+                                                description="Your notary will update your schedule here once it is booked."
+                                                actionLabel="Need help?"
+                                                onAction={() => showToast("Please contact your notary.", "success")}
+                                                colorClass="text-blue-600"
+                                                bgClass="bg-blue-50"
+                                            />
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {portalAppointments.map(appt => (
+                                                    <div key={appt.id} className="border border-gray-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                                        <div>
+                                                            <p className="text-xs font-semibold text-gray-400 uppercase">{appt.type || 'Notary Service'}</p>
+                                                            <p className="text-lg font-semibold text-gray-800">{appt.date} • {appt.time}</p>
+                                                            <p className="text-sm text-gray-500">Location: {appt.location || 'Provided by notary'}</p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-sm text-gray-500">Fee</p>
+                                                            <p className="text-lg font-bold text-gray-800">${appt.fee || '--'}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
+                                        <h4 className="text-lg font-semibold text-gray-800 mb-3">Completed Invoices</h4>
+                                        {portalAppointments.filter(appt => ['Completed', 'Paid'].includes(appt.status)).length === 0 ? (
+                                            <EmptyState 
+                                                icon="fa-file-invoice"
+                                                title="No invoices yet"
+                                                description="After your appointment is completed, invoices will appear here for download."
+                                                actionLabel="Contact notary"
+                                                onAction={() => showToast("We will notify you when invoices are ready.", "success")}
+                                                colorClass="text-emerald-600"
+                                                bgClass="bg-emerald-50"
+                                            />
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {portalAppointments.filter(appt => ['Completed', 'Paid'].includes(appt.status)).map(appt => (
+                                                    <div key={appt.id} className="flex items-center justify-between border border-gray-100 rounded-xl p-4">
+                                                        <div>
+                                                            <p className="font-semibold text-gray-800">{appt.date} Invoice</p>
+                                                            <p className="text-sm text-gray-500">Total: ${appt.fee}</p>
+                                                        </div>
+                                                        <button onClick={() => PDFGenerator.createInvoice(appt, user)} className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-semibold">Download</button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
+                                        <h4 className="text-lg font-semibold text-gray-800 mb-3">E-Sign Documents</h4>
+                                        <div className="space-y-4">
+                                            {documents.map(doc => {
+                                                const signed = signatures.find(s => s.documentId === doc.id && s.clientEmail === portalClient.email);
+                                                return (
+                                                    <div key={doc.id} className="border border-gray-100 rounded-xl p-4">
+                                                        <div className="flex items-start justify-between gap-4">
+                                                            <div>
+                                                                <p className="font-semibold text-gray-800">{doc.title}</p>
+                                                                <p className="text-sm text-gray-500">{doc.description}</p>
+                                                            </div>
+                                                            {signed ? (
+                                                                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">Signed</span>
+                                                            ) : (
+                                                                <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full">Pending</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="mt-3 flex flex-wrap gap-2">
+                                                            {!signed ? (
+                                                                <button onClick={() => { setActiveDoc(doc); setSignatureInput(''); setConsentChecked(false); }} className="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-semibold">Review & Sign</button>
+                                                            ) : (
+                                                                <button onClick={() => handleDownloadSigned(doc)} className="bg-gray-900 text-white px-3 py-2 rounded-lg text-xs font-semibold">Download Copy</button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-900 text-white p-6 rounded-2xl shadow">
+                                        <h4 className="text-lg font-semibold mb-2">Secure by Design</h4>
+                                        <p className="text-sm text-slate-200">Clients access only their own records using email + access code verification. Signed documents are timestamped for audit readiness.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {activeDoc && (
+                        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                            <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h4 className="text-lg font-semibold text-gray-800">{activeDoc.title}</h4>
+                                        <p className="text-sm text-gray-500">{activeDoc.description}</p>
+                                    </div>
+                                    <button onClick={() => setActiveDoc(null)} className="text-gray-400"><i className="fas fa-times"></i></button>
+                                </div>
+                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 max-h-40 overflow-y-auto">
+                                    {activeDoc.body}
+                                </div>
+                                <div className="mt-4 space-y-3">
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Type your full name</label>
+                                        <input className="w-full p-3 border rounded-xl" value={signatureInput} onChange={(e) => setSignatureInput(e.target.value)} placeholder="Full legal name" />
+                                    </div>
+                                    <label className="flex items-start gap-2 text-sm text-gray-500">
+                                        <input type="checkbox" checked={consentChecked} onChange={(e) => setConsentChecked(e.target.checked)} className="mt-1" />
+                                        I agree that this e-signature is the legal equivalent of my handwritten signature.
+                                    </label>
+                                    <button onClick={() => handleSignDocument(activeDoc)} className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold">Sign & Submit</button>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
             );
         };
 
-        const Journal = ({ user, onUpgrade }) => {
+        const Journal = ({ user, onUpgrade, quickEntry, onQuickEntryUsed }) => {
             const [entries, setEntries] = useState([]);
             const [showForm, setShowForm] = useState(false);
+            const [idCapture, setIdCapture] = useState(null);
+            const [idPreview, setIdPreview] = useState('');
+            const [selectedEntry, setSelectedEntry] = useState(null);
+            useEffect(() => {
+                if (quickEntry) {
+                    setShowForm(true);
+                }
+            }, [quickEntry]);
             useEffect(() => { DataManager.get('notary_journal').then(setEntries); }, []);
-            const handleSave = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await DataManager.save('notary_journal', { id: Date.now().toString(), date: fd.get('date'), signer: fd.get('signer'), docType: fd.get('docType'), fee: fd.get('fee') }); setShowForm(false); setEntries(await DataManager.get('notary_journal')); showToast("Entry Logged"); };
+            const handleSave = async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const encryptedId = idCapture ? encryptPayload(idCapture) : null;
+                await DataManager.save('notary_journal', {
+                    id: Date.now().toString(),
+                    date: fd.get('date'),
+                    signer: fd.get('signer'),
+                    docType: fd.get('docType'),
+                    fee: fd.get('fee'),
+                    idCapture: encryptedId
+                });
+                setShowForm(false);
+                setIdCapture(null);
+                setIdPreview('');
+                setEntries(await DataManager.get('notary_journal'));
+                showToast("Entry Logged");
+            };
+            const handleIdUpload = (file) => {
+                if (!file) {
+                    setIdCapture(null);
+                    setIdPreview('');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const result = reader.result;
+                    setIdCapture(typeof result === 'string' ? result : null);
+                    setIdPreview(typeof result === 'string' ? result : '');
+                };
+                reader.readAsDataURL(file);
+            };
             const handleExport = () => { if (user.plan !== 'pro') { onUpgrade(); return; } if (window.jspdf) PDFGenerator.createReport("Notary Journal", ["Date", "Signer", "Doc", "Fee"], entries.map(e => [e.date, e.signer, e.docType, `$${e.fee}`]), "journal.pdf"); };
-            return (<div className="p-6 pb-24"><div className="flex justify-between items-center mb-6"><div className="flex gap-2"><h3 className="text-lg font-bold text-gray-800">Journal</h3><button onClick={handleExport} className="text-gray-400 hover:text-blue-600"><i className="fas fa-file-export"></i></button></div><button onClick={() => setShowForm(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Log</button></div>{showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6"><form onSubmit={handleSave} className="space-y-4"><input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" /><input required name="signer" type="text" placeholder="Signer" className="w-full p-3 bg-gray-50 border rounded-xl" /><div className="flex gap-2"><button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 rounded-lg">Cancel</button><button type="submit" className="flex-1 bg-purple-600 text-white rounded-lg">Save</button></div></form></div>}<div className="space-y-3">{entries.length === 0 ? <EmptyState icon="fa-book" title="Journal Empty" description="Log your notarial acts." actionLabel="Log" onAction={()=>setShowForm(true)} colorClass="text-purple-600" bgClass="bg-purple-50" /> : entries.map(e => <div key={e.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><h4>{e.signer}</h4><p className="text-xs text-gray-500">{e.docType}</p></div>)}</div></div>);
+            return (
+                <div className="p-6 pb-24">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex gap-2">
+                            <h3 className="text-lg font-bold text-gray-800">Journal</h3>
+                            <button onClick={handleExport} className="text-gray-400 hover:text-blue-600"><i className="fas fa-file-export"></i></button>
+                        </div>
+                        <button onClick={() => setShowForm(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Log</button>
+                    </div>
+                    {showForm && (
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                            <form onSubmit={handleSave} className="space-y-4">
+                                <input required name="date" type="date" defaultValue={quickEntry?.date || ''} className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input required name="signer" type="text" defaultValue={quickEntry?.signer || ''} placeholder="Signer" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input name="docType" type="text" defaultValue={quickEntry?.docType || ''} placeholder="Document Type" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input name="fee" type="number" defaultValue={quickEntry?.fee || ''} placeholder="Fee" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+                                    <label className="text-xs font-bold text-slate-500 uppercase block">Audit-Proof Capture (ID/Thumbprint)</label>
+                                    <input type="file" accept="image/*" capture="environment" onChange={(e) => handleIdUpload(e.target.files?.[0])} className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200" />
+                                    {idPreview && <img src={idPreview} alt="ID capture preview" className="w-full max-h-48 object-contain rounded-lg border border-slate-200" />}
+                                    <p className="text-xs text-slate-400">Captured image is obfuscated and stored on this device only. For production compliance, use encrypted cloud storage with key management.</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 rounded-lg">Cancel</button>
+                                    <button type="submit" onClick={() => onQuickEntryUsed?.()} className="flex-1 bg-purple-600 text-white rounded-lg">Save</button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+                    <div className="space-y-3">
+                        {entries.length === 0 ? (
+                            <EmptyState icon="fa-book" title="Journal Empty" description="Log your notarial acts." actionLabel="Log" onAction={()=>setShowForm(true)} colorClass="text-purple-600" bgClass="bg-purple-50" />
+                        ) : entries.map(e => {
+                            const decrypted = e.idCapture ? decryptPayload(e.idCapture) : null;
+                            return (
+                                <div key={e.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div>
+                                            <h4 className="font-semibold text-gray-800">{e.signer}</h4>
+                                            <p className="text-xs text-gray-500">{e.docType || 'Notarial Entry'}</p>
+                                        </div>
+                                        {e.idCapture && (
+                                            <button onClick={() => setSelectedEntry({ ...e, decrypted })} className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">View Capture</button>
+                                        )}
+                                    </div>
+                                    {e.fee && <p className="text-xs text-gray-400 mt-2">Fee: ${e.fee}</p>}
+                                </div>
+                            );
+                        })}
+                    </div>
+                    {selectedEntry && (
+                        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                            <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h4 className="text-lg font-semibold text-gray-800">Audit Capture</h4>
+                                        <p className="text-sm text-gray-500">{selectedEntry.signer} • {selectedEntry.date}</p>
+                                    </div>
+                                    <button onClick={() => setSelectedEntry(null)} className="text-gray-400"><i className="fas fa-times"></i></button>
+                                </div>
+                                {selectedEntry.decrypted ? (
+                                    <img src={selectedEntry.decrypted} alt="Audit capture" className="w-full max-h-80 object-contain rounded-xl border border-slate-200" />
+                                ) : (
+                                    <p className="text-sm text-gray-500">Unable to decrypt capture.</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
         };
 
         const Finances = () => {
@@ -1090,13 +1650,101 @@
             const [expenses, setExpenses] = useState([]);
             const [mileage, setMileage] = useState([]);
             const [showForm, setShowForm] = useState(false);
+            const [currentTrip, setCurrentTrip] = useState(null);
+            const [locationStatus, setLocationStatus] = useState('');
              useEffect(() => { const load = async () => { setExpenses(await DataManager.get('notary_expenses')); setMileage(await DataManager.get('notary_mileage')); }; load(); }, []);
+            useEffect(() => { setCurrentTrip(safeParse(localStorage.getItem('notary_active_trip'), null)); }, []);
             const handleSave = async (e) => { e.preventDefault(); const formData = new FormData(e.target); if (activeTab === 'expenses') { await DataManager.save('notary_expenses', { id: Date.now().toString(), date: formData.get('date'), category: formData.get('category'), desc: formData.get('desc'), amount: formData.get('amount') }); setExpenses(await DataManager.get('notary_expenses')); } else { await DataManager.save('notary_mileage', { id: Date.now().toString(), date: formData.get('date'), start: formData.get('start'), end: formData.get('end'), miles: formData.get('miles') }); setMileage(await DataManager.get('notary_mileage')); } setShowForm(false); showToast("Record Saved"); };
             const handleExport = () => { if (activeTab === 'expenses') PDFGenerator.createReport("Expense Report", ["Date", "Category", "Description", "Amount"], expenses.map(e => [e.date, e.category, e.desc, `-$${e.amount}`]), "expenses.pdf"); else PDFGenerator.createReport("Mileage Log", ["Date", "Start", "End", "Miles"], mileage.map(m => [m.date, m.start, m.end, `${m.miles} mi`]), "mileage.pdf"); };
+            const haversineMiles = (start, end) => {
+                const toRad = (value) => (value * Math.PI) / 180;
+                const R = 3958.8;
+                const dLat = toRad(end.lat - start.lat);
+                const dLng = toRad(end.lng - start.lng);
+                const lat1 = toRad(start.lat);
+                const lat2 = toRad(end.lat);
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+                return 2 * R * Math.asin(Math.sqrt(a));
+            };
+            const getPosition = () => new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocation unavailable'));
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                    (err) => reject(err),
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            });
+
+            const handleStartTrip = async () => {
+                setLocationStatus('Requesting GPS...');
+                try {
+                    const coords = await getPosition();
+                    const startTrip = { id: Date.now().toString(), start: coords, startTime: new Date().toISOString() };
+                    localStorage.setItem('notary_active_trip', JSON.stringify(startTrip));
+                    setCurrentTrip(startTrip);
+                    setLocationStatus('Trip started. Tracking mileage.');
+                    showToast("Trip Started");
+                } catch (err) {
+                    setLocationStatus('Unable to access GPS. Please enable location permissions.');
+                    showToast("GPS Error", "error");
+                }
+            };
+
+            const handleEndTrip = async () => {
+                if (!currentTrip) return;
+                setLocationStatus('Calculating mileage...');
+                try {
+                    const coords = await getPosition();
+                    const distance = haversineMiles(currentTrip.start, coords);
+                    const entry = {
+                        id: currentTrip.id,
+                        date: new Date().toISOString().split('T')[0],
+                        start: `${currentTrip.start.lat.toFixed(4)}, ${currentTrip.start.lng.toFixed(4)}`,
+                        end: `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`,
+                        miles: distance.toFixed(2),
+                        startTime: currentTrip.startTime,
+                        endTime: new Date().toISOString()
+                    };
+                    await DataManager.save('notary_mileage', entry);
+                    setMileage(await DataManager.get('notary_mileage'));
+                    localStorage.removeItem('notary_active_trip');
+                    setCurrentTrip(null);
+                    setLocationStatus(`Trip saved • ${distance.toFixed(2)} mi`);
+                    showToast("Trip Saved");
+                } catch (err) {
+                    setLocationStatus('Unable to access GPS. Try again.');
+                    showToast("GPS Error", "error");
+                }
+            };
             return (
                 <div className="p-6 pb-24">
                     <div className="bg-white p-1 rounded-xl flex mb-6 border border-gray-200 shadow-sm"><button onClick={() => setActiveTab('expenses')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'expenses' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-500'}`}>Expenses</button><button onClick={() => setActiveTab('mileage')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'mileage' ? 'bg-blue-50 text-blue-700' : 'text-gray-500'}`}>Mileage</button></div>
                     <div className="flex justify-between items-center mb-6"><div><p className="text-xs text-gray-500 uppercase font-bold">Total</p><p className="text-2xl font-bold text-gray-800">{activeTab === 'expenses' ? `$${expenses.reduce((s, i) => s + parseFloat(i.amount||0), 0).toFixed(2)}` : `${mileage.reduce((s, i) => s + parseFloat(i.miles||0), 0)} mi`}</p></div><div className="flex gap-2"><button onClick={handleExport} className="bg-white text-gray-500 border w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-file-export"></i></button><button onClick={() => setShowForm(true)} className="bg-gray-900 text-white w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-plus"></i></button></div></div>
+                    {activeTab === 'mileage' && (
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                <div>
+                                    <p className="text-xs font-bold text-blue-600 uppercase">Smart Mileage Tracker</p>
+                                    <h4 className="text-lg font-semibold text-gray-800">Start & end trips with GPS</h4>
+                                    <p className="text-sm text-gray-500">Tap Start Trip to capture your location, then End Trip when you arrive. We'll log the mileage automatically.</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={handleStartTrip} disabled={!!currentTrip} className={`px-4 py-2 rounded-lg text-sm font-semibold ${currentTrip ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white'}`}>Start Trip</button>
+                                    <button onClick={handleEndTrip} disabled={!currentTrip} className={`px-4 py-2 rounded-lg text-sm font-semibold ${currentTrip ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}>End Trip</button>
+                                </div>
+                            </div>
+                            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+                                <span className={`px-3 py-1 rounded-full ${currentTrip ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                                    {currentTrip ? 'Trip in progress' : 'No active trip'}
+                                </span>
+                                {currentTrip && <span className="text-gray-500">Started {new Date(currentTrip.startTime).toLocaleTimeString()}</span>}
+                                {locationStatus && <span className="text-gray-500">{locationStatus}</span>}
+                            </div>
+                        </div>
+                    )}
                     {showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6"><form onSubmit={handleSave} className="space-y-4"><input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" />{activeTab === 'expenses' ? <><input name="category" placeholder="Category" className="w-full p-3 border rounded-xl" /><input name="desc" placeholder="Description" className="w-full p-3 border rounded-xl" /><input name="amount" placeholder="Amount" className="w-full p-3 border rounded-xl" /></> : <><input name="start" placeholder="Start" className="w-full p-3 border rounded-xl" /><input name="end" placeholder="End" className="w-full p-3 border rounded-xl" /><input name="miles" placeholder="Miles" className="w-full p-3 border rounded-xl" /></>}<button className="w-full bg-gray-900 text-white py-3 rounded-lg">Save</button></form></div>}
                     
                     <div className="space-y-3">
@@ -1123,6 +1771,191 @@
                         ) : (
                             activeTab === 'expenses' ? expenses.map(e => <div key={e.id} className="bg-white p-3 rounded shadow"><span>{e.desc}</span></div>) : mileage.map(m => <div key={m.id} className="bg-white p-3 rounded shadow"><span>{m.start} to {m.end}</span></div>)
                         )}
+                    </div>
+                </div>
+            );
+        };
+
+        const AgencyManagement = ({ appointments }) => {
+            const [team, setTeam] = useState([]);
+            const [assignments, setAssignments] = useState([]);
+            const [showForm, setShowForm] = useState(false);
+
+            useEffect(() => {
+                const load = async () => {
+                    setTeam(await DataManager.get('notary_team'));
+                    setAssignments(await DataManager.get('notary_assignments'));
+                };
+                load();
+            }, []);
+
+            const safeAppointments = Array.isArray(appointments) ? appointments : [];
+            const activeAppointments = safeAppointments
+                .filter(appt => appt.status !== 'Cancelled')
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const aggregateRevenue = safeAppointments
+                .filter(appt => ['Paid', 'Completed'].includes(appt.status))
+                .reduce((sum, appt) => sum + parseFloat(appt.fee || 0), 0);
+
+            const handleAddNotary = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const entry = {
+                    id: Date.now().toString(),
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    region: formData.get('region') || 'Unassigned',
+                    status: formData.get('status') || 'Available'
+                };
+                await DataManager.save('notary_team', entry);
+                setTeam(await DataManager.get('notary_team'));
+                setShowForm(false);
+                showToast("Team Member Added");
+            };
+
+            const handleAssign = async (appointmentId, notaryId) => {
+                if (!notaryId) return;
+                const assignment = {
+                    id: appointmentId,
+                    appointmentId,
+                    notaryId,
+                    assignedAt: new Date().toISOString()
+                };
+                await DataManager.save('notary_assignments', assignment);
+                setAssignments(await DataManager.get('notary_assignments'));
+                showToast("Assignment Updated");
+            };
+
+            const getAssignedNotary = (appointmentId) => {
+                const assignment = assignments.find(item => item.appointmentId === appointmentId);
+                return assignment ? team.find(member => member.id === assignment.notaryId) : null;
+            };
+
+            return (
+                <div className="p-6 pb-24">
+                    <div className="max-w-6xl mx-auto space-y-6">
+                        <div className="bg-white p-6 rounded-2xl shadow border border-gray-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                            <div>
+                                <p className="text-xs font-bold text-sky-600 uppercase">Team Mode</p>
+                                <h3 className="text-2xl font-bold text-gray-900">Agency Management</h3>
+                                <p className="text-sm text-gray-500">Assign jobs to notaries, manage capacity, and track revenue across your organization.</p>
+                            </div>
+                            <div className="flex flex-wrap gap-4">
+                                <div className="bg-slate-900 text-white rounded-xl px-5 py-4 min-w-[180px]">
+                                    <p className="text-xs uppercase text-slate-300">Active Notaries</p>
+                                    <p className="text-2xl font-bold">{team.length}</p>
+                                </div>
+                                <div className="bg-white border border-slate-200 rounded-xl px-5 py-4 min-w-[180px]">
+                                    <p className="text-xs uppercase text-slate-500">Monthly Revenue</p>
+                                    <p className="text-2xl font-bold text-slate-900">${aggregateRevenue.toFixed(2)}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="text-lg font-semibold text-gray-800">Notary Team</h4>
+                                    <button onClick={() => setShowForm(true)} className="text-sm font-semibold text-blue-600">Add</button>
+                                </div>
+                                {showForm && (
+                                    <form onSubmit={handleAddNotary} className="space-y-3 mb-4">
+                                        <input name="name" required placeholder="Full Name" className="w-full p-2 border rounded-lg" />
+                                        <input name="email" type="email" required placeholder="Email" className="w-full p-2 border rounded-lg" />
+                                        <input name="region" placeholder="Region / City" className="w-full p-2 border rounded-lg" />
+                                        <select name="status" className="w-full p-2 border rounded-lg">
+                                            <option>Available</option>
+                                            <option>On Assignment</option>
+                                            <option>Off Duty</option>
+                                        </select>
+                                        <div className="flex gap-2">
+                                            <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 rounded-lg py-2">Cancel</button>
+                                            <button type="submit" className="flex-1 bg-blue-600 text-white rounded-lg py-2">Save</button>
+                                        </div>
+                                    </form>
+                                )}
+                                <div className="space-y-3">
+                                    {team.length === 0 ? (
+                                        <EmptyState 
+                                            icon="fa-users"
+                                            title="No team members yet"
+                                            description="Add your first notary to start assigning jobs."
+                                            actionLabel="Add Notary"
+                                            onAction={() => setShowForm(true)}
+                                            colorClass="text-sky-600"
+                                            bgClass="bg-sky-50"
+                                        />
+                                    ) : (
+                                        team.map(member => (
+                                            <div key={member.id} className="border border-gray-100 rounded-xl p-3">
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <p className="font-semibold text-gray-800">{member.name}</p>
+                                                        <p className="text-xs text-gray-500">{member.email}</p>
+                                                    </div>
+                                                    <span className="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-full">{member.status}</span>
+                                                </div>
+                                                <p className="text-xs text-gray-400 mt-2">{member.region}</p>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="lg:col-span-2 space-y-6">
+                                <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
+                                    <h4 className="text-lg font-semibold text-gray-800 mb-3">Master Calendar</h4>
+                                    {activeAppointments.length === 0 ? (
+                                        <EmptyState 
+                                            icon="fa-calendar-alt"
+                                            title="No appointments scheduled"
+                                            description="Once appointments are booked, they'll show here for assignment."
+                                            actionLabel="Refresh"
+                                            onAction={() => showToast("Calendar Updated", "success")}
+                                            colorClass="text-blue-600"
+                                            bgClass="bg-blue-50"
+                                        />
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {activeAppointments.map(appt => {
+                                                const assignedNotary = getAssignedNotary(appt.id);
+                                                return (
+                                                    <div key={appt.id} className="border border-gray-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                                        <div>
+                                                            <p className="text-xs font-semibold text-gray-400 uppercase">{appt.type || 'Notary Service'}</p>
+                                                            <p className="text-lg font-semibold text-gray-800">{appt.clientName}</p>
+                                                            <p className="text-sm text-gray-500">{appt.date} • {appt.time || 'TBD'}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="text-right">
+                                                                <p className="text-xs text-gray-400">Assigned</p>
+                                                                <p className="text-sm font-semibold text-gray-700">{assignedNotary ? assignedNotary.name : 'Unassigned'}</p>
+                                                            </div>
+                                                            <select
+                                                                value={assignedNotary?.id || ''}
+                                                                onChange={(e) => handleAssign(appt.id, e.target.value)}
+                                                                className="border border-gray-200 rounded-lg p-2 text-sm"
+                                                            >
+                                                                <option value="">Assign Notary</option>
+                                                                {team.map(member => (
+                                                                    <option key={member.id} value={member.id}>{member.name}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="bg-slate-900 text-white p-6 rounded-2xl shadow">
+                                    <h4 className="text-lg font-semibold mb-2">Agency Insights</h4>
+                                    <p className="text-sm text-slate-200">Track assignments and revenue in one place. Expand your team and keep every signing accounted for.</p>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             );
@@ -1188,7 +2021,7 @@
         };
 
         const App = () => {
-            const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('notary_user_profile')));
+            const [user, setUser] = useState(() => safeParse(localStorage.getItem('notary_user_profile'), null));
             const [currentView, setCurrentView] = useState(user ? 'dashboard' : 'landing');
             const [appointments, setAppointments] = useState([]);
             const [credentials, setCredentials] = useState([]);
@@ -1198,6 +2031,8 @@
             const [showSettings, setShowSettings] = useState(false);
             const [showOnboarding, setShowOnboarding] = useState(false);
             const [showAIModal, setShowAIModal] = useState(false); 
+            const [showWhatsNew, setShowWhatsNew] = useState(() => !!user && !localStorage.getItem('notary_whats_new_seen_v2'));
+            const [quickJournalEntry, setQuickJournalEntry] = useState(null);
 
             useEffect(() => {
                 DataManager.get('notary_appointments').then(setAppointments);
@@ -1217,6 +2052,7 @@
                 setUser(profile);
                 setCurrentView('dashboard');
                 if (!localStorage.getItem('notary_onboarded')) setShowOnboarding(true);
+                if (!localStorage.getItem('notary_whats_new_seen_v2')) setShowWhatsNew(true);
                 showToast("Welcome Back!");
             };
 
@@ -1226,13 +2062,64 @@
                 setCurrentView('landing');
             };
 
-            const handleUpgrade = () => { const upgraded = { ...user, plan: 'pro' }; setUser(upgraded); localStorage.setItem('notary_user_profile', JSON.stringify(upgraded)); setShowPricing(false); showToast("Upgrade Successful!"); };
+            const handleUpgrade = (targetPlan = 'pro') => {
+                const upgraded = {
+                    ...user,
+                    plan: targetPlan,
+                    role: targetPlan === 'team' ? 'agency' : (user?.role || 'solo')
+                };
+                setUser(upgraded);
+                localStorage.setItem('notary_user_profile', JSON.stringify(upgraded));
+                setShowPricing(false);
+                showToast("Upgrade Successful!");
+            };
+
+            const handleOnboardingComplete = (selectedRole) => {
+                const nextUser = {
+                    ...(user || {}),
+                    role: selectedRole,
+                    plan: selectedRole === 'agency' ? ((user?.plan === 'team') ? 'team' : 'free') : (user?.plan || 'free')
+                };
+                setUser(nextUser);
+                localStorage.setItem('notary_user_profile', JSON.stringify(nextUser));
+                localStorage.setItem('notary_onboarded', 'true');
+                setShowOnboarding(false);
+                if (selectedRole === 'agency' && !hasFeatureAccess(nextUser, 'agency')) setShowPricing(true);
+            };
 
             const handleSaveAppt = async (appt) => {
                 await DataManager.save('notary_appointments', appt);
                 setAppointments(await DataManager.get('notary_appointments'));
                 setCurrentView('schedule');
                 showToast("Appointment Saved");
+            };
+
+            const handleMarkPaid = async (appt) => {
+                const updated = { ...appt, status: 'Paid' };
+                await DataManager.save('notary_appointments', updated);
+                await DataManager.save('notary_journal', {
+                    id: `pay-${updated.id}`,
+                    date: new Date().toISOString().split('T')[0],
+                    signer: updated.clientName,
+                    docType: `Payment • ${updated.type || 'Notary Service'}`,
+                    fee: updated.fee
+                });
+                setAppointments(await DataManager.get('notary_appointments'));
+                showToast("Payment Recorded");
+            };
+
+            const handleGenerateInvoice = (appt) => {
+                PDFGenerator.createInvoice(appt, user);
+            };
+
+            const handleQuickJournal = (appt) => {
+                setQuickJournalEntry({
+                    date: appt.date || new Date().toISOString().split('T')[0],
+                    signer: appt.clientName || '',
+                    docType: appt.type || 'Notary Service',
+                    fee: appt.fee || ''
+                });
+                setCurrentView('journal');
             };
             
             const handleRefresh = async () => {
@@ -1245,13 +2132,15 @@
                     case 'landing': return <LandingPage onNavigate={() => setCurrentView('auth')} />;
                     case 'auth': return <AuthScreen onAuth={handleLogin} onBack={() => setCurrentView('landing')} />;
                     case 'dashboard': return <Dashboard appointments={appointments} credentials={credentials} setView={setCurrentView} isCloud={isCloudConnected} />;
-                    case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} />;
+                    case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onMarkPaid={handleMarkPaid} onGenerateInvoice={handleGenerateInvoice} onQuickJournal={handleQuickJournal} user={user} />;
                     case 'addAppointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => setCurrentView('schedule')} />;
                     case 'clients': return <Clients />;
-                    case 'journal': return <Journal user={user} onUpgrade={()=>{}} />;
+                    case 'portal': return hasFeatureAccess(user, 'portal') ? <ClientPortal user={user} appointments={appointments} /> : <div className="p-6"><EmptyState icon="fa-door-open" title="Client Portal is a Pro feature" description="Upgrade to Pro to enable secure client logins and e-sign workflows." actionLabel="Upgrade" onAction={() => setShowPricing(true)} colorClass="text-cyan-600" bgClass="bg-cyan-50" /></div>;
+                    case 'journal': return <Journal user={user} onUpgrade={() => setShowPricing(true)} quickEntry={quickJournalEntry} onQuickEntryUsed={() => setQuickJournalEntry(null)} />;
                     case 'finances': return <Finances />;
                     case 'credentials': return <Credentials onUpdate={handleRefresh} />;
-                    case 'trainer': return <TrainerModule stateDB={STATE_DATABASE} courseMods={COURSE_MODULES} user={user} onUpgrade={()=>{}} />;
+                    case 'agency': return hasFeatureAccess(user, 'agency') ? <AgencyManagement appointments={appointments} /> : <div className="p-6"><EmptyState icon="fa-building" title="Team Mode requires Team plan" description="Upgrade to Team to manage multiple notaries and assignments." actionLabel="Upgrade" onAction={() => setShowPricing(true)} colorClass="text-sky-600" bgClass="bg-sky-50" /></div>;
+                    case 'trainer': return hasFeatureAccess(user, 'trainer') ? <TrainerModule stateDB={STATE_DATABASE} courseMods={COURSE_MODULES} user={user} onUpgrade={()=>setShowPricing(true)} /> : <div className="p-6"><EmptyState icon="fa-robot" title="AI Trainer is a Pro feature" description="Upgrade to Pro for compliance coaching and simulations." actionLabel="Upgrade" onAction={() => setShowPricing(true)} colorClass="text-indigo-600" bgClass="bg-indigo-50" /></div>;
                     case 'admin': return <AdminPanel stateDB={STATE_DATABASE} onUpdateStateDB={()=>{}} />;
                     default: return <div>Not found</div>;
                 }
@@ -1274,7 +2163,18 @@
                     {showAIModal && <AIHelperModal onClose={() => setShowAIModal(false)} />}
                     {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={handleUpgrade} />}
                     {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} onSave={handleUpdateProfile} />}
-                    {showOnboarding && <OnboardingTour onComplete={() => { localStorage.setItem('notary_onboarded', 'true'); setShowOnboarding(false); }} />}
+                    {showOnboarding && <OnboardingTour onComplete={handleOnboardingComplete} />}
+                    {showWhatsNew && (
+                        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[92%] bg-white border border-blue-100 rounded-2xl shadow-xl p-4 font-sans">
+                            <div className="flex items-start justify-between gap-3">
+                                <div>
+                                    <p className="text-xs font-bold uppercase text-blue-600">What's New</p>
+                                    <p className="text-sm text-gray-600 mt-1">Payments, Client Portal, Smart Mileage, Audit Journal Capture, and Team Mode are now available by plan.</p>
+                                </div>
+                                <button onClick={() => { localStorage.setItem('notary_whats_new_seen_v2', 'true'); setShowWhatsNew(false); }} className="text-gray-400"><i className="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                    )}
                     
                     <Sidebar 
                         currentView={currentView} 
@@ -1284,6 +2184,7 @@
                         onLogout={handleLogout} 
                         userName={user.name} 
                         userPlan={user.plan} 
+                        userRole={user.role || 'solo'}
                         onUpgrade={() => setShowPricing(true)} 
                         onSettings={() => setShowSettings(true)}
                     />
