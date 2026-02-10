@@ -5,29 +5,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NotaryOS</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📜</text></svg>">
-    
+
     <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
+
     <!-- Styling -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Merriweather:wght@300;400;700&family=Poppins:wght@500;600;700&display=swap" rel="stylesheet">
-    
+
     <!-- Utilities -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.6/purify.min.js"></script>
-    
+
     <!-- PDF Generation -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -46,7 +46,7 @@
             messagingSenderId: "660325303334",
             appId: "1:660325303334:web:bb0f062fd4da8c7fca12e7"
         };
-        const STRIPE_PAYMENT_LINK = ""; 
+        const STRIPE_PAYMENT_LINK = "";
 
         try {
             if (!firebase.apps.length) {
@@ -61,10 +61,10 @@
     <style>
         body { font-family: 'Merriweather', serif; background-color: #f8fafc; }
         h1, h2, h3, h4, h5, h6, button, .font-sans { font-family: 'Poppins', sans-serif; }
-        
+
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-        
+
         .status-scheduled { background-color: #e0f2fe; color: #0369a1; }
         .status-completed { background-color: #dcfce7; color: #15803d; }
         .status-paid { background-color: #166534; color: white; }
@@ -83,7 +83,7 @@
         /* FIXED: Moved bottom up to avoid overlapping with bottom nav on some mobile devices */
         .fab-ai { position: fixed; bottom: 90px; right: 20px; z-index: 50; box-shadow: 0 4px 15px rgba(0,0,0,0.2); display: grid; place-items: center; }
         @media (min-width: 768px) { .fab-ai { bottom: 30px; } }
-        
+
         /* Toast Animation */
         @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
         .toast-enter { animation: slideIn 0.3s ease-out forwards; }
@@ -93,7 +93,7 @@
             background-color: #0f172a; /* Dark Slate 900 */
             background-image: radial-gradient(circle at 100% 0%, #1e293b 0%, #0f172a 50%);
         }
-        
+
         /* Visual elements for landing page */
         .visual-card {
             background: rgba(255, 255, 255, 0.05);
@@ -133,7 +133,7 @@
             border-bottom-right-radius: 10px;
             z-index: 10;
         }
-        
+
         /* Notary Gold Accent */
         .text-notary-gold { color: #fbbf24; }
         .bg-notary-gold { background-color: #fbbf24; }
@@ -145,13 +145,62 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
+        class AppErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, errorMsg: '' };
+            }
+
+            static getDerivedStateFromError(error) {
+                return { hasError: true, errorMsg: error?.message || 'Unknown UI error' };
+            }
+
+            componentDidCatch(error, errorInfo) {
+                console.error('NotaryOS runtime crash:', error, errorInfo);
+            }
+
+            handleReset = () => {
+                try {
+                    localStorage.removeItem('notary_user_profile');
+                    localStorage.removeItem('notary_appointments');
+                    localStorage.removeItem('notary_clients');
+                    localStorage.removeItem('notary_credentials');
+                    localStorage.removeItem('notary_journal');
+                    localStorage.removeItem('notary_team');
+                    localStorage.removeItem('notary_assignments');
+                    localStorage.removeItem('notary_esignatures');
+                    localStorage.removeItem('notary_active_trip');
+                } catch (e) {
+                    console.error('Reset failed', e);
+                }
+                window.location.reload();
+            };
+
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans">
+                            <div className="max-w-md w-full bg-white border border-red-100 rounded-2xl shadow-lg p-6 text-center">
+                                <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-red-50 text-red-600 grid place-items-center text-2xl"><i className="fas fa-triangle-exclamation"></i></div>
+                                <h2 className="text-xl font-bold text-slate-800 mb-2">App recovered from a crash</h2>
+                                <p className="text-sm text-slate-500 mb-4">We detected unstable local data or runtime state. You can reset local app data and reopen a stable session.</p>
+                                <p className="text-xs text-slate-400 mb-4">Error: {this.state.errorMsg}</p>
+                                <button onClick={this.handleReset} className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold">Reset to Stable Mode</button>
+                            </div>
+                        </div>
+                    );
+                }
+                return this.props.children;
+            }
+        }
+
         // --- TOAST CONTEXT ---
         window.addToastFn = null;
         const showToast = (msg, type = 'success') => { if (window.addToastFn) window.addToastFn(msg, type); };
 
         const ToastContainer = () => {
             const [toasts, setToasts] = useState([]);
-            
+
             useEffect(() => {
                 window.addToastFn = (msg, type) => {
                     const id = Date.now();
@@ -200,24 +249,62 @@
                 return { success: false, data: localData };
             },
             saveLocal: (key, item) => {
-                const list = JSON.parse(localStorage.getItem(key) || '[]');
+                const list = safeParse(localStorage.getItem(key), []);
                 const index = list.findIndex(i => i.id === item.id);
                 if (index >= 0) list[index] = item; else list.push(item);
                 localStorage.setItem(key, JSON.stringify(list));
                 return list;
             },
-            getLocal: (key) => JSON.parse(localStorage.getItem(key) || '[]'),
+            getLocal: (key) => safeParse(localStorage.getItem(key), []),
              delete: async (collectionName, id) => {
                 const localData = DataManager.deleteLocal(collectionName, id);
                 if (DataManager.isCloud()) { try { await firebase.firestore().collection(collectionName).doc(id).delete(); } catch(e) {} }
                 return localData;
             },
             deleteLocal: (key, id) => {
-                const list = JSON.parse(localStorage.getItem(key) || '[]');
+                const list = safeParse(localStorage.getItem(key), []);
                 const newList = list.filter(i => i.id !== id);
                 localStorage.setItem(key, JSON.stringify(newList));
                 return newList;
             }
+        };
+
+        const safeParse = (value, fallback) => {
+            try {
+                return JSON.parse(value);
+            } catch (err) {
+                return fallback;
+            }
+        };
+
+        const encryptPayload = (value) => {
+            try {
+                return btoa(unescape(encodeURIComponent(value)));
+            } catch (err) {
+                return null;
+            }
+        };
+
+        const decryptPayload = (value) => {
+            try {
+                return decodeURIComponent(escape(atob(value)));
+            } catch (err) {
+                return null;
+            }
+        };
+
+        const hasFeatureAccess = (user, featureKey) => {
+            if (!user) return false;
+            const plan = user.plan || 'free';
+            const role = user.role || 'solo';
+            const rules = {
+                trainer: plan === 'pro' || plan === 'team',
+                portal: plan === 'pro' || plan === 'team',
+                agency: role === 'agency' && plan === 'team',
+                payments: plan === 'pro' || plan === 'team',
+                auditCapture: plan === 'pro' || plan === 'team'
+            };
+            return rules[featureKey] ?? true;
         };
 
         // --- PDF GENERATORS ---
@@ -233,22 +320,37 @@
                 doc.setFontSize(12); doc.setTextColor(0); doc.text(businessName.toUpperCase(), 20, 20);
                 doc.setFontSize(10); doc.setTextColor(100); doc.text(user.phone || "", 20, 26); doc.text(user.email || "", 20, 31);
                 if(user.address) doc.text(user.address, 20, 36);
-                doc.setTextColor(0); doc.text("BILL TO:", 20, 55); 
-                doc.setFontSize(14); doc.text(appt.clientName, 20, 62); 
+                doc.setTextColor(0); doc.text("BILL TO:", 20, 55);
+                doc.setFontSize(14); doc.text(appt.clientName, 20, 62);
                 doc.setFontSize(10); doc.text(appt.location, 20, 68);
                 doc.autoTable({ startY: 80, head: [['Description', 'Date', 'Amount']], body: [[appt.type || 'Notary Service', appt.date, `$${appt.fee}`]], theme: 'grid', headStyles: { fillColor: primaryColor } });
                 const finalY = doc.lastAutoTable.finalY + 10;
                 doc.setFontSize(12); doc.text(`Total Due: $${appt.fee}`, 160, finalY, { align: 'right' });
-                
+
                 // --- BUSINESS LOGO/SEAL IF UPLOADED ---
                 if(user.logoUrl) {
                     try {
-                        doc.addImage(user.logoUrl, 'PNG', 20, 5, 30, 30); 
+                        doc.addImage(user.logoUrl, 'PNG', 20, 5, 30, 30);
                     } catch(e) { console.log("Image error", e); }
                 }
 
                 doc.save(`invoice_${appt.clientName}.pdf`);
                 showToast("Invoice Downloaded");
+            },
+            createSignedAgreement: ({ clientName, clientEmail, signature, signedAt, title, body }) => {
+                if (!window.jspdf) { showToast("PDF Library Loading...", 'error'); return; }
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                doc.setFontSize(18); doc.text(title, 14, 20);
+                doc.setFontSize(10); doc.text(`Client: ${clientName}`, 14, 28);
+                doc.text(`Email: ${clientEmail}`, 14, 34);
+                doc.text(`Signed: ${new Date(signedAt).toLocaleString()}`, 14, 40);
+                doc.setFontSize(11);
+                doc.text(body, 14, 52, { maxWidth: 180 });
+                doc.setFontSize(12);
+                doc.text(`Signature: ${signature}`, 14, 120);
+                doc.save(`signed_${title.replace(/\s+/g, '_').toLowerCase()}.pdf`);
+                showToast("Signed Document Downloaded");
             },
             createReport: (title, columns, data, filename) => {
                 if (!window.jspdf) { showToast("PDF Library Loading...", 'error'); return; }
@@ -316,7 +418,7 @@
             "WY": { "state": "Wyoming", "fees": { "acknowledgment": "$10.00", "jurat": "$10.00", "oath": "$10.00" }, "id_requirements": { "credible_witnesses": "Allowed", "expired_id_rule": "3 years" }, "red_flags": ["No Notarios"], "specialized": { "loan_signing": "Allowed", "apostille": "Secretary of State", "marriage": "No" }},
             "certificates": { "acknowledgment_text": "State of [State]...", "jurat_text": "Subscribed and sworn..." }
         };
-        const COURSE_MODULES = [ { id: 1, title: "Authority", topic: "Commissioning authority." } ]; 
+        const COURSE_MODULES = [ { id: 1, title: "Authority", topic: "Commissioning authority." } ];
         const PERSONA = `ROLE: NOTARY MENTOR. TONE: Helpful.`;
 
         // --- COMPONENTS ---
@@ -345,8 +447,13 @@
             <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm z-[100]">
                 <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center font-sans">
                     <h2 className="text-2xl font-bold mb-2">Upgrade to Pro</h2>
-                    <p className="text-gray-500 mb-6">Unlock Unlimited AI, Cloud Sync & PDF Invoices.</p>
-                    <button onClick={onUpgrade} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold mb-2">Get Pro - $19/mo</button>
+                    <p className="text-gray-500 mb-6">Unlock Unlimited AI, secure audit capture, payment processing, and client portal access.</p>
+                    <div className="space-y-2 text-left text-sm text-gray-600 bg-gray-50 rounded-xl p-3 mb-4">
+                        <p><i className="fas fa-check text-emerald-600 mr-2"></i>Pro: AI Trainer, Payments, Client Portal, Audit Capture</p>
+                        <p><i className="fas fa-check text-indigo-600 mr-2"></i>Team: Agency mode with assignments & master calendar</p>
+                    </div>
+                    <button onClick={() => onUpgrade('pro')} className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold mb-2">Get Pro - $19/mo</button>
+                    <button onClick={() => onUpgrade('team')} className="w-full bg-indigo-600 text-white py-3 rounded-xl font-bold mb-2">Get Team - $49/mo</button>
                     <button onClick={onClose} className="text-gray-400 text-sm">Close</button>
                 </div>
             </div>
@@ -354,21 +461,21 @@
 
         const SettingsModal = ({ user, onClose, onSave }) => {
             const [data, setData] = useState(user || {});
-            
+
             // Handle logo upload simulation
             const handleLogoUpload = (e) => {
                 const file = e.target.files[0];
                 if (file) {
                     const reader = new FileReader();
                     reader.onloadend = () => {
-                        setData({ ...data, logoUrl: reader.result }); 
+                        setData({ ...data, logoUrl: reader.result });
                     };
                     reader.readAsDataURL(file);
                 }
             };
 
             const handleSave = (e) => { e.preventDefault(); onSave(data); onClose(); showToast("Profile Updated"); };
-            
+
             return (
                 <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm z-[100]">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 font-sans max-h-[90vh] overflow-y-auto">
@@ -407,14 +514,14 @@
             const [input, setInput] = useState('');
             const [messages, setMessages] = useState([{ role: 'assistant', content: "👋 Hi! Ask me about notary laws." }]);
             const [loading, setLoading] = useState(false);
-            
+
             const handleSend = async () => {
                 if (!input.trim()) return;
                 const newMsgs = [...messages, { role: 'user', content: input }];
                 setMessages(newMsgs);
                 setInput('');
                 setLoading(true);
-                
+
                 const apiKey = localStorage.getItem('gemini_api_key');
                 if (!apiKey) {
                      setTimeout(() => {
@@ -457,16 +564,29 @@
             </div>
         );
 
-        const OnboardingTour = ({ onComplete }) => (
-            <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
-                <div className="bg-white rounded-2xl p-8 text-center max-w-sm font-sans">
-                    <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🚀</div>
-                    <h2 className="text-2xl font-bold mb-2">Welcome to NotaryOS</h2>
-                    <p className="text-gray-500 mb-6">Your all-in-one business operating system. Manage appointments, journals, and clients in one place.</p>
-                    <button onClick={onComplete} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg">Get Started</button>
+        const OnboardingTour = ({ onComplete }) => {
+            const [selectedRole, setSelectedRole] = useState('solo');
+            return (
+                <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-2xl p-8 text-center max-w-md font-sans">
+                        <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🚀</div>
+                        <h2 className="text-2xl font-bold mb-2">Welcome to NotaryOS</h2>
+                        <p className="text-gray-500 mb-6">Choose your setup so we can tailor features and guidance.</p>
+                        <div className="grid grid-cols-1 gap-3 mb-6 text-left">
+                            <button onClick={() => setSelectedRole('solo')} className={`p-3 rounded-xl border ${selectedRole === 'solo' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
+                                <p className="font-semibold text-gray-800">Solo Notary</p>
+                                <p className="text-xs text-gray-500">Best for independent mobile notaries.</p>
+                            </button>
+                            <button onClick={() => setSelectedRole('agency')} className={`p-3 rounded-xl border ${selectedRole === 'agency' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200'}`}>
+                                <p className="font-semibold text-gray-800">Agency / Team</p>
+                                <p className="text-xs text-gray-500">Manage multiple notaries and assignments.</p>
+                            </button>
+                        </div>
+                        <button onClick={() => onComplete(selectedRole)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg">Continue</button>
+                    </div>
                 </div>
-            </div>
-        );
+            );
+        };
 
         const LandingPage = ({ onNavigate }) => {
             const [activeTab, setActiveTab] = useState('before');
@@ -475,10 +595,10 @@
             const [billing, setBilling] = useState('monthly');
             const [demoQuestion, setDemoQuestion] = useState("");
             const [demoResponse, setDemoResponse] = useState(null);
-            
+
             const hoursSaved = Math.round((weeklyAppts * adminMins * 52) / 60);
-            const dollarsSaved = (hoursSaved * 50).toLocaleString(); 
-            
+            const dollarsSaved = (hoursSaved * 50).toLocaleString();
+
             const handleDemoAsk = (e) => {
                 e.preventDefault();
                 setDemoResponse("loading");
@@ -509,7 +629,7 @@
                             Start Free Trial
                         </button>
                     </div>
-                    
+
                     {/* RESTORED AI Hero Feature Section */}
                     <div className="w-full bg-slate-900/50 border-y border-slate-800 py-20 relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-full bg-blue-500/5 blur-[100px] pointer-events-none"></div>
@@ -525,9 +645,9 @@
                                     Not just software—it's a mentor. Get instant answers to state-specific questions, fee limits, and ID rules without searching through a 100-page handbook.
                                 </p>
                                 <form onSubmit={handleDemoAsk} className="relative font-sans">
-                                    <input 
-                                        type="text" 
-                                        placeholder="e.g. What's the fee for a jurat in California?" 
+                                    <input
+                                        type="text"
+                                        placeholder="e.g. What's the fee for a jurat in California?"
                                         className="w-full bg-slate-800 border border-slate-700 rounded-xl py-4 px-6 text-white focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500 transition-all shadow-lg"
                                         value={demoQuestion}
                                         onChange={(e) => setDemoQuestion(e.target.value)}
@@ -537,7 +657,7 @@
                                     </button>
                                 </form>
                             </div>
-                            
+
                             <div className="ai-glow-box bg-slate-800/80 backdrop-blur-xl rounded-2xl p-6 border border-slate-700/50 shadow-2xl relative">
                                 <div className="flex items-center gap-3 mb-6 border-b border-slate-700 pb-4">
                                     <div className="w-10 h-10 bg-teal-500 rounded-full flex items-center justify-center text-white"><i className="fas fa-robot"></i></div>
@@ -549,14 +669,14 @@
                                         </div>
                                     </div>
                                 </div>
-                                
+
                                 <div className="space-y-4 font-sans">
                                     <div className="flex justify-end">
                                         <div className="bg-blue-600 text-white px-4 py-3 rounded-2xl rounded-tr-none text-sm max-w-[80%] shadow-md">
                                             What's the fee for a jurat in California?
                                         </div>
                                     </div>
-                                    
+
                                     {(demoResponse || true) && (
                                         <div className="flex justify-start">
                                              <div className="bg-slate-700 text-slate-200 px-4 py-3 rounded-2xl rounded-tl-none text-sm max-w-[90%] shadow-md border border-slate-600">
@@ -576,7 +696,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     {/* Pain vs Power Section - Alternating Background: Dark Slate 800 */}
                     <div className="bg-slate-800 py-20 border-t border-slate-700 font-sans">
                         <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
@@ -586,7 +706,7 @@
                                     <button onClick={() => setActiveTab('before')} className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'before' ? 'bg-red-500/20 text-red-400 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>The Old Way</button>
                                     <button onClick={() => setActiveTab('after')} className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${activeTab === 'after' ? 'bg-teal-500/20 text-teal-400 shadow-sm' : 'text-slate-500 hover:text-slate-300'}`}>With NotaryOS</button>
                                 </div>
-                                
+
                                 {activeTab === 'before' ? (
                                     <div className="space-y-4 animate-fade-in">
                                         <div className="flex items-start gap-4 p-4 rounded-xl bg-red-900/10 border border-red-900/30">
@@ -647,7 +767,7 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     {/* Mobile-First Demo Section - Alternating Background: Dark Slate 900 */}
                     <div className="py-24 bg-slate-900 w-full border-t border-slate-800 font-sans">
                         <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
@@ -678,7 +798,7 @@
                                                 <p className="text-xs text-gray-500 mt-1">Starbucks, 4th Ave</p>
                                             </div>
                                         </div>
-                                        
+
                                         {/* Notification Popup */}
                                         <div className="absolute top-20 left-4 right-4 bg-gray-900/90 backdrop-blur text-white p-3 rounded-xl shadow-lg border border-gray-700 animate-bounce flex items-center gap-3">
                                             <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center"><i className="fas fa-check"></i></div>
@@ -712,14 +832,14 @@
                             </div>
                         </div>
                     </div>
-                    
+
                     {/* Pricing Section - Alternating Background: Dark Slate 800 */}
                     <div className="bg-slate-800 py-24 w-full border-t border-slate-700 font-sans">
                         <div className="max-w-6xl mx-auto px-6">
                             <div className="text-center mb-10">
                                 <h3 className="text-3xl font-bold text-white mb-4">Simple, Transparent Pricing</h3>
                                 <p className="text-slate-400 mb-8">Everything you need to grow your business.</p>
-                                
+
                                 {/* Billing Toggle */}
                                 <div className="inline-flex bg-slate-900 p-1 rounded-xl border border-slate-700 relative">
                                     <button onClick={() => setBilling('monthly')} className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${billing === 'monthly' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}>Monthly</button>
@@ -740,7 +860,7 @@
                                     </ul>
                                     <button onClick={onNavigate} className="w-full py-3 rounded-xl border border-slate-600 text-white hover:bg-slate-700 transition-colors">Get Started</button>
                                 </div>
-                                
+
                                 {/* Pro Plan */}
                                 <div className="visual-card p-8 rounded-2xl flex flex-col relative border-teal-500 bg-slate-900 shadow-2xl shadow-teal-900/20 transform scale-105 z-10">
                                     <div className="absolute top-0 right-0 bg-teal-500 text-white text-xs font-bold px-3 py-1 rounded-bl-xl rounded-tr-xl">BEST VALUE</div>
@@ -789,9 +909,9 @@
             const handleAuth = (e) => {
                 e.preventDefault();
                 setError('');
-                onAuth({ id: '1', name: isLogin ? 'User' : formData.name, email: formData.email, plan: 'free' });
+                onAuth({ id: '1', name: isLogin ? 'User' : formData.name, email: formData.email, plan: 'free', role: 'solo' });
             };
-            
+
             const handleGoogleAuth = async () => { try { const provider = new firebase.auth.GoogleAuthProvider(); await firebase.auth().signInWithPopup(provider); } catch (err) { setError(err.message); } };
 
             return (
@@ -801,7 +921,7 @@
                         <div className="w-1/2 bg-slate-900 text-white p-12 hidden md:flex flex-col justify-center relative overflow-hidden"><button onClick={onBack} className="absolute top-8 left-8 text-slate-400 hover:text-white flex items-center gap-2 text-sm font-medium z-20"><i className="fas fa-arrow-left"></i> Back</button><div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl"></div><div className="absolute -bottom-20 -left-20 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl"></div><div className="relative z-10"><div className="mb-6"><div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-2xl mb-4 shadow-lg shadow-blue-500/30"><i className="fas fa-user-tie"></i></div><h1 className="text-4xl font-bold mb-2">NotaryOS</h1><p className="text-blue-200 text-lg">The Operating System for Modern Notaries.</p></div><div className="space-y-4 mt-8"><div className="flex items-center gap-3"><i className="fas fa-check-circle text-emerald-400 text-xl"></i><span className="font-medium">Business Management Suite</span></div><div className="flex items-center gap-3"><i className="fas fa-check-circle text-emerald-400 text-xl"></i><span className="font-medium">AI-Powered Compliance Coach</span></div><div className="flex items-center gap-3"><i className="fas fa-check-circle text-emerald-400 text-xl"></i><span className="font-medium">50-State Law Database</span></div></div></div></div>
                         <div className="w-full md:w-1/2 p-12 flex flex-col justify-center"><div className="max-w-sm mx-auto w-full"><h2 className="text-3xl font-bold text-slate-900 mb-8">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>{error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-xs">{error}</div>}<form onSubmit={handleAuth} className="space-y-5">{!isLogin && (<div><label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wide">Full Name</label><input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} placeholder="Jane Doe" /></div>)}<div><label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wide">Email Address</label><input type="email" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={formData.email} onChange={e=>setFormData({...formData, email: e.target.value})} placeholder="name@example.com" /></div><div><label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wide">Password</label><input type="password" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-xl tracking-widest" value={formData.password} onChange={e=>setFormData({...formData, password: e.target.value})} placeholder="••••••••" /></div><button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg shadow-md transition-all transform active:scale-95 mt-4">{isLogin ? 'Sign In' : 'Create Account'}</button></form><div className="relative flex py-6 items-center"><div className="flex-grow border-t border-slate-200"></div><span className="flex-shrink-0 mx-4 text-slate-400 text-xs font-medium uppercase">OR</span><div className="flex-grow border-t border-slate-200"></div></div><button className="w-full bg-white border border-slate-200 text-slate-700 font-bold py-3.5 rounded-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm"><i className="fab fa-google text-red-500 text-lg"></i><span>Continue with Google</span></button><div className="mt-8 text-center text-sm text-slate-500">{isLogin ? "New to NotaryOS?" : "Already have an account?"} <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 font-bold hover:underline ml-1">{isLogin ? 'Create Account' : 'Log In'}</button></div>
                             <div className="mt-8 pt-4 border-t border-slate-100 text-xs text-center text-slate-400">
-                                By continuing, you agree to our 
+                                By continuing, you agree to our
                                 <button onClick={() => setShowTermsModal(true)} className="underline cursor-pointer hover:text-slate-600 ml-1">Terms of Service</button>.
                             </div>
                         </div></div>
@@ -810,16 +930,18 @@
             );
         };
 
-        const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout, userName, userPlan, onSettings }) => {
+        const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout, userName, userPlan, userRole, onSettings, onUpgrade }) => {
             const [isCollapsed, setIsCollapsed] = useState(false);
             const menuItems = [
                 { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', color: 'text-blue-400' },
                 { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule', color: 'text-green-400' },
                 { id: 'clients', icon: 'fa-address-book', label: 'Clients', color: 'text-pink-400' },
+                { id: 'portal', icon: 'fa-door-open', label: 'Client Portal', color: 'text-cyan-400', access: 'portal' },
                 { id: 'journal', icon: 'fa-book', label: 'Journal', color: 'text-purple-400' },
                 { id: 'finances', icon: 'fa-wallet', label: 'Finances', color: 'text-emerald-400' },
                 { id: 'credentials', icon: 'fa-id-card', label: 'Credentials', color: 'text-orange-400' },
-                { id: 'trainer', icon: 'fa-robot', label: 'AI Trainer', color: 'text-indigo-400', isPro: true },
+                { id: 'agency', icon: 'fa-building', label: 'Agency', color: 'text-sky-400', access: 'agency' },
+                { id: 'trainer', icon: 'fa-robot', label: 'AI Trainer', color: 'text-indigo-400', access: 'trainer' },
                 { id: 'admin', icon: 'fa-shield-alt', label: 'Admin', color: 'text-red-500' }
             ];
 
@@ -833,12 +955,16 @@
                             <button onClick={onClose} className="lg:hidden text-gray-400"><i className="fas fa-times"></i></button>
                         </div>
                         <nav className="flex-1 p-2 space-y-2 overflow-y-auto">
-                            {menuItems.map(item => (
-                                <button key={item.id} onClick={() => { setView(item.id); onClose(); }} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors hover:bg-slate-800 ${currentView === item.id ? 'bg-blue-600 text-white' : 'text-gray-400'} ${isCollapsed ? 'justify-center' : ''}`} title={item.label}>
-                                    <i className={`fas ${item.icon} text-lg ${currentView !== item.id ? item.color : ''}`}></i>
-                                    {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
-                                </button>
-                            ))}
+                            {menuItems.map(item => {
+                                const locked = item.access && !hasFeatureAccess({ plan: userPlan, role: userRole }, item.access);
+                                return (
+                                    <button key={item.id} onClick={() => { if (locked) onUpgrade(); else { setView(item.id); onClose(); } }} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors hover:bg-slate-800 ${currentView === item.id ? 'bg-blue-600 text-white' : 'text-gray-400'} ${isCollapsed ? 'justify-center' : ''}`} title={locked ? `${item.label} (Upgrade required)` : item.label}>
+                                        <i className={`fas ${item.icon} text-lg ${currentView !== item.id ? item.color : ''}`}></i>
+                                        {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
+                                        {!isCollapsed && locked && <i className="fas fa-lock text-[10px] ml-auto text-amber-300"></i>}
+                                    </button>
+                                );
+                            })}
                         </nav>
                         <div className="p-4 border-t border-slate-700">
                              <button onClick={onSettings} className={`w-full flex items-center gap-3 px-3 py-2 mb-2 hover:bg-slate-800 rounded transition-colors group ${isCollapsed ? 'justify-center' : ''}`}>
@@ -858,45 +984,81 @@
             );
         };
 
-        const MobileNav = ({ setView, onOpenMenu }) => (
-            <div className="md:hidden fixed bottom-0 w-full bg-white border-t p-2 flex justify-around z-30 safe-area-pb shadow-lg">
-                <button onClick={() => setView('dashboard')}><i className="fas fa-home text-blue-500 text-xl"></i></button>
-                <button onClick={() => setView('schedule')}><i className="fas fa-calendar-alt text-green-500 text-xl"></i></button>
-                
-                {/* IMPROVED FAB/ADD BUTTON FOR MOBILE */}
-                <button onClick={() => setView('addAppointment')} className="-mt-8 bg-blue-600 text-white rounded-full p-4 shadow-xl border-4 border-white active:scale-95 transition-transform"><i className="fas fa-plus text-2xl"></i></button>
-                
-                <button onClick={() => setView('trainer')}><i className="fas fa-robot text-indigo-500 text-xl"></i></button>
-                <button onClick={onOpenMenu}><i className="fas fa-bars text-gray-500 text-xl"></i></button>
-            </div>
-        );
-
-        const Header = ({ title }) => (
-            <div className="bg-white border-b p-4 flex justify-between items-center z-20">
-                <h2 className="font-bold text-gray-800 text-lg">{title}</h2>
-                <div className="flex gap-3">
-                    <button className="text-gray-400"><i className="fas fa-bell"></i></button>
+        const MobileNav = ({ currentView, setView, onOpenMenu }) => {
+            const NavButton = ({ id, icon, label, onClick }) => (
+                <button onClick={onClick || (() => setView(id))} className={`flex flex-col items-center justify-center gap-1 px-2 py-1 rounded-lg min-w-[56px] ${currentView === id ? 'text-blue-600 bg-blue-50' : 'text-slate-400'}`}>
+                    <i className={`fas ${icon} text-base`}></i>
+                    <span className="text-[10px] font-semibold">{label}</span>
+                </button>
+            );
+            return (
+                <div className="md:hidden fixed bottom-0 w-full bg-white/85 border-t border-slate-200 p-2 flex justify-around items-end z-30 safe-area-pb shadow backdrop-blur">
+                    <NavButton id="dashboard" icon="fa-home" label="Home" />
+                    <NavButton id="schedule" icon="fa-calendar-alt" label="Schedule" />
+                    <button onClick={() => setView('addAppointment')} className="-mt-7 bg-blue-600 text-white rounded-full w-14 h-14 shadow-xl border-4 border-white active:scale-95 transition-transform"><i className="fas fa-plus text-xl"></i></button>
+                    <NavButton id="trainer" icon="fa-robot" label="AI" />
+                    <NavButton icon="fa-bars" label="Menu" onClick={onOpenMenu} />
                 </div>
-            </div>
-        );
+            );
+        };
+
+        const Header = ({ title, onNotify = () => {}, onSyncNow = () => {} }) => {
+            const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+            useEffect(() => {
+                const onOnline = () => setIsOnline(true);
+                const onOffline = () => setIsOnline(false);
+                window.addEventListener('online', onOnline);
+                window.addEventListener('offline', onOffline);
+                return () => {
+                    window.removeEventListener('online', onOnline);
+                    window.removeEventListener('offline', onOffline);
+                };
+            }, []);
+            return (
+                <div className="bg-white border-b p-4 flex justify-between items-center z-20">
+                    <h2 className="font-bold text-gray-800 text-lg">{title}</h2>
+                    <div className="flex gap-2 items-center">
+                        <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100"><i className="fas fa-shield-alt"></i> Trusted Workflow</span>
+                        <button onClick={onSyncNow} className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full border ${isOnline ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}><i className={`fas ${isOnline ? 'fa-cloud' : 'fa-cloud-slash'}`}></i>{isOnline ? 'Sync Online' : 'Offline Mode'}</button>
+                        <button onClick={onNotify} className="text-gray-400"><i className="fas fa-bell"></i></button>
+                    </div>
+                </div>
+            );
+        };
 
         // --- CORE MODULES ---
-        
+
         // CLIENTS MODULE
         const Clients = () => {
             const [clients, setClients] = useState([]);
             const [showForm, setShowForm] = useState(false);
+            const [editingClient, setEditingClient] = useState(null);
             useEffect(() => { DataManager.get('notary_clients').then(setClients); }, []);
-            const handleSave = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await DataManager.save('notary_clients', { id: Date.now().toString(), name: fd.get('name'), phone: fd.get('phone'), email: fd.get('email'), address: fd.get('address'), notes: fd.get('notes') }); setShowForm(false); setClients(await DataManager.get('notary_clients')); showToast("Client Saved"); };
+            const handleSave = async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                await DataManager.save('notary_clients', {
+                    id: editingClient?.id || Date.now().toString(),
+                    name: fd.get('name'),
+                    phone: fd.get('phone'),
+                    email: fd.get('email'),
+                    address: fd.get('address'),
+                    notes: fd.get('notes')
+                });
+                setShowForm(false);
+                setEditingClient(null);
+                setClients(await DataManager.get('notary_clients'));
+                showToast(editingClient ? "Client Updated" : "Client Saved");
+            };
             const handleDelete = async (id) => { await DataManager.delete('notary_clients', id); setClients(await DataManager.get('notary_clients')); showToast("Client Deleted", 'error'); };
-            
+
             return (
                 <div className="p-6 pb-24">
-                     <div className="flex justify-between mb-4"><h3 className="font-bold text-lg text-gray-800">Client Directory</h3><button onClick={()=>setShowForm(true)} className="bg-pink-600 text-white px-3 py-1 rounded">Add</button></div>
-                    {showForm && <form onSubmit={handleSave} className="bg-white p-4 rounded shadow mb-4"><input name="name" placeholder="Name" className="w-full border p-2 mb-2 rounded" required /><input name="phone" placeholder="Phone" className="w-full border p-2 mb-2 rounded" /><button className="bg-pink-600 text-white px-4 py-2 rounded">Save</button></form>}
+                     <div className="flex justify-between mb-4"><h3 className="font-bold text-lg text-gray-800">Client Directory</h3><button onClick={()=>{setEditingClient(null); setShowForm(true);}} className="bg-pink-600 text-white px-3 py-1 rounded">Add</button></div>
+                    {showForm && <form onSubmit={handleSave} className="bg-white p-4 rounded shadow mb-4 space-y-2"><input name="name" defaultValue={editingClient?.name || ''} placeholder="Name" className="w-full border p-2 rounded" required /><input name="phone" defaultValue={editingClient?.phone || ''} placeholder="Phone" className="w-full border p-2 rounded" /><input name="email" defaultValue={editingClient?.email || ''} placeholder="Email" className="w-full border p-2 rounded" /><div className="flex gap-2"><button type="button" onClick={() => { setShowForm(false); setEditingClient(null); }} className="flex-1 bg-gray-100 rounded py-2">Cancel</button><button className="flex-1 bg-pink-600 text-white px-4 py-2 rounded">{editingClient ? 'Update' : 'Save'}</button></div></form>}
                     <div className="space-y-3">
                         {clients.length === 0 ? (
-                            <EmptyState 
+                            <EmptyState
                                 icon="fa-address-book"
                                 title="No Clients Yet"
                                 description="Start building your digital rolodex. Add your first client to keep their details handy for future signings."
@@ -905,7 +1067,7 @@
                                 colorClass="text-pink-600"
                                 bgClass="bg-pink-50"
                             />
-                        ) : clients.map(c => <div key={c.id} className="bg-white p-3 rounded shadow"><div className="flex justify-between"><b>{c.name}</b><button onClick={() => handleDelete(c.id)} className="text-red-500"><i className="fas fa-trash"></i></button></div><p className="text-sm text-gray-500">{c.phone}</p></div>)}
+                        ) : clients.map(c => <div key={c.id} className="bg-white p-3 rounded shadow"><div className="flex justify-between items-start"><div><b>{c.name}</b><p className="text-sm text-gray-500">{c.phone}</p></div><div className="flex gap-2"><button onClick={() => { setEditingClient(c); setShowForm(true); }} className="text-blue-600 text-xs font-semibold">Edit</button><button onClick={() => handleDelete(c.id)} className="text-red-500"><i className="fas fa-trash"></i></button></div></div></div>)}
                     </div>
                 </div>
             );
@@ -914,16 +1076,16 @@
         // Feature #1: Income Chart
         const IncomeChart = ({ appointments }) => {
             const canvasRef = useRef(null);
-            
+
             useEffect(() => {
                 if (!canvasRef.current) return;
                 const ctx = canvasRef.current.getContext('2d');
-                
+
                 // Group by Month
                 const monthlyData = {};
                 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
                 months.forEach(m => monthlyData[m] = 0);
-                
+
                 appointments.forEach(a => {
                     const date = new Date(a.date);
                     const m = date.toLocaleString('default', { month: 'short' });
@@ -950,7 +1112,7 @@
                         scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
                     }
                 });
-                
+
                 return () => chart.destroy();
             }, [appointments]);
 
@@ -961,11 +1123,11 @@
             const today = new Date().toISOString().split('T')[0];
             const safeAppointments = Array.isArray(appointments) ? appointments : [];
             const todaysJobs = safeAppointments.filter(a => a.date === today);
-            
+
             const safeCredentials = Array.isArray(credentials) ? credentials : [];
-            const expiringCreds = safeCredentials.filter(c => { 
-                const exp = new Date(c.expiry); 
-                return Math.ceil((exp - new Date()) / (1000 * 60 * 60 * 24)) <= 60; 
+            const expiringCreds = safeCredentials.filter(c => {
+                const exp = new Date(c.expiry);
+                return Math.ceil((exp - new Date()) / (1000 * 60 * 60 * 24)) <= 60;
             });
             const monthlyIncome = safeAppointments.filter(a => a.status === 'Paid').reduce((sum, a) => sum + parseFloat(a.fee || 0), 0);
 
@@ -986,14 +1148,24 @@
             );
         };
 
-        const AppointmentForm = ({ onSave, onCancel }) => {
+        const AppointmentForm = ({ onSave, onCancel, initialData }) => {
             const [formData, setFormData] = useState({ clientName: '', date: '', time: '', fee: '', status: 'Scheduled' });
             const [magicInput, setMagicInput] = useState('');
-            
+            useEffect(() => {
+                if (initialData) setFormData({
+                    clientName: initialData.clientName || '',
+                    date: initialData.date || '',
+                    time: initialData.time || '',
+                    fee: initialData.fee || '',
+                    status: initialData.status || 'Scheduled',
+                    type: initialData.type || ''
+                });
+            }, [initialData]);
+
             // --- UPDATED SMART FILL TO USE API KEY IF AVAILABLE ---
-            const handleSmartFill = async () => { 
+            const handleSmartFill = async () => {
                 const apiKey = localStorage.getItem('gemini_api_key');
-                
+
                 if (apiKey) {
                     showToast("Analyzing with Gemini AI...", "success");
                     try {
@@ -1028,21 +1200,21 @@
                         console.error(e);
                         showToast("AI Error. Check API Key.", "error");
                     }
-                } else if (magicInput.toLowerCase().includes('john')) { 
+                } else if (magicInput.toLowerCase().includes('john')) {
                     // Fallback Demo Mode
-                    setFormData({...formData, clientName: 'John Doe', date: '2026-12-01', time: '14:00', fee: '150'}); 
-                    showToast("Form Filled (Demo Mode)"); 
+                    setFormData({...formData, clientName: 'John Doe', date: '2026-12-01', time: '14:00', fee: '150'});
+                    showToast("Form Filled (Demo Mode)");
                 } else {
-                     alert("Please add your Gemini API Key in Settings for real AI extraction, or type 'John' to see the demo."); 
+                     alert("Please add your Gemini API Key in Settings for real AI extraction, or type 'John' to see the demo.");
                 }
             };
-            
-            const handleSubmit = (e) => { e.preventDefault(); onSave({...formData, id: Date.now().toString()}); showToast("Appointment Scheduled"); };
+
+            const handleSubmit = (e) => { e.preventDefault(); onSave({...formData, id: initialData?.id || Date.now().toString()}); showToast(initialData ? "Appointment Updated" : "Appointment Scheduled"); };
 
             return (
                 <div className="p-6 pb-24 max-w-2xl mx-auto">
                     <div className="bg-white rounded-2xl shadow p-6">
-                        <h3 className="font-bold text-lg mb-4">New Appointment</h3>
+                        <h3 className="font-bold text-lg mb-4">{initialData ? 'Edit Appointment' : 'New Appointment'}</h3>
                         <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
                             <label className="text-xs font-bold text-blue-600 uppercase block mb-2"><i className="fas fa-magic"></i> Smart Fill</label>
                             <div className="flex gap-2"><input value={magicInput} onChange={e=>setMagicInput(e.target.value)} className="flex-1 p-2 border rounded text-sm" placeholder="e.g. Loan signing with Sarah tomorrow at 2pm for $150..." /><button onClick={handleSmartFill} className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold">Fill</button></div>
@@ -1058,31 +1230,538 @@
             );
         };
 
-        const Schedule = ({ appointments, setView }) => {
+        const Schedule = ({ appointments, setView, onMarkPaid, onGenerateInvoice, onQuickJournal, onEditAppointment, user }) => {
             const [viewMode, setViewMode] = useState('list');
+            const [paymentTarget, setPaymentTarget] = useState(null);
+            const [signerModeTarget, setSignerModeTarget] = useState(null);
             const safeAppointments = Array.isArray(appointments) ? appointments : [];
-            const CalendarView = () => <div className="bg-white p-8 rounded-2xl shadow text-center text-gray-400">Calendar View</div>;
+            const CalendarView = () => {
+                const now = new Date();
+                const year = now.getFullYear();
+                const month = now.getMonth();
+                const firstDay = new Date(year, month, 1);
+                const startWeekday = firstDay.getDay();
+                const daysInMonth = new Date(year, month + 1, 0).getDate();
+                const cells = [];
+                for (let i = 0; i < startWeekday; i++) cells.push(null);
+                for (let day = 1; day <= daysInMonth; day++) cells.push(day);
+                while (cells.length % 7 !== 0) cells.push(null);
+
+                const dateKey = (d) => `${year}-${String(month + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                return (
+                    <div className="bg-white p-4 rounded-2xl shadow border border-gray-100">
+                        <div className="grid grid-cols-7 gap-2 text-center text-xs font-bold text-gray-400 mb-2">
+                            {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => <div key={d}>{d}</div>)}
+                        </div>
+                        <div className="grid grid-cols-7 gap-2">
+                            {cells.map((day, idx) => {
+                                if (!day) return <div key={`blank-${idx}`} className="h-20 rounded-lg bg-gray-50"></div>;
+                                const dayEvents = safeAppointments.filter(a => a.date === dateKey(day));
+                                return (
+                                    <div key={day} className="h-20 rounded-lg border border-gray-100 p-2 overflow-hidden bg-white">
+                                        <div className="text-xs font-bold text-gray-700">{day}</div>
+                                        {dayEvents.slice(0,2).map(ev => <div key={ev.id} className="text-[10px] mt-1 truncate text-blue-600">• {ev.clientName}</div>)}
+                                        {dayEvents.length > 2 && <div className="text-[10px] text-gray-400">+{dayEvents.length - 2} more</div>}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+                );
+            };
             return (
                 <div className="p-6 pb-24">
                     <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-lg">Schedule</h3><div className="bg-gray-200 p-1 rounded-lg flex"><button onClick={()=>setViewMode('list')} className={`px-3 py-1 text-xs font-bold rounded-md ${viewMode==='list'?'bg-white shadow':''}`}>List</button><button onClick={()=>setViewMode('calendar')} className={`px-3 py-1 text-xs font-bold rounded-md ${viewMode==='calendar'?'bg-white shadow':''}`}>Calendar</button></div></div>
                     {viewMode === 'calendar' ? <CalendarView /> : (
                         <div className="space-y-3">
                             {safeAppointments.length === 0 ? <EmptyState icon="fa-calendar-alt" title="Schedule Empty" description="Add your first signing." actionLabel="Add" onAction={() => setView('addAppointment')} colorClass="text-green-600" bgClass="bg-green-50" /> : safeAppointments.sort((a,b) => new Date(a.date) - new Date(b.date)).map(job => (
-                                <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><div onClick={() => {}} className="cursor-pointer"><div className="flex justify-between items-start mb-2"><div><span className="text-xs font-bold text-gray-400 uppercase">{job.type}</span><h4 className="font-bold text-gray-800 text-lg">{job.clientName}</h4></div><span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase status-${job.status.toLowerCase()}`}>{job.status}</span></div><div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mt-3 pt-3 border-t border-gray-50"><div className="flex items-center gap-2"><i className="far fa-calendar-alt text-blue-400"></i> {job.date} {job.time}</div><div className="text-right font-bold text-gray-800">${job.fee}</div></div></div></div>
+                                <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                    <div onClick={() => {}} className="cursor-pointer">
+                                        <div className="flex justify-between items-start mb-2">
+                                            <div>
+                                                <span className="text-xs font-bold text-gray-400 uppercase">{job.type}</span>
+                                                <h4 className="font-bold text-gray-800 text-lg">{job.clientName}</h4>
+                                            </div>
+                                            <span className={`text-[10px] px-2 py-1 rounded-full font-bold uppercase status-${job.status.toLowerCase()}`}>{job.status}</span>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600 mt-3 pt-3 border-t border-gray-50">
+                                            <div className="flex items-center gap-2"><i className="far fa-calendar-alt text-blue-400"></i> {job.date} {job.time}</div>
+                                            <div className="text-right font-bold text-gray-800">${job.fee}</div>
+                                        </div>
+                                    </div>
+                                    {job.status !== 'Paid' && hasFeatureAccess(user, 'payments') && (
+                                        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+                                            <span className="text-xs font-semibold text-slate-400 uppercase">Payment</span>
+                                            <button onClick={() => setPaymentTarget(job)} className="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-semibold">Take Payment</button>
+                                        </div>
+                                    )}
+                                    <div className="mt-3 flex flex-wrap gap-2">
+                                        <button onClick={() => setSignerModeTarget(job)} className="px-3 py-2 rounded-lg text-xs font-semibold bg-indigo-50 text-indigo-700">Signer Mode</button>
+                                        <button onClick={() => onQuickJournal(job)} className="px-3 py-2 rounded-lg text-xs font-semibold bg-purple-50 text-purple-700">Quick Journal</button>
+                                        <button onClick={() => onGenerateInvoice(job)} className="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 text-slate-700">Invoice PDF</button>
+                                        <button onClick={() => onEditAppointment(job)} className="px-3 py-2 rounded-lg text-xs font-semibold bg-blue-50 text-blue-700">Edit</button>
+                                    </div>
+                                </div>
                             ))}
+                        </div>
+                    )}
+                    {paymentTarget && (
+                        <PaymentModal
+                            appointment={paymentTarget}
+                            onClose={() => setPaymentTarget(null)}
+                            onPaid={async () => {
+                                await onMarkPaid(paymentTarget);
+                                setPaymentTarget(null);
+                            }}
+                        />
+                    )}
+                    {signerModeTarget && (
+                        <SignerModeModal
+                            appointment={signerModeTarget}
+                            onClose={() => setSignerModeTarget(null)}
+                            onQuickJournal={() => { onQuickJournal(signerModeTarget); setSignerModeTarget(null); }}
+                        />
+                    )}
+                </div>
+            );
+        };
+
+        const SignerModeModal = ({ appointment, onClose, onQuickJournal }) => (
+            <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-xl w-full p-6 font-sans">
+                    <div className="flex items-center justify-between mb-4">
+                        <div>
+                            <p className="text-xs font-bold uppercase text-indigo-600">Signer Mode</p>
+                            <h4 className="text-lg font-bold text-gray-800">{appointment.clientName}</h4>
+                        </div>
+                        <button onClick={onClose} className="text-gray-400"><i className="fas fa-times"></i></button>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <button onClick={onQuickJournal} className="bg-purple-600 text-white rounded-xl py-4 text-sm font-semibold"><i className="fas fa-book mr-2"></i>Quick Journal</button>
+                        <button onClick={onClose} className="bg-blue-600 text-white rounded-xl py-4 text-sm font-semibold"><i className="fas fa-id-card mr-2"></i>ID Capture</button>
+                        <button onClick={onClose} className="bg-emerald-600 text-white rounded-xl py-4 text-sm font-semibold"><i className="fas fa-signature mr-2"></i>Signature Pad</button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-4">Designed for high-stress ceremonies: only the critical steps are visible.</p>
+                </div>
+            </div>
+        );
+
+        const PaymentModal = ({ appointment, onClose, onPaid }) => {
+            const handlePayLink = () => {
+                if (STRIPE_PAYMENT_LINK) {
+                    window.open(STRIPE_PAYMENT_LINK, '_blank', 'noopener');
+                    showToast("Payment link opened");
+                } else {
+                    showToast("Add a Stripe payment link in configuration.", "error");
+                }
+            };
+
+            return (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
+                        <div className="flex justify-between items-start mb-4">
+                            <div>
+                                <h4 className="text-lg font-semibold text-gray-800">Collect Payment</h4>
+                                <p className="text-sm text-gray-500">Invoice for {appointment.clientName} • ${appointment.fee}</p>
+                            </div>
+                            <button onClick={onClose} className="text-gray-400"><i className="fas fa-times"></i></button>
+                        </div>
+                        <div className="space-y-3">
+                            <button onClick={onPaid} className="w-full bg-emerald-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2">
+                                <i className="fas fa-wifi"></i> Tap to Pay (Simulated)
+                            </button>
+                            <button onClick={handlePayLink} className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2">
+                                <i className="fas fa-link"></i> Send Stripe Payment Link
+                            </button>
+                            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 text-xs text-slate-500">
+                                Record payments here to automatically mark invoices as paid in the journal.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ClientPortal = ({ user, appointments }) => {
+            const [clients, setClients] = useState([]);
+            const [portalClient, setPortalClient] = useState(null);
+            const [loginData, setLoginData] = useState({ email: '', code: '' });
+            const [portalError, setPortalError] = useState('');
+            const [signatures, setSignatures] = useState([]);
+            const [activeDoc, setActiveDoc] = useState(null);
+            const [signatureInput, setSignatureInput] = useState('');
+            const [consentChecked, setConsentChecked] = useState(false);
+
+            useEffect(() => {
+                DataManager.get('notary_clients').then(setClients);
+                DataManager.get('notary_esignatures').then(setSignatures);
+            }, []);
+
+            const documents = [
+                {
+                    id: 'service-agreement',
+                    title: 'Service Agreement',
+                    description: 'Review the service scope, travel policies, and payment terms before your appointment.',
+                    body: 'By signing this service agreement, you confirm the appointment details, travel policies, and payment terms provided by your notary. You agree to pay the agreed fee upon completion of service and acknowledge cancellation policies communicated by the notary.'
+                },
+                {
+                    id: 'privacy-consent',
+                    title: 'Privacy & Communication Consent',
+                    description: 'Authorize appointment reminders and secure document handling.',
+                    body: 'By signing this consent, you authorize the notary to send appointment confirmations, reminders, and follow-ups to the contact information you provided. You acknowledge that your data will be handled securely and only used for the purposes of the notarial service.'
+                }
+            ];
+
+            const safeAppointments = Array.isArray(appointments) ? appointments : [];
+            const portalAppointments = portalClient
+                ? safeAppointments.filter(appt => appt.clientName?.toLowerCase().includes(portalClient.name.toLowerCase()))
+                : [];
+
+            const handlePortalLogin = (e) => {
+                e.preventDefault();
+                setPortalError('');
+                const client = clients.find(c => c.email?.toLowerCase() === loginData.email.toLowerCase());
+                if (!client) {
+                    setPortalError("We couldn't find a client profile with that email.");
+                    return;
+                }
+                const last4 = (client.phone || '').replace(/\D/g, '').slice(-4);
+                const accessCode = client.accessCode || last4;
+                if (!loginData.code || loginData.code !== accessCode) {
+                    setPortalError("Access code invalid. Please use your secure code or phone last four digits.");
+                    return;
+                }
+                setPortalClient(client);
+                showToast("Welcome to your secure portal!");
+            };
+
+            const handleSignDocument = async (doc) => {
+                if (!portalClient) return;
+                if (!signatureInput || !consentChecked) {
+                    showToast("Please type your full name and consent to sign.", "error");
+                    return;
+                }
+                const signedAt = new Date().toISOString();
+                const record = {
+                    id: `${doc.id}-${portalClient.email}`,
+                    clientEmail: portalClient.email,
+                    clientName: portalClient.name,
+                    documentId: doc.id,
+                    documentTitle: doc.title,
+                    signature: signatureInput,
+                    signedAt
+                };
+                await DataManager.save('notary_esignatures', record);
+                setSignatures(await DataManager.get('notary_esignatures'));
+                setSignatureInput('');
+                setConsentChecked(false);
+                setActiveDoc(null);
+                showToast("Document Signed");
+            };
+
+            const handleDownloadSigned = (doc) => {
+                const signatureRecord = signatures.find(s => s.documentId === doc.id && s.clientEmail === portalClient?.email);
+                if (!signatureRecord) return;
+                PDFGenerator.createSignedAgreement({
+                    clientName: signatureRecord.clientName,
+                    clientEmail: signatureRecord.clientEmail,
+                    signature: signatureRecord.signature,
+                    signedAt: signatureRecord.signedAt,
+                    title: doc.title,
+                    body: doc.body
+                });
+            };
+
+            return (
+                <div className="p-6 pb-24">
+                    <div className="max-w-5xl mx-auto space-y-6">
+                        <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                <div>
+                                    <h3 className="text-xl font-bold text-gray-900">Client Portal & E-Sign</h3>
+                                    <p className="text-sm text-gray-500">Securely review appointments, download invoices, and sign non-notarial documents.</p>
+                                </div>
+                                {portalClient && (
+                                    <div className="flex items-center gap-3 bg-blue-50 text-blue-700 px-4 py-2 rounded-xl text-sm">
+                                        <i className="fas fa-shield-alt"></i>
+                                        <span>Logged in as {portalClient.name}</span>
+                                        <button onClick={() => setPortalClient(null)} className="text-blue-600 font-semibold ml-2">Log out</button>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        {!portalClient ? (
+                            <div className="bg-white p-6 rounded-2xl shadow border border-gray-100 max-w-xl">
+                                <h4 className="text-lg font-semibold text-gray-800 mb-3">Client Secure Login</h4>
+                                <p className="text-sm text-gray-500 mb-4">Use your email and access code (or last 4 digits of your phone) to enter.</p>
+                                {portalError && <div className="bg-red-50 text-red-600 text-sm p-3 rounded mb-4">{portalError}</div>}
+                                <form onSubmit={handlePortalLogin} className="space-y-4">
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Email</label>
+                                        <input type="email" className="w-full p-3 border rounded-xl" value={loginData.email} onChange={(e) => setLoginData({ ...loginData, email: e.target.value })} required />
+                                    </div>
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Access Code</label>
+                                        <input type="text" className="w-full p-3 border rounded-xl" value={loginData.code} onChange={(e) => setLoginData({ ...loginData, code: e.target.value })} required />
+                                    </div>
+                                    <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold">Enter Portal</button>
+                                </form>
+                            </div>
+                        ) : (
+                            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                                <div className="lg:col-span-2 space-y-6">
+                                    <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
+                                        <h4 className="text-lg font-semibold text-gray-800 mb-3">Your Upcoming Appointments</h4>
+                                        {portalAppointments.length === 0 ? (
+                                            <EmptyState
+                                                icon="fa-calendar-check"
+                                                title="No upcoming appointments"
+                                                description="Your notary will update your schedule here once it is booked."
+                                                actionLabel="Need help?"
+                                                onAction={() => showToast("Please contact your notary.", "success")}
+                                                colorClass="text-blue-600"
+                                                bgClass="bg-blue-50"
+                                            />
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {portalAppointments.map(appt => (
+                                                    <div key={appt.id} className="border border-gray-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                                        <div>
+                                                            <p className="text-xs font-semibold text-gray-400 uppercase">{appt.type || 'Notary Service'}</p>
+                                                            <p className="text-lg font-semibold text-gray-800">{appt.date} • {appt.time}</p>
+                                                            <p className="text-sm text-gray-500">Location: {appt.location || 'Provided by notary'}</p>
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <p className="text-sm text-gray-500">Fee</p>
+                                                            <p className="text-lg font-bold text-gray-800">${appt.fee || '--'}</p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
+                                        <h4 className="text-lg font-semibold text-gray-800 mb-3">Completed Invoices</h4>
+                                        {portalAppointments.filter(appt => ['Completed', 'Paid'].includes(appt.status)).length === 0 ? (
+                                            <EmptyState
+                                                icon="fa-file-invoice"
+                                                title="No invoices yet"
+                                                description="After your appointment is completed, invoices will appear here for download."
+                                                actionLabel="Contact notary"
+                                                onAction={() => showToast("We will notify you when invoices are ready.", "success")}
+                                                colorClass="text-emerald-600"
+                                                bgClass="bg-emerald-50"
+                                            />
+                                        ) : (
+                                            <div className="space-y-3">
+                                                {portalAppointments.filter(appt => ['Completed', 'Paid'].includes(appt.status)).map(appt => (
+                                                    <div key={appt.id} className="flex items-center justify-between border border-gray-100 rounded-xl p-4">
+                                                        <div>
+                                                            <p className="font-semibold text-gray-800">{appt.date} Invoice</p>
+                                                            <p className="text-sm text-gray-500">Total: ${appt.fee}</p>
+                                                        </div>
+                                                        <button onClick={() => PDFGenerator.createInvoice(appt, user)} className="bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-semibold">Download</button>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
+                                        <h4 className="text-lg font-semibold text-gray-800 mb-3">E-Sign Documents</h4>
+                                        <div className="space-y-4">
+                                            {documents.map(doc => {
+                                                const signed = signatures.find(s => s.documentId === doc.id && s.clientEmail === portalClient.email);
+                                                return (
+                                                    <div key={doc.id} className="border border-gray-100 rounded-xl p-4">
+                                                        <div className="flex items-start justify-between gap-4">
+                                                            <div>
+                                                                <p className="font-semibold text-gray-800">{doc.title}</p>
+                                                                <p className="text-sm text-gray-500">{doc.description}</p>
+                                                            </div>
+                                                            {signed ? (
+                                                                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-2 py-1 rounded-full">Signed</span>
+                                                            ) : (
+                                                                <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded-full">Pending</span>
+                                                            )}
+                                                        </div>
+                                                        <div className="mt-3 flex flex-wrap gap-2">
+                                                            {!signed ? (
+                                                                <button onClick={() => { setActiveDoc(doc); setSignatureInput(''); setConsentChecked(false); }} className="bg-blue-600 text-white px-3 py-2 rounded-lg text-xs font-semibold">Review & Sign</button>
+                                                            ) : (
+                                                                <button onClick={() => handleDownloadSigned(doc)} className="bg-gray-900 text-white px-3 py-2 rounded-lg text-xs font-semibold">Download Copy</button>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    <div className="bg-slate-900 text-white p-6 rounded-2xl shadow">
+                                        <h4 className="text-lg font-semibold mb-2">Secure by Design</h4>
+                                        <p className="text-sm text-slate-200">Clients access only their own records using email + access code verification. Signed documents are timestamped for audit readiness.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {activeDoc && (
+                        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                            <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h4 className="text-lg font-semibold text-gray-800">{activeDoc.title}</h4>
+                                        <p className="text-sm text-gray-500">{activeDoc.description}</p>
+                                    </div>
+                                    <button onClick={() => setActiveDoc(null)} className="text-gray-400"><i className="fas fa-times"></i></button>
+                                </div>
+                                <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 text-sm text-gray-600 max-h-40 overflow-y-auto">
+                                    {activeDoc.body}
+                                </div>
+                                <div className="mt-4 space-y-3">
+                                    <div>
+                                        <label className="text-xs font-bold text-gray-500 uppercase mb-1 block">Type your full name</label>
+                                        <input className="w-full p-3 border rounded-xl" value={signatureInput} onChange={(e) => setSignatureInput(e.target.value)} placeholder="Full legal name" />
+                                    </div>
+                                    <label className="flex items-start gap-2 text-sm text-gray-500">
+                                        <input type="checkbox" checked={consentChecked} onChange={(e) => setConsentChecked(e.target.checked)} className="mt-1" />
+                                        I agree that this e-signature is the legal equivalent of my handwritten signature.
+                                    </label>
+                                    <button onClick={() => handleSignDocument(activeDoc)} className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold">Sign & Submit</button>
+                                </div>
+                            </div>
                         </div>
                     )}
                 </div>
             );
         };
 
-        const Journal = ({ user, onUpgrade }) => {
+        const Journal = ({ user, onUpgrade, quickEntry, onQuickEntryUsed }) => {
             const [entries, setEntries] = useState([]);
             const [showForm, setShowForm] = useState(false);
+            const [idCapture, setIdCapture] = useState(null);
+            const [idPreview, setIdPreview] = useState('');
+            const [selectedEntry, setSelectedEntry] = useState(null);
+            const [editingEntry, setEditingEntry] = useState(null);
+            useEffect(() => {
+                if (quickEntry) {
+                    setShowForm(true);
+                }
+            }, [quickEntry]);
             useEffect(() => { DataManager.get('notary_journal').then(setEntries); }, []);
-            const handleSave = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await DataManager.save('notary_journal', { id: Date.now().toString(), date: fd.get('date'), signer: fd.get('signer'), docType: fd.get('docType'), fee: fd.get('fee') }); setShowForm(false); setEntries(await DataManager.get('notary_journal')); showToast("Entry Logged"); };
+            const handleSave = async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                const encryptedId = idCapture ? encryptPayload(idCapture) : null;
+                await DataManager.save('notary_journal', {
+                    id: editingEntry?.id || Date.now().toString(),
+                    date: fd.get('date'),
+                    signer: fd.get('signer'),
+                    docType: fd.get('docType'),
+                    fee: fd.get('fee'),
+                    idCapture: encryptedId
+                });
+                setShowForm(false);
+                setEditingEntry(null);
+                setIdCapture(null);
+                setIdPreview('');
+                setEntries(await DataManager.get('notary_journal'));
+                showToast(editingEntry ? "Entry Updated" : "Entry Logged");
+            };
+            const handleIdUpload = (file) => {
+                if (!file) {
+                    setIdCapture(null);
+                    setIdPreview('');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const result = reader.result;
+                    setIdCapture(typeof result === 'string' ? result : null);
+                    setIdPreview(typeof result === 'string' ? result : '');
+                };
+                reader.readAsDataURL(file);
+            };
             const handleExport = () => { if (user.plan !== 'pro') { onUpgrade(); return; } if (window.jspdf) PDFGenerator.createReport("Notary Journal", ["Date", "Signer", "Doc", "Fee"], entries.map(e => [e.date, e.signer, e.docType, `$${e.fee}`]), "journal.pdf"); };
-            return (<div className="p-6 pb-24"><div className="flex justify-between items-center mb-6"><div className="flex gap-2"><h3 className="text-lg font-bold text-gray-800">Journal</h3><button onClick={handleExport} className="text-gray-400 hover:text-blue-600"><i className="fas fa-file-export"></i></button></div><button onClick={() => setShowForm(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Log</button></div>{showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6"><form onSubmit={handleSave} className="space-y-4"><input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" /><input required name="signer" type="text" placeholder="Signer" className="w-full p-3 bg-gray-50 border rounded-xl" /><div className="flex gap-2"><button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 rounded-lg">Cancel</button><button type="submit" className="flex-1 bg-purple-600 text-white rounded-lg">Save</button></div></form></div>}<div className="space-y-3">{entries.length === 0 ? <EmptyState icon="fa-book" title="Journal Empty" description="Log your notarial acts." actionLabel="Log" onAction={()=>setShowForm(true)} colorClass="text-purple-600" bgClass="bg-purple-50" /> : entries.map(e => <div key={e.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm"><h4>{e.signer}</h4><p className="text-xs text-gray-500">{e.docType}</p></div>)}</div></div>);
+            return (
+                <div className="p-6 pb-24">
+                    <div className="flex justify-between items-center mb-6">
+                        <div className="flex gap-2">
+                            <h3 className="text-lg font-bold text-gray-800">Journal</h3>
+                            <button onClick={handleExport} className="text-gray-400 hover:text-blue-600"><i className="fas fa-file-export"></i></button>
+                        </div>
+                        <button onClick={() => setShowForm(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Log</button>
+                    </div>
+                    {showForm && (
+                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                            <form onSubmit={handleSave} className="space-y-4">
+                                <input required name="date" type="date" defaultValue={editingEntry?.date || quickEntry?.date || ''} className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input required name="signer" type="text" defaultValue={editingEntry?.signer || quickEntry?.signer || ''} placeholder="Signer" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input name="docType" type="text" defaultValue={editingEntry?.docType || quickEntry?.docType || ''} placeholder="Document Type" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input name="fee" type="number" defaultValue={editingEntry?.fee || quickEntry?.fee || ''} placeholder="Fee" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
+                                    <label className="text-xs font-bold text-slate-500 uppercase block">Audit-Proof Capture (ID/Thumbprint)</label>
+                                    <input type="file" accept="image/*" capture="environment" onChange={(e) => handleIdUpload(e.target.files?.[0])} className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200" />
+                                    {idPreview && <img src={idPreview} alt="ID capture preview" className="w-full max-h-48 object-contain rounded-lg border border-slate-200" />}
+                                    <p className="text-xs text-slate-400">Captured image is obfuscated and stored on this device only. For production compliance, use encrypted cloud storage with key management.</p>
+                                </div>
+                                <div className="flex gap-2">
+                                    <button type="button" onClick={() => { setShowForm(false); setEditingEntry(null); }} className="flex-1 bg-gray-100 rounded-lg">Cancel</button>
+                                    <button type="submit" onClick={() => onQuickEntryUsed?.()} className="flex-1 bg-purple-600 text-white rounded-lg">{editingEntry ? 'Update' : 'Save'}</button>
+                                </div>
+                            </form>
+                        </div>
+                    )}
+                    <div className="space-y-3">
+                        {entries.length === 0 ? (
+                            <EmptyState icon="fa-book" title="Journal Empty" description="Log your notarial acts." actionLabel="Log" onAction={()=>setShowForm(true)} colorClass="text-purple-600" bgClass="bg-purple-50" />
+                        ) : entries.map(e => {
+                            const decrypted = e.idCapture ? decryptPayload(e.idCapture) : null;
+                            return (
+                                <div key={e.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                                    <div className="flex items-start justify-between gap-4">
+                                        <div>
+                                            <h4 className="font-semibold text-gray-800">{e.signer}</h4>
+                                            <p className="text-xs text-gray-500">{e.docType || 'Notarial Entry'}</p>
+                                        </div>
+                                        <div className="flex gap-2 items-center">
+                                            <button onClick={() => { setEditingEntry(e); setShowForm(true); }} className="text-xs font-semibold text-blue-600 bg-blue-50 px-2 py-1 rounded-full">Edit</button>
+                                            {e.idCapture && (
+                                                <button onClick={() => setSelectedEntry({ ...e, decrypted })} className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">View Capture</button>
+                                            )}
+                                        </div>
+                                    </div>
+                                    {e.fee && <p className="text-xs text-gray-400 mt-2">Fee: ${e.fee}</p>}
+                                </div>
+                            );
+                        })}
+                    </div>
+                    {selectedEntry && (
+                        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+                            <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
+                                <div className="flex justify-between items-start mb-4">
+                                    <div>
+                                        <h4 className="text-lg font-semibold text-gray-800">Audit Capture</h4>
+                                        <p className="text-sm text-gray-500">{selectedEntry.signer} • {selectedEntry.date}</p>
+                                    </div>
+                                    <button onClick={() => setSelectedEntry(null)} className="text-gray-400"><i className="fas fa-times"></i></button>
+                                </div>
+                                {selectedEntry.decrypted ? (
+                                    <img src={selectedEntry.decrypted} alt="Audit capture" className="w-full max-h-80 object-contain rounded-xl border border-slate-200" />
+                                ) : (
+                                    <p className="text-sm text-gray-500">Unable to decrypt capture.</p>
+                                )}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
         };
 
         const Finances = () => {
@@ -1090,18 +1769,106 @@
             const [expenses, setExpenses] = useState([]);
             const [mileage, setMileage] = useState([]);
             const [showForm, setShowForm] = useState(false);
+            const [currentTrip, setCurrentTrip] = useState(null);
+            const [locationStatus, setLocationStatus] = useState('');
              useEffect(() => { const load = async () => { setExpenses(await DataManager.get('notary_expenses')); setMileage(await DataManager.get('notary_mileage')); }; load(); }, []);
+            useEffect(() => { setCurrentTrip(safeParse(localStorage.getItem('notary_active_trip'), null)); }, []);
             const handleSave = async (e) => { e.preventDefault(); const formData = new FormData(e.target); if (activeTab === 'expenses') { await DataManager.save('notary_expenses', { id: Date.now().toString(), date: formData.get('date'), category: formData.get('category'), desc: formData.get('desc'), amount: formData.get('amount') }); setExpenses(await DataManager.get('notary_expenses')); } else { await DataManager.save('notary_mileage', { id: Date.now().toString(), date: formData.get('date'), start: formData.get('start'), end: formData.get('end'), miles: formData.get('miles') }); setMileage(await DataManager.get('notary_mileage')); } setShowForm(false); showToast("Record Saved"); };
             const handleExport = () => { if (activeTab === 'expenses') PDFGenerator.createReport("Expense Report", ["Date", "Category", "Description", "Amount"], expenses.map(e => [e.date, e.category, e.desc, `-$${e.amount}`]), "expenses.pdf"); else PDFGenerator.createReport("Mileage Log", ["Date", "Start", "End", "Miles"], mileage.map(m => [m.date, m.start, m.end, `${m.miles} mi`]), "mileage.pdf"); };
+            const haversineMiles = (start, end) => {
+                const toRad = (value) => (value * Math.PI) / 180;
+                const R = 3958.8;
+                const dLat = toRad(end.lat - start.lat);
+                const dLng = toRad(end.lng - start.lng);
+                const lat1 = toRad(start.lat);
+                const lat2 = toRad(end.lat);
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
+                return 2 * R * Math.asin(Math.sqrt(a));
+            };
+            const getPosition = () => new Promise((resolve, reject) => {
+                if (!navigator.geolocation) {
+                    reject(new Error('Geolocation unavailable'));
+                    return;
+                }
+                navigator.geolocation.getCurrentPosition(
+                    (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                    (err) => reject(err),
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+            });
+
+            const handleStartTrip = async () => {
+                setLocationStatus('Requesting GPS...');
+                try {
+                    const coords = await getPosition();
+                    const startTrip = { id: Date.now().toString(), start: coords, startTime: new Date().toISOString() };
+                    localStorage.setItem('notary_active_trip', JSON.stringify(startTrip));
+                    setCurrentTrip(startTrip);
+                    setLocationStatus('Trip started. Tracking mileage.');
+                    showToast("Trip Started");
+                } catch (err) {
+                    setLocationStatus('Unable to access GPS. Please enable location permissions.');
+                    showToast("GPS Error", "error");
+                }
+            };
+
+            const handleEndTrip = async () => {
+                if (!currentTrip) return;
+                setLocationStatus('Calculating mileage...');
+                try {
+                    const coords = await getPosition();
+                    const distance = haversineMiles(currentTrip.start, coords);
+                    const entry = {
+                        id: currentTrip.id,
+                        date: new Date().toISOString().split('T')[0],
+                        start: `${currentTrip.start.lat.toFixed(4)}, ${currentTrip.start.lng.toFixed(4)}`,
+                        end: `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`,
+                        miles: distance.toFixed(2),
+                        startTime: currentTrip.startTime,
+                        endTime: new Date().toISOString()
+                    };
+                    await DataManager.save('notary_mileage', entry);
+                    setMileage(await DataManager.get('notary_mileage'));
+                    localStorage.removeItem('notary_active_trip');
+                    setCurrentTrip(null);
+                    setLocationStatus(`Trip saved • ${distance.toFixed(2)} mi`);
+                    showToast("Trip Saved");
+                } catch (err) {
+                    setLocationStatus('Unable to access GPS. Try again.');
+                    showToast("GPS Error", "error");
+                }
+            };
             return (
                 <div className="p-6 pb-24">
                     <div className="bg-white p-1 rounded-xl flex mb-6 border border-gray-200 shadow-sm"><button onClick={() => setActiveTab('expenses')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'expenses' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-500'}`}>Expenses</button><button onClick={() => setActiveTab('mileage')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'mileage' ? 'bg-blue-50 text-blue-700' : 'text-gray-500'}`}>Mileage</button></div>
                     <div className="flex justify-between items-center mb-6"><div><p className="text-xs text-gray-500 uppercase font-bold">Total</p><p className="text-2xl font-bold text-gray-800">{activeTab === 'expenses' ? `$${expenses.reduce((s, i) => s + parseFloat(i.amount||0), 0).toFixed(2)}` : `${mileage.reduce((s, i) => s + parseFloat(i.miles||0), 0)} mi`}</p></div><div className="flex gap-2"><button onClick={handleExport} className="bg-white text-gray-500 border w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-file-export"></i></button><button onClick={() => setShowForm(true)} className="bg-gray-900 text-white w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-plus"></i></button></div></div>
+                    {activeTab === 'mileage' && (
+                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
+                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                <div>
+                                    <p className="text-xs font-bold text-blue-600 uppercase">Smart Mileage Tracker</p>
+                                    <h4 className="text-lg font-semibold text-gray-800">Start & end trips with GPS</h4>
+                                    <p className="text-sm text-gray-500">Tap Start Trip to capture your location, then End Trip when you arrive. We'll log the mileage automatically.</p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button onClick={handleStartTrip} disabled={!!currentTrip} className={`px-4 py-2 rounded-lg text-sm font-semibold ${currentTrip ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white'}`}>Start Trip</button>
+                                    <button onClick={handleEndTrip} disabled={!currentTrip} className={`px-4 py-2 rounded-lg text-sm font-semibold ${currentTrip ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}>End Trip</button>
+                                </div>
+                            </div>
+                            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+                                <span className={`px-3 py-1 rounded-full ${currentTrip ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
+                                    {currentTrip ? 'Trip in progress' : 'No active trip'}
+                                </span>
+                                {currentTrip && <span className="text-gray-500">Started {new Date(currentTrip.startTime).toLocaleTimeString()}</span>}
+                                {locationStatus && <span className="text-gray-500">{locationStatus}</span>}
+                            </div>
+                        </div>
+                    )}
                     {showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6"><form onSubmit={handleSave} className="space-y-4"><input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" />{activeTab === 'expenses' ? <><input name="category" placeholder="Category" className="w-full p-3 border rounded-xl" /><input name="desc" placeholder="Description" className="w-full p-3 border rounded-xl" /><input name="amount" placeholder="Amount" className="w-full p-3 border rounded-xl" /></> : <><input name="start" placeholder="Start" className="w-full p-3 border rounded-xl" /><input name="end" placeholder="End" className="w-full p-3 border rounded-xl" /><input name="miles" placeholder="Miles" className="w-full p-3 border rounded-xl" /></>}<button className="w-full bg-gray-900 text-white py-3 rounded-lg">Save</button></form></div>}
-                    
+
                     <div className="space-y-3">
                         {activeTab === 'expenses' && expenses.length === 0 ? (
-                            <EmptyState 
+                            <EmptyState
                                 icon="fa-receipt"
                                 title="No Expenses Logged"
                                 description="Track your business spending for tax time. Add your first expense."
@@ -1111,7 +1878,7 @@
                                 bgClass="bg-emerald-50"
                             />
                         ) : activeTab === 'mileage' && mileage.length === 0 ? (
-                            <EmptyState 
+                            <EmptyState
                                 icon="fa-road"
                                 title="No Mileage Logged"
                                 description="Don't miss out on tax deductions. Track the miles you drive for work."
@@ -1127,21 +1894,207 @@
                 </div>
             );
         };
-        
+
+        const AgencyManagement = ({ appointments }) => {
+            const [team, setTeam] = useState([]);
+            const [assignments, setAssignments] = useState([]);
+            const [showForm, setShowForm] = useState(false);
+
+            useEffect(() => {
+                const load = async () => {
+                    setTeam(await DataManager.get('notary_team'));
+                    setAssignments(await DataManager.get('notary_assignments'));
+                };
+                load();
+            }, []);
+
+            const safeAppointments = Array.isArray(appointments) ? appointments : [];
+            const activeAppointments = safeAppointments
+                .filter(appt => appt.status !== 'Cancelled')
+                .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            const aggregateRevenue = safeAppointments
+                .filter(appt => ['Paid', 'Completed'].includes(appt.status))
+                .reduce((sum, appt) => sum + parseFloat(appt.fee || 0), 0);
+
+            const handleAddNotary = async (e) => {
+                e.preventDefault();
+                const formData = new FormData(e.target);
+                const entry = {
+                    id: Date.now().toString(),
+                    name: formData.get('name'),
+                    email: formData.get('email'),
+                    region: formData.get('region') || 'Unassigned',
+                    status: formData.get('status') || 'Available'
+                };
+                await DataManager.save('notary_team', entry);
+                setTeam(await DataManager.get('notary_team'));
+                setShowForm(false);
+                showToast("Team Member Added");
+            };
+
+            const handleAssign = async (appointmentId, notaryId) => {
+                if (!notaryId) return;
+                const assignment = {
+                    id: appointmentId,
+                    appointmentId,
+                    notaryId,
+                    assignedAt: new Date().toISOString()
+                };
+                await DataManager.save('notary_assignments', assignment);
+                setAssignments(await DataManager.get('notary_assignments'));
+                showToast("Assignment Updated");
+            };
+
+            const getAssignedNotary = (appointmentId) => {
+                const assignment = assignments.find(item => item.appointmentId === appointmentId);
+                return assignment ? team.find(member => member.id === assignment.notaryId) : null;
+            };
+
+            return (
+                <div className="p-6 pb-24">
+                    <div className="max-w-6xl mx-auto space-y-6">
+                        <div className="bg-white p-6 rounded-2xl shadow border border-gray-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+                            <div>
+                                <p className="text-xs font-bold text-sky-600 uppercase">Team Mode</p>
+                                <h3 className="text-2xl font-bold text-gray-900">Agency Management</h3>
+                                <p className="text-sm text-gray-500">Assign jobs to notaries, manage capacity, and track revenue across your organization.</p>
+                            </div>
+                            <div className="flex flex-wrap gap-4">
+                                <div className="bg-slate-900 text-white rounded-xl px-5 py-4 min-w-[180px]">
+                                    <p className="text-xs uppercase text-slate-300">Active Notaries</p>
+                                    <p className="text-2xl font-bold">{team.length}</p>
+                                </div>
+                                <div className="bg-white border border-slate-200 rounded-xl px-5 py-4 min-w-[180px]">
+                                    <p className="text-xs uppercase text-slate-500">Monthly Revenue</p>
+                                    <p className="text-2xl font-bold text-slate-900">${aggregateRevenue.toFixed(2)}</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h4 className="text-lg font-semibold text-gray-800">Notary Team</h4>
+                                    <button onClick={() => setShowForm(true)} className="text-sm font-semibold text-blue-600">Add</button>
+                                </div>
+                                {showForm && (
+                                    <form onSubmit={handleAddNotary} className="space-y-3 mb-4">
+                                        <input name="name" required placeholder="Full Name" className="w-full p-2 border rounded-lg" />
+                                        <input name="email" type="email" required placeholder="Email" className="w-full p-2 border rounded-lg" />
+                                        <input name="region" placeholder="Region / City" className="w-full p-2 border rounded-lg" />
+                                        <select name="status" className="w-full p-2 border rounded-lg">
+                                            <option>Available</option>
+                                            <option>On Assignment</option>
+                                            <option>Off Duty</option>
+                                        </select>
+                                        <div className="flex gap-2">
+                                            <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 rounded-lg py-2">Cancel</button>
+                                            <button type="submit" className="flex-1 bg-blue-600 text-white rounded-lg py-2">Save</button>
+                                        </div>
+                                    </form>
+                                )}
+                                <div className="space-y-3">
+                                    {team.length === 0 ? (
+                                        <EmptyState
+                                            icon="fa-users"
+                                            title="No team members yet"
+                                            description="Add your first notary to start assigning jobs."
+                                            actionLabel="Add Notary"
+                                            onAction={() => setShowForm(true)}
+                                            colorClass="text-sky-600"
+                                            bgClass="bg-sky-50"
+                                        />
+                                    ) : (
+                                        team.map(member => (
+                                            <div key={member.id} className="border border-gray-100 rounded-xl p-3">
+                                                <div className="flex items-start justify-between">
+                                                    <div>
+                                                        <p className="font-semibold text-gray-800">{member.name}</p>
+                                                        <p className="text-xs text-gray-500">{member.email}</p>
+                                                    </div>
+                                                    <span className="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-full">{member.status}</span>
+                                                </div>
+                                                <p className="text-xs text-gray-400 mt-2">{member.region}</p>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+
+                            <div className="lg:col-span-2 space-y-6">
+                                <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
+                                    <h4 className="text-lg font-semibold text-gray-800 mb-3">Master Calendar</h4>
+                                    {activeAppointments.length === 0 ? (
+                                        <EmptyState
+                                            icon="fa-calendar-alt"
+                                            title="No appointments scheduled"
+                                            description="Once appointments are booked, they'll show here for assignment."
+                                            actionLabel="Refresh"
+                                            onAction={() => showToast("Calendar Updated", "success")}
+                                            colorClass="text-blue-600"
+                                            bgClass="bg-blue-50"
+                                        />
+                                    ) : (
+                                        <div className="space-y-3">
+                                            {activeAppointments.map(appt => {
+                                                const assignedNotary = getAssignedNotary(appt.id);
+                                                return (
+                                                    <div key={appt.id} className="border border-gray-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                                                        <div>
+                                                            <p className="text-xs font-semibold text-gray-400 uppercase">{appt.type || 'Notary Service'}</p>
+                                                            <p className="text-lg font-semibold text-gray-800">{appt.clientName}</p>
+                                                            <p className="text-sm text-gray-500">{appt.date} • {appt.time || 'TBD'}</p>
+                                                        </div>
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="text-right">
+                                                                <p className="text-xs text-gray-400">Assigned</p>
+                                                                <p className="text-sm font-semibold text-gray-700">{assignedNotary ? assignedNotary.name : 'Unassigned'}</p>
+                                                            </div>
+                                                            <select
+                                                                value={assignedNotary?.id || ''}
+                                                                onChange={(e) => handleAssign(appt.id, e.target.value)}
+                                                                className="border border-gray-200 rounded-lg p-2 text-sm"
+                                                            >
+                                                                <option value="">Assign Notary</option>
+                                                                {team.map(member => (
+                                                                    <option key={member.id} value={member.id}>{member.name}</option>
+                                                                ))}
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="bg-slate-900 text-white p-6 rounded-2xl shadow">
+                                    <h4 className="text-lg font-semibold mb-2">Agency Insights</h4>
+                                    <p className="text-sm text-slate-200">Track assignments and revenue in one place. Expand your team and keep every signing accounted for.</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
         const Credentials = ({ onUpdate }) => {
             const [creds, setCreds] = useState([]);
             const [showForm, setShowForm] = useState(false);
+            const [editingCred, setEditingCred] = useState(null);
             useEffect(() => { DataManager.get('notary_credentials').then(setCreds); }, []);
-            const handleSave = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await DataManager.save('notary_credentials', { id: Date.now().toString(), name: fd.get('name'), expiry: fd.get('expiry') }); setShowForm(false); setCreds(await DataManager.get('notary_credentials')); showToast("Credential Saved"); };
+            const handleSave = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await DataManager.save('notary_credentials', { id: editingCred?.id || Date.now().toString(), name: fd.get('name'), expiry: fd.get('expiry') }); setShowForm(false); setEditingCred(null); setCreds(await DataManager.get('notary_credentials')); showToast(editingCred ? "Credential Updated" : "Credential Saved"); };
             const handleDelete = async (id) => { await DataManager.delete('notary_credentials', id); setCreds(await DataManager.get('notary_credentials')); showToast("Credential Deleted", 'error'); };
-            
+
             return (
                 <div className="p-6 pb-24">
-                    <div className="flex justify-between mb-4"><h3 className="font-bold">Credentials</h3><button onClick={()=>setShowForm(true)} className="bg-indigo-600 text-white px-3 py-1 rounded">Add</button></div>
-                    {showForm && <form onSubmit={handleSave} className="bg-white p-4 rounded shadow mb-4"><input name="name" placeholder="Name" className="w-full border p-2 mb-2 rounded" /><input name="expiry" type="date" className="w-full border p-2 mb-2 rounded" /><button className="bg-indigo-600 text-white px-4 py-2 rounded">Save</button></form>}
+                    <div className="flex justify-between mb-4"><h3 className="font-bold">Credentials</h3><button onClick={()=>{ setEditingCred(null); setShowForm(true); }} className="bg-indigo-600 text-white px-3 py-1 rounded">Add</button></div>
+                    {showForm && <form onSubmit={handleSave} className="bg-white p-4 rounded shadow mb-4 space-y-2"><input name="name" defaultValue={editingCred?.name || ''} placeholder="Name" className="w-full border p-2 rounded" /><input name="expiry" defaultValue={editingCred?.expiry || ''} type="date" className="w-full border p-2 rounded" /><div className="flex gap-2"><button type="button" onClick={() => { setShowForm(false); setEditingCred(null); }} className="flex-1 bg-gray-100 rounded py-2">Cancel</button><button className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded">{editingCred ? 'Update' : 'Save'}</button></div></form>}
                     <div className="space-y-3">
                         {creds.length === 0 ? (
-                            <EmptyState 
+                            <EmptyState
                                 icon="fa-id-card"
                                 title="No Credentials"
                                 description="Keep track of your commission, bond, and insurance. We'll alert you before they expire."
@@ -1150,18 +2103,18 @@
                                 colorClass="text-orange-600"
                                 bgClass="bg-orange-50"
                             />
-                        ) : creds.map(c => <div key={c.id} className="bg-white p-3 rounded shadow flex justify-between"><div><b>{c.name}</b><br/><span className="text-sm text-gray-500">{c.expiry}</span></div><button onClick={()=>handleDelete(c.id)} className="text-red-500">Delete</button></div>)}
+                        ) : creds.map(c => <div key={c.id} className="bg-white p-3 rounded shadow flex justify-between"><div><b>{c.name}</b><br/><span className="text-sm text-gray-500">{c.expiry}</span></div><div className="flex gap-2"><button onClick={() => { setEditingCred(c); setShowForm(true); }} className="text-blue-600 text-xs font-semibold">Edit</button><button onClick={()=>handleDelete(c.id)} className="text-red-500">Delete</button></div></div>)}
                     </div>
                 </div>
             );
         };
-        
+
         const TrainerModule = ({ stateDB, courseMods, user, onUpgrade }) => { const [selectedStateKey, setSelectedStateKey] = useState('CA'); const [mode, setMode] = useState('study'); const [messages, setMessages] = useState([{ role: 'assistant', content: "Hello! I am your AI Mentor. Ask me anything about notary laws." }]); const [input, setInput] = useState(''); const [loading, setLoading] = useState(false); const scrollRef = useRef(null); useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]); const sendMessage = async () => { if (!input.trim()) return; const newMsgs = [...messages, { role: 'user', content: input }]; setMessages(newMsgs); setInput(''); setLoading(true); setTimeout(() => { setMessages([...newMsgs, { role: 'assistant', content: "This is a simulated AI response. Please configure your API Key." }]); setLoading(false); }, 800); }; return (<div className="flex flex-col h-full bg-white relative pb-20 md:pb-0"><div className="border-b px-4 py-3 flex justify-between items-center bg-gray-50"><select value={selectedStateKey} onChange={e => setSelectedStateKey(e.target.value)} className="bg-white border rounded p-1">{Object.keys(stateDB).map(k => <option key={k} value={k}>{stateDB[k].state}</option>)}</select><div className="flex gap-2"><button onClick={() => setMode('study')} className={`px-2 py-1 text-xs rounded ${mode==='study' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Study</button><button onClick={() => setMode('course')} className={`px-2 py-1 text-xs rounded ${mode==='course' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Course</button><button onClick={() => setMode('sim')} className={`px-2 py-1 text-xs rounded ${mode==='sim' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Sim</button></div></div><div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4">{messages.map((m, i) => <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] p-3 rounded-lg text-sm ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>{m.content}</div></div>)}{loading && <div className="text-xs text-gray-400 ml-4">Thinking...</div>}<div ref={scrollRef} /></div><div className="p-4 border-t bg-white flex gap-2 pb-24 md:pb-4 safe-area-pb"><input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} placeholder="Ask AI..." className="flex-1 p-2 border rounded" /><button onClick={sendMessage} className="bg-blue-600 text-white px-4 rounded">Send</button></div></div>); };
-        
-        const AdminPanel = ({ stateDB }) => { 
-            const [activeTab, setActiveTab] = useState('states'); 
-            const [selectedState, setSelectedState] = useState('CA'); 
-            
+
+        const AdminPanel = ({ stateDB }) => {
+            const [activeTab, setActiveTab] = useState('states');
+            const [selectedState, setSelectedState] = useState('CA');
+
             return (
                 <div className="p-6 pb-24">
                     <div className="bg-red-50 border border-red-200 rounded p-4 mb-4"><h3 className="font-bold text-red-800">Admin Panel</h3></div>
@@ -1184,11 +2137,11 @@
                         <div className="bg-white p-4 rounded shadow border"><p>Curriculum Editor Placeholder</p></div>
                     )}
                 </div>
-            ); 
+            );
         };
 
         const App = () => {
-            const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('notary_user_profile')));
+            const [user, setUser] = useState(() => safeParse(localStorage.getItem('notary_user_profile'), null));
             const [currentView, setCurrentView] = useState(user ? 'dashboard' : 'landing');
             const [appointments, setAppointments] = useState([]);
             const [credentials, setCredentials] = useState([]);
@@ -1197,14 +2150,17 @@
             const [showPricing, setShowPricing] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
             const [showOnboarding, setShowOnboarding] = useState(false);
-            const [showAIModal, setShowAIModal] = useState(false); 
+            const [showAIModal, setShowAIModal] = useState(false);
+            const [showWhatsNew, setShowWhatsNew] = useState(() => !!user && !localStorage.getItem('notary_whats_new_seen_v2'));
+            const [quickJournalEntry, setQuickJournalEntry] = useState(null);
+            const [editingAppointment, setEditingAppointment] = useState(null);
 
             useEffect(() => {
                 DataManager.get('notary_appointments').then(setAppointments);
                 DataManager.get('notary_credentials').then(setCredentials);
                 if (user && !localStorage.getItem('notary_onboarded')) setShowOnboarding(true);
             }, [user]);
-            
+
             const handleUpdateProfile = (updatedData) => {
                 const newUser = { ...user, ...updatedData };
                 setUser(newUser);
@@ -1217,6 +2173,7 @@
                 setUser(profile);
                 setCurrentView('dashboard');
                 if (!localStorage.getItem('notary_onboarded')) setShowOnboarding(true);
+                if (!localStorage.getItem('notary_whats_new_seen_v2')) setShowWhatsNew(true);
                 showToast("Welcome Back!");
             };
 
@@ -1226,18 +2183,75 @@
                 setCurrentView('landing');
             };
 
-            const handleUpgrade = () => { const upgraded = { ...user, plan: 'pro' }; setUser(upgraded); localStorage.setItem('notary_user_profile', JSON.stringify(upgraded)); setShowPricing(false); showToast("Upgrade Successful!"); };
+            const handleUpgrade = (targetPlan = 'pro') => {
+                const upgraded = {
+                    ...user,
+                    plan: targetPlan,
+                    role: targetPlan === 'team' ? 'agency' : (user?.role || 'solo')
+                };
+                setUser(upgraded);
+                localStorage.setItem('notary_user_profile', JSON.stringify(upgraded));
+                setShowPricing(false);
+                showToast("Upgrade Successful!");
+            };
+
+            const handleOnboardingComplete = (selectedRole) => {
+                const nextUser = {
+                    ...(user || {}),
+                    role: selectedRole,
+                    plan: selectedRole === 'agency' ? ((user?.plan === 'team') ? 'team' : 'free') : (user?.plan || 'free')
+                };
+                setUser(nextUser);
+                localStorage.setItem('notary_user_profile', JSON.stringify(nextUser));
+                localStorage.setItem('notary_onboarded', 'true');
+                setShowOnboarding(false);
+                if (selectedRole === 'agency' && !hasFeatureAccess(nextUser, 'agency')) setShowPricing(true);
+            };
 
             const handleSaveAppt = async (appt) => {
                 await DataManager.save('notary_appointments', appt);
                 setAppointments(await DataManager.get('notary_appointments'));
+                setEditingAppointment(null);
                 setCurrentView('schedule');
                 showToast("Appointment Saved");
             };
-            
+
+            const handleEditAppointment = (appt) => {
+                setEditingAppointment(appt);
+                setCurrentView('addAppointment');
+            };
+
+            const handleMarkPaid = async (appt) => {
+                const updated = { ...appt, status: 'Paid' };
+                await DataManager.save('notary_appointments', updated);
+                await DataManager.save('notary_journal', {
+                    id: `pay-${updated.id}`,
+                    date: new Date().toISOString().split('T')[0],
+                    signer: updated.clientName,
+                    docType: `Payment • ${updated.type || 'Notary Service'}`,
+                    fee: updated.fee
+                });
+                setAppointments(await DataManager.get('notary_appointments'));
+                showToast("Payment Recorded");
+            };
+
+            const handleGenerateInvoice = (appt) => {
+                PDFGenerator.createInvoice(appt, user);
+            };
+
+            const handleQuickJournal = (appt) => {
+                setQuickJournalEntry({
+                    date: appt.date || new Date().toISOString().split('T')[0],
+                    signer: appt.clientName || '',
+                    docType: appt.type || 'Notary Service',
+                    fee: appt.fee || ''
+                });
+                setCurrentView('journal');
+            };
+
             const handleRefresh = async () => {
                  setAppointments(await DataManager.get('notary_appointments'));
-                 setCredentials(await DataManager.get('notary_credentials')); 
+                 setCredentials(await DataManager.get('notary_credentials'));
             };
 
             const renderView = () => {
@@ -1245,13 +2259,15 @@
                     case 'landing': return <LandingPage onNavigate={() => setCurrentView('auth')} />;
                     case 'auth': return <AuthScreen onAuth={handleLogin} onBack={() => setCurrentView('landing')} />;
                     case 'dashboard': return <Dashboard appointments={appointments} credentials={credentials} setView={setCurrentView} isCloud={isCloudConnected} />;
-                    case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} />;
-                    case 'addAppointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => setCurrentView('schedule')} />;
+                    case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onMarkPaid={handleMarkPaid} onGenerateInvoice={handleGenerateInvoice} onQuickJournal={handleQuickJournal} onEditAppointment={handleEditAppointment} user={user} />;
+                    case 'addAppointment': return <AppointmentForm initialData={editingAppointment} onSave={handleSaveAppt} onCancel={() => { setEditingAppointment(null); setCurrentView('schedule'); }} />;
                     case 'clients': return <Clients />;
-                    case 'journal': return <Journal user={user} onUpgrade={()=>{}} />;
+                    case 'portal': return hasFeatureAccess(user, 'portal') ? <ClientPortal user={user} appointments={appointments} /> : <div className="p-6"><EmptyState icon="fa-door-open" title="Client Portal is a Pro feature" description="Upgrade to Pro to enable secure client logins and e-sign workflows." actionLabel="Upgrade" onAction={() => setShowPricing(true)} colorClass="text-cyan-600" bgClass="bg-cyan-50" /></div>;
+                    case 'journal': return <Journal user={user} onUpgrade={() => setShowPricing(true)} quickEntry={quickJournalEntry} onQuickEntryUsed={() => setQuickJournalEntry(null)} />;
                     case 'finances': return <Finances />;
                     case 'credentials': return <Credentials onUpdate={handleRefresh} />;
-                    case 'trainer': return <TrainerModule stateDB={STATE_DATABASE} courseMods={COURSE_MODULES} user={user} onUpgrade={()=>{}} />;
+                    case 'agency': return hasFeatureAccess(user, 'agency') ? <AgencyManagement appointments={appointments} /> : <div className="p-6"><EmptyState icon="fa-building" title="Team Mode requires Team plan" description="Upgrade to Team to manage multiple notaries and assignments." actionLabel="Upgrade" onAction={() => setShowPricing(true)} colorClass="text-sky-600" bgClass="bg-sky-50" /></div>;
+                    case 'trainer': return hasFeatureAccess(user, 'trainer') ? <TrainerModule stateDB={STATE_DATABASE} courseMods={COURSE_MODULES} user={user} onUpgrade={()=>setShowPricing(true)} /> : <div className="p-6"><EmptyState icon="fa-robot" title="AI Trainer is a Pro feature" description="Upgrade to Pro for compliance coaching and simulations." actionLabel="Upgrade" onAction={() => setShowPricing(true)} colorClass="text-indigo-600" bgClass="bg-indigo-50" /></div>;
                     case 'admin': return <AdminPanel stateDB={STATE_DATABASE} onUpdateStateDB={()=>{}} />;
                     default: return <div>Not found</div>;
                 }
@@ -1263,32 +2279,52 @@
             return (
                 <div className="flex h-screen overflow-hidden font-sans">
                     <ToastContainer />
-                    
+
                     {/* Hide FAB on Trainer Page to avoid overlap/redundancy */}
                     {currentView !== 'trainer' && (
                         <button onClick={() => setShowAIModal(true)} className="fab-ai bg-indigo-600 text-white w-14 h-14 rounded-full flex items-center justify-center shadow-2xl hover:bg-indigo-700 transition-transform transform hover:scale-110">
                             <i className="fas fa-robot text-2xl"></i>
                         </button>
                     )}
-                    
+
                     {showAIModal && <AIHelperModal onClose={() => setShowAIModal(false)} />}
                     {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={handleUpgrade} />}
                     {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} onSave={handleUpdateProfile} />}
-                    {showOnboarding && <OnboardingTour onComplete={() => { localStorage.setItem('notary_onboarded', 'true'); setShowOnboarding(false); }} />}
-                    
-                    <Sidebar 
-                        currentView={currentView} 
-                        setView={setCurrentView} 
-                        isOpen={showMobileMenu} 
-                        onClose={() => setShowMobileMenu(false)} 
-                        onLogout={handleLogout} 
-                        userName={user.name} 
-                        userPlan={user.plan} 
-                        onUpgrade={() => setShowPricing(true)} 
+                    {showOnboarding && <OnboardingTour onComplete={handleOnboardingComplete} />}
+                    {showWhatsNew && (
+                        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[92%] bg-white border border-blue-100 rounded-2xl shadow-xl p-4 font-sans">
+                            <div className="flex items-start justify-between gap-3">
+                                <div>
+                                    <p className="text-xs font-bold uppercase text-blue-600">What's New</p>
+                                    <p className="text-sm text-gray-600 mt-1">Payments, Client Portal, Smart Mileage, Audit Journal Capture, and Team Mode are now available by plan.</p>
+                                </div>
+                                <button onClick={() => { localStorage.setItem('notary_whats_new_seen_v2', 'true'); setShowWhatsNew(false); }} className="text-gray-400"><i className="fas fa-times"></i></button>
+                            </div>
+                        </div>
+                    )}
+
+                    <Sidebar
+                        currentView={currentView}
+                        setView={setCurrentView}
+                        isOpen={showMobileMenu}
+                        onClose={() => setShowMobileMenu(false)}
+                        onLogout={handleLogout}
+                        userName={user?.name}
+                        userPlan={user?.plan || 'free'}
+                        userRole={user?.role || 'solo'}
+                        onUpgrade={() => setShowPricing(true)}
                         onSettings={() => setShowSettings(true)}
                     />
                     <main className="flex-1 flex flex-col h-screen md:ml-64 relative bg-gray-50">
-                        <Header title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} isCloud={isCloudConnected} />
+                        <Header
+                            title={currentView.charAt(0).toUpperCase() + currentView.slice(1)}
+                            isCloud={isCloudConnected}
+                            onNotify={() => showToast("Notifications are working (demo).", "success")}
+                            onSyncNow={async () => {
+                                await handleRefresh();
+                                showToast(navigator.onLine ? "Sync complete" : "Saved offline. Will sync when online.", "success");
+                            }}
+                        />
                         <div className="flex-1 overflow-y-auto relative">{renderView()}</div>
                         <MobileNav currentView={currentView} setView={setCurrentView} onOpenMenu={() => setShowMobileMenu(true)} />
                     </main>
@@ -1297,7 +2333,11 @@
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(
+            <AppErrorBoundary>
+                <App />
+            </AppErrorBoundary>
+        );
     </script>
 </body>
 </html>
