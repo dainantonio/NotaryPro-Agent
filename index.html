@@ -145,6 +145,55 @@
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
+        class AppErrorBoundary extends React.Component {
+            constructor(props) {
+                super(props);
+                this.state = { hasError: false, errorMsg: '' };
+            }
+
+            static getDerivedStateFromError(error) {
+                return { hasError: true, errorMsg: error?.message || 'Unknown UI error' };
+            }
+
+            componentDidCatch(error, errorInfo) {
+                console.error('NotaryOS runtime crash:', error, errorInfo);
+            }
+
+            handleReset = () => {
+                try {
+                    localStorage.removeItem('notary_user_profile');
+                    localStorage.removeItem('notary_appointments');
+                    localStorage.removeItem('notary_clients');
+                    localStorage.removeItem('notary_credentials');
+                    localStorage.removeItem('notary_journal');
+                    localStorage.removeItem('notary_team');
+                    localStorage.removeItem('notary_assignments');
+                    localStorage.removeItem('notary_esignatures');
+                    localStorage.removeItem('notary_active_trip');
+                } catch (e) {
+                    console.error('Reset failed', e);
+                }
+                window.location.reload();
+            };
+
+            render() {
+                if (this.state.hasError) {
+                    return (
+                        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6 font-sans">
+                            <div className="max-w-md w-full bg-white border border-red-100 rounded-2xl shadow-lg p-6 text-center">
+                                <div className="w-14 h-14 mx-auto mb-3 rounded-full bg-red-50 text-red-600 grid place-items-center text-2xl"><i className="fas fa-triangle-exclamation"></i></div>
+                                <h2 className="text-xl font-bold text-slate-800 mb-2">App recovered from a crash</h2>
+                                <p className="text-sm text-slate-500 mb-4">We detected unstable local data or runtime state. You can reset local app data and reopen a stable session.</p>
+                                <p className="text-xs text-slate-400 mb-4">Error: {this.state.errorMsg}</p>
+                                <button onClick={this.handleReset} className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold">Reset to Stable Mode</button>
+                            </div>
+                        </div>
+                    );
+                }
+                return this.props.children;
+            }
+        }
+
         // --- TOAST CONTEXT ---
         window.addToastFn = null;
         const showToast = (msg, type = 'success') => { if (window.addToastFn) window.addToastFn(msg, type); };
@@ -2176,7 +2225,11 @@
         };
 
         const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
+        root.render(
+            <AppErrorBoundary>
+                <App />
+            </AppErrorBoundary>
+        );
     </script>
 </body>
 </html>
