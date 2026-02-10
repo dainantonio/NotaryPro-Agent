@@ -918,14 +918,29 @@
             </div>
         );
 
-        const Header = ({ title }) => (
-            <div className="bg-white border-b p-4 flex justify-between items-center z-20">
-                <h2 className="font-bold text-gray-800 text-lg">{title}</h2>
-                <div className="flex gap-3">
-                    <button className="text-gray-400"><i className="fas fa-bell"></i></button>
+        const Header = ({ title }) => {
+            const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
+            useEffect(() => {
+                const onOnline = () => setIsOnline(true);
+                const onOffline = () => setIsOnline(false);
+                window.addEventListener('online', onOnline);
+                window.addEventListener('offline', onOffline);
+                return () => {
+                    window.removeEventListener('online', onOnline);
+                    window.removeEventListener('offline', onOffline);
+                };
+            }, []);
+            return (
+                <div className="bg-white border-b p-4 flex justify-between items-center z-20">
+                    <h2 className="font-bold text-gray-800 text-lg">{title}</h2>
+                    <div className="flex gap-2 items-center">
+                        <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100"><i className="fas fa-shield-alt"></i> Trusted Workflow</span>
+                        <span className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full border ${isOnline ? 'bg-blue-50 text-blue-700 border-blue-100' : 'bg-amber-50 text-amber-700 border-amber-100'}`}><i className={`fas ${isOnline ? 'fa-cloud' : 'fa-cloud-slash'}`}></i>{isOnline ? 'Sync Online' : 'Offline Mode'}</span>
+                        <button className="text-gray-400"><i className="fas fa-bell"></i></button>
+                    </div>
                 </div>
-            </div>
-        );
+            );
+        };
 
         // --- CORE MODULES ---
         
@@ -1450,7 +1465,7 @@
             );
         };
 
-        const Journal = ({ user, onUpgrade }) => {
+        const Journal = ({ user, onUpgrade, quickEntry, onQuickEntryUsed }) => {
             const [entries, setEntries] = useState([]);
             const [showForm, setShowForm] = useState(false);
             const [idCapture, setIdCapture] = useState(null);
