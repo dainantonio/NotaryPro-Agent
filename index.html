@@ -1015,7 +1015,7 @@
                                                 <div className="space-y-3">
                                                     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                                                         <p className="text-xs text-gray-500">April Revenue</p>
-                                                        <p className="text-2xl font-extrabold text-gray-800 mt-1">$3,420</p>
+                                                        <p className="text-2xl font-bold text-gray-800 mt-1">$3,420</p>
                                                         <div className="text-[11px] text-emerald-600 mt-1 font-semibold"><i className="fas fa-arrow-up"></i> 18% vs last month</div>
                                                     </div>
                                                     <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between border-l-4 border-l-emerald-500">
@@ -1294,7 +1294,7 @@
                                 colorClass="text-pink-600"
                                 bgClass="bg-pink-50"
                             />
-                        ) : clients.map(c => <div key={c.id} className="bg-white p-3 rounded shadow"><div className="flex justify-between items-start"><div><b>{c.name}</b><p className="text-sm text-gray-500">{c.phone}</p></div><div className="flex gap-2"><button onClick={() => { setEditingClient(c); setShowForm(true); }} className="text-blue-600 text-xs font-semibold">Edit</button><button onClick={() => handleDelete(c.id)} className="text-red-500"><i className="fas fa-trash"></i></button></div></div></div>)}
+                        ) : clients.map(c => <div key={c.id} className="bg-white p-3 rounded shadow"><div className="flex justify-between items-start"><div><b>{c.name}</b><p className="text-sm text-gray-500">{c.phone}</p></div><div className="flex gap-2"><button onClick={() => { setEditingClient(c); setShowForm(true); }} className="text-blue-600 hover:text-blue-800 transition-colors"><i className="fas fa-edit"></i></button><button onClick={() => handleDelete(c.id)} className="text-red-400 hover:text-red-600 transition-colors"><i className="fas fa-trash"></i></button></div></div></div>)}
                     </div>
                 </div>
             );
@@ -1457,7 +1457,7 @@
             );
         };
 
-        const Schedule = ({ appointments, setView, onMarkPaid }) => {
+        const Schedule = ({ appointments, setView, onMarkPaid, onEdit, onAdd }) => {
             const [viewMode, setViewMode] = useState('list');
             const [paymentTarget, setPaymentTarget] = useState(null);
             const safeAppointments = Array.isArray(appointments) ? appointments : [];
@@ -1475,19 +1475,38 @@
 
                 const dateKey = (d) => `${year}-${String(month + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                 return (
-                    <div className="bg-white p-4 rounded-2xl shadow border border-gray-100">
+                    <div className="bg-white p-4 rounded-2xl shadow border border-gray-100 select-none">
                         <div className="grid grid-cols-7 gap-2 text-center text-xs font-bold text-gray-400 mb-2">
                             {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => <div key={d}>{d}</div>)}
                         </div>
                         <div className="grid grid-cols-7 gap-2">
                             {cells.map((day, idx) => {
-                                if (!day) return <div key={`blank-${idx}`} className="h-20 rounded-lg bg-gray-50"></div>;
-                                const dayEvents = safeAppointments.filter(a => a.date === dateKey(day));
+                                if (!day) return <div key={`blank-${idx}`} className="h-24 rounded-lg bg-gray-50/50"></div>;
+                                const dateStr = dateKey(day);
+                                const dayEvents = safeAppointments.filter(a => a.date === dateStr);
+                                const isToday = new Date().toISOString().split('T')[0] === dateStr;
                                 return (
-                                    <div key={day} className="h-20 rounded-lg border border-gray-100 p-2 overflow-hidden bg-white">
-                                        <div className="text-xs font-bold text-gray-700">{day}</div>
-                                        {dayEvents.slice(0,2).map(ev => <div key={ev.id} className="text-[10px] mt-1 truncate text-blue-600">• {ev.clientName}</div>)}
-                                        {dayEvents.length > 2 && <div className="text-[10px] text-gray-400">+{dayEvents.length - 2} more</div>}
+                                    <div 
+                                        key={day} 
+                                        onClick={() => onAdd(dateStr)}
+                                        className={`h-24 rounded-lg border p-1 overflow-hidden transition-colors cursor-pointer hover:bg-blue-50/50 relative group ${isToday ? 'border-blue-300 bg-blue-50' : 'border-gray-100 bg-white'}`}
+                                    >
+                                        <div className={`text-xs font-bold mb-1 ${isToday ? 'text-blue-600' : 'text-gray-700'}`}>{day}</div>
+                                        <div className="space-y-1 overflow-y-auto h-16 scrollbar-hide">
+                                            {dayEvents.map(ev => (
+                                                <div 
+                                                    key={ev.id} 
+                                                    onClick={(e) => { e.stopPropagation(); onEdit(ev); }}
+                                                    className="text-[10px] bg-blue-100 text-blue-800 px-1 py-0.5 rounded truncate hover:bg-blue-200 transition-colors"
+                                                    title={ev.clientName}
+                                                >
+                                                    {ev.time} {ev.clientName}
+                                                </div>
+                                            ))}
+                                        </div>
+                                        <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <i className="fas fa-plus-circle text-blue-400 text-xs"></i>
+                                        </div>
                                     </div>
                                 );
                             })}
@@ -1501,8 +1520,8 @@
                     {viewMode === 'calendar' ? <CalendarView /> : (
                         <div className="space-y-3">
                             {safeAppointments.length === 0 ? <EmptyState icon="fa-calendar-alt" title="Schedule Empty" description="Add your first signing." actionLabel="Add" onAction={() => setView('addAppointment')} colorClass="text-green-600" bgClass="bg-green-50" /> : safeAppointments.sort((a,b) => new Date(a.date) - new Date(b.date)).map(job => (
-                                <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                                    <div onClick={() => {}} className="cursor-pointer">
+                                <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm relative group">
+                                    <div className="cursor-pointer" onClick={() => onEdit(job)}>
                                         <div className="flex justify-between items-start mb-2">
                                             <div>
                                                 <span className="text-xs font-bold text-gray-400 uppercase">{job.type}</span>
@@ -1515,12 +1534,18 @@
                                             <div className="text-right font-bold text-gray-800">${job.fee}</div>
                                         </div>
                                     </div>
-                                    {job.status !== 'Paid' && (
-                                        <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
-                                            <span className="text-xs font-semibold text-slate-400 uppercase">Payment</span>
+                                    
+                                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 text-sm">
+                                        {job.status !== 'Paid' ? (
                                             <button onClick={() => setPaymentTarget(job)} className="bg-emerald-600 text-white px-3 py-2 rounded-lg text-xs font-semibold">Take Payment</button>
+                                        ) : (
+                                            <span className="text-xs font-bold text-emerald-600"><i className="fas fa-check-circle"></i> Paid</span>
+                                        )}
+                                        <div className="flex gap-2 ml-auto">
+                                            <button onClick={() => onEdit(job)} className="text-blue-500 hover:text-blue-700 p-2"><i className="fas fa-edit"></i></button>
+                                            <button onClick={() => {}} className="text-red-400 hover:text-red-600 p-2"><i className="fas fa-trash"></i></button>
                                         </div>
-                                    )}
+                                    </div>
                                 </div>
                             ))}
                         </div>
@@ -2286,7 +2311,7 @@
                                 colorClass="text-orange-600"
                                 bgClass="bg-orange-50"
                             />
-                        ) : creds.map(c => <div key={c.id} className="bg-white p-3 rounded shadow flex justify-between"><div><b>{c.name}</b><br/><span className="text-sm text-gray-500">{c.expiry}</span></div><div className="flex gap-2"><button onClick={() => { setEditingCred(c); setShowForm(true); }} className="text-blue-600 text-xs font-semibold">Edit</button><button onClick={()=>handleDelete(c.id)} className="text-red-500">Delete</button></div></div>)}
+                        ) : creds.map(c => <div key={c.id} className="bg-white p-3 rounded shadow flex justify-between"><div><b>{c.name}</b><br/><span className="text-sm text-gray-500">{c.expiry}</span></div><div className="flex gap-2"><button onClick={() => { setEditingCred(c); setShowForm(true); }} className="text-blue-600 hover:text-blue-800 transition-colors"><i className="fas fa-edit"></i></button><button onClick={()=>handleDelete(c.id)} className="text-red-400 hover:text-red-600 transition-colors"><i className="fas fa-trash"></i></button></div></div>)}
                     </div>
                 </div>
             );
@@ -2393,6 +2418,7 @@
             const [showWelcomeTour, setShowWelcomeTour] = useState(false);
             const [showAIModal, setShowAIModal] = useState(false); 
             const [showWhatsNew, setShowWhatsNew] = useState(() => !!user && !localStorage.getItem('notary_whats_new_seen_v2'));
+            const [editingAppointment, setEditingAppointment] = useState(null);
             const theme = 'default';
 
             useEffect(() => {
@@ -2476,7 +2502,18 @@
                 await DataManager.save('notary_appointments', appt);
                 setAppointments(await DataManager.get('notary_appointments'));
                 setCurrentView('schedule');
+                setEditingAppointment(null);
                 showToast("Appointment Saved");
+            };
+            
+            const handleEditAppt = (appt) => {
+                setEditingAppointment(appt);
+                setCurrentView('addAppointment');
+            };
+            
+            const handleAddApptWithDate = (dateStr) => {
+                setEditingAppointment({ date: dateStr });
+                setCurrentView('addAppointment');
             };
 
             const handleMarkPaid = async (appt) => {
@@ -2498,12 +2535,10 @@
                  setCredentials(await DataManager.get('notary_credentials'));
             };
 
-            // FIX: Added missing handleNotify function to prevent ReferenceError
             const handleNotify = () => {
                 showToast("No new notifications", "success");
             };
 
-            // FIX: Added missing handleSyncNow function to prevent ReferenceError
             const handleSyncNow = async () => {
                 showToast("Syncing data...");
                 await handleRefresh();
@@ -2515,8 +2550,8 @@
                     case 'landing': return <LandingPage onNavigate={() => setCurrentView('auth')} />;
                     case 'auth': return <AuthScreen onAuth={handleLogin} onBack={() => setCurrentView('landing')} />;
                     case 'dashboard': return <Dashboard appointments={appointments} credentials={credentials} setView={setCurrentView} isCloud={isCloudConnected} />;
-                    case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onMarkPaid={handleMarkPaid} />;
-                    case 'addAppointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => setCurrentView('schedule')} />;
+                    case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onMarkPaid={handleMarkPaid} onEdit={handleEditAppt} onAdd={handleAddApptWithDate} />;
+                    case 'addAppointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => { setEditingAppointment(null); setCurrentView('schedule'); }} initialData={editingAppointment} />;
                     case 'clients': return <Clients />;
                     case 'portal': return <ClientPortal user={user} appointments={appointments} />;
                     case 'journal': return <Journal user={user} onUpgrade={()=>{}} />;
