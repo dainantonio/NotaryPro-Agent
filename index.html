@@ -71,30 +71,6 @@
             --accent-soft: #e0e7ff;
         }
 
-        body[data-theme='midnight'] {
-            --app-bg: #020617;
-            --surface-bg: #0f172a;
-            --surface-muted: #1e293b;
-            --text-primary: #e2e8f0;
-            --text-muted: #94a3b8;
-            --border-color: #334155;
-            --accent-color: #38bdf8;
-            --accent-hover: #0ea5e9;
-            --accent-soft: #082f49;
-        }
-
-        body[data-theme='sunset'] {
-            --app-bg: #fff7ed;
-            --surface-bg: #fffbeb;
-            --surface-muted: #ffedd5;
-            --text-primary: #7c2d12;
-            --text-muted: #9a3412;
-            --border-color: #fdba74;
-            --accent-color: #ea580c;
-            --accent-hover: #c2410c;
-            --accent-soft: #fed7aa;
-        }
-
         body { font-family: 'Merriweather', serif; background-color: var(--app-bg); color: var(--text-primary); transition: background-color .25s ease, color .25s ease; }
         h1, h2, h3, h4, h5, h6, button, .font-sans { font-family: 'Poppins', sans-serif; }
 
@@ -195,6 +171,44 @@
 
         .phone-flow-track {
             width: max-content;
+        }
+
+        .phone-flow-card {
+            transition: transform 0.3s ease, opacity 0.3s ease, filter 0.3s ease;
+        }
+
+        .phone-flow-card {
+            transform: scale(0.92);
+            opacity: 0.78;
+            filter: saturate(0.8);
+        }
+
+        .phone-flow-card:first-child {
+            transform: scale(1);
+            opacity: 1;
+            filter: saturate(1);
+        }
+
+        @media (min-width: 768px) {
+            .phone-flow-carousel {
+                overflow: visible;
+                cursor: default;
+                user-select: auto;
+                touch-action: auto;
+            }
+
+            .phone-flow-track {
+                width: 100%;
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 1rem;
+            }
+
+            .phone-flow-card {
+                transform: none;
+                opacity: 1;
+                filter: none;
+            }
         }
 
         /* Notary Gold Accent */
@@ -922,18 +936,18 @@
 
                     {/* Mobile-First Demo Section - Alternating Background: Dark Slate 900 */}
                     <div className="py-24 bg-slate-900 w-full border-t border-slate-800 font-sans">
-                        <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
-                            <div className="order-2 md:order-1">
+                        <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-[1.2fr_1fr] gap-16 items-center">
+                            <div className="order-2 lg:order-1">
                                 <div 
                                     ref={carouselRef}
-                                    className="phone-flow-carousel overflow-x-auto scrollbar-hide pb-3 -mx-2 px-2 snap-x snap-mandatory"
+                                    className="phone-flow-carousel overflow-x-auto scrollbar-hide pb-3 -mx-2 px-8 md:px-0 snap-x snap-mandatory"
                                     onMouseDown={onMouseDown}
                                     onMouseMove={onMouseMove}
                                     onMouseUp={onMouseUp}
                                     onMouseLeave={onMouseLeave}
                                 >
                                     <div className="phone-flow-track flex gap-5">
-                                        <div className="phone-mockup min-w-[280px] w-[280px] h-[560px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
+                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4 relative">
                                                 <div className="flex justify-between items-center mb-6">
@@ -961,7 +975,7 @@
                                             </div>
                                         </div>
 
-                                        <div className="phone-mockup min-w-[280px] w-[280px] h-[560px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
+                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4">
                                                 <div className="flex justify-between items-center mb-6">
@@ -991,7 +1005,7 @@
                                             </div>
                                         </div>
 
-                                        <div className="phone-mockup min-w-[280px] w-[280px] h-[560px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
+                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4">
                                                 <div className="flex justify-between items-center mb-6">
@@ -1023,9 +1037,9 @@
                                         </div>
                                     </div>
                                 </div>
-                                <p className="text-xs text-slate-400 mt-3 text-center md:text-left">Swipe on mobile or drag/click on desktop to preview the complete mobile workflow.</p>
+                                <p className="text-xs text-slate-400 mt-3 text-center md:text-left">Swipe on mobile to focus each screen, or view all 3 at once on larger displays.</p>
                             </div>
-                            <div className="order-1 md:order-2">
+                            <div className="order-1 lg:order-2">
                                 <h3 className="text-3xl font-bold text-white mb-6">Run your business from your pocket.</h3>
                                 <p className="text-slate-400 text-lg mb-8 leading-relaxed">
                                     From booking to signature capture to final payout, NotaryOS mirrors how real mobile appointments happen. Start with your daily schedule, complete ID/journal checks at the table, then send and track payment before you drive to the next stop.
@@ -1211,25 +1225,6 @@
                 <button onClick={onOpenMenu}><i className="fas fa-bars text-slate-400 text-lg"></i></button>
             </div>
         );
-
-        const ThemeToggle = ({ theme, setTheme }) => {
-            const themes = [
-                { value: 'default', label: 'Classic' },
-                { value: 'midnight', label: 'Midnight' },
-                { value: 'sunset', label: 'Sunset' }
-            ];
-
-            return (
-                <div className="fixed top-4 right-4 z-50">
-                    <div className="theme-surface theme-border border rounded-xl shadow-md px-3 py-2">
-                        <label htmlFor="theme-select" className="text-[10px] font-bold uppercase tracking-wide theme-text-muted">Theme</label>
-                        <select id="theme-select" value={theme} onChange={e => setTheme(e.target.value)} className="mt-1 text-xs theme-surface theme-text theme-border border rounded-lg px-2 py-1 focus:outline-none">
-                            {themes.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-                        </select>
-                    </div>
-                </div>
-            );
-        };
 
         const Header = ({ title, onNotify, onSyncNow }) => {
             const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -2398,7 +2393,7 @@
             const [showWelcomeTour, setShowWelcomeTour] = useState(false);
             const [showAIModal, setShowAIModal] = useState(false); 
             const [showWhatsNew, setShowWhatsNew] = useState(() => !!user && !localStorage.getItem('notary_whats_new_seen_v2'));
-            const [theme, setTheme] = useState(() => localStorage.getItem('notary_theme') || 'default');
+            const theme = 'default';
 
             useEffect(() => {
                 DataManager.get('notary_appointments').then(setAppointments);
@@ -2419,7 +2414,6 @@
 
             useEffect(() => {
                 document.body.setAttribute('data-theme', theme);
-                localStorage.setItem('notary_theme', theme);
             }, [theme]);
 
             const handleUpdateProfile = (updatedData) => {
@@ -2535,13 +2529,12 @@
                 }
             };
 
-            if (!user && currentView !== 'landing' && currentView !== 'auth') { return <><ThemeToggle theme={theme} setTheme={setTheme} /><LandingPage onNavigate={() => setCurrentView('auth')} /></>; }
-            if (currentView === 'landing' || currentView === 'auth') return <><ThemeToggle theme={theme} setTheme={setTheme} />{renderView()}</>;
+            if (!user && currentView !== 'landing' && currentView !== 'auth') { return <LandingPage onNavigate={() => setCurrentView('auth')} />; }
+            if (currentView === 'landing' || currentView === 'auth') return renderView();
 
             return (
                 <div className="flex h-screen overflow-hidden font-sans theme-app-bg">
                     <ToastContainer />
-                    <ThemeToggle theme={theme} setTheme={setTheme} />
 
                     {/* Hide FAB on Trainer Page to avoid overlap/redundancy */}
                     {currentView !== 'trainer' && (
