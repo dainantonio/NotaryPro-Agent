@@ -6,7 +6,7 @@
     <title>NotaryOS</title>
     
     <!-- PWA Configuration -->
-    <meta name="theme-color" content="#f8fafc">
+    <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="NotaryOS">
@@ -19,8 +19,8 @@
         "short_name": "NotaryOS",
         "start_url": ".",
         "display": "standalone",
-        "background_color": "#f8fafc",
-        "theme_color": "#f8fafc",
+        "background_color": "#0f172a",
+        "theme_color": "#0f172a",
         "orientation": "portrait",
         "icons": [{
             "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%234f46e5%22 rx=%2220%22/><text x=%2250%22 y=%2250%22 font-size=%2250%22 text-anchor=%22middle%22 dy=%22.35em%22>📜</text></svg>",
@@ -93,19 +93,29 @@
 
     <style>
         :root {
-            --app-bg: #f8fafc;
+            --app-bg: #f1f5f9;
             --surface-bg: #ffffff;
-            --surface-muted: #eef2ff;
+            --surface-muted: #e8eef7;
             --text-primary: #0f172a;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --accent-color: #4f46e5;
-            --accent-hover: #4338ca;
-            --accent-soft: #e0e7ff;
+            --text-muted: #475569;
+            --border-color: #dbe4ef;
+            --accent-color: #1d4ed8;
+            --accent-hover: #1e40af;
+            --accent-soft: #dbeafe;
+            --trust-ink: #0b1b3a;
         }
 
-        body { font-family: 'Merriweather', serif; background-color: var(--app-bg); color: var(--text-primary); transition: background-color .25s ease, color .25s ease; }
-        h1, h2, h3, h4, h5, h6, button, .font-sans { font-family: 'Poppins', sans-serif; }
+        body {
+            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+            background:
+                radial-gradient(circle at 8% -20%, rgba(37, 99, 235, 0.12), transparent 45%),
+                radial-gradient(circle at 95% -15%, rgba(15, 23, 42, 0.08), transparent 35%),
+                var(--app-bg);
+            color: var(--text-primary);
+            transition: background-color .25s ease, color .25s ease;
+            letter-spacing: 0.01em;
+        }
+        h1, h2, h3, h4, h5, h6, button, .font-sans { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; }
 
         .theme-app-bg { background-color: var(--app-bg) !important; }
         .theme-surface { background-color: var(--surface-bg) !important; }
@@ -116,6 +126,37 @@
         .theme-accent-btn { background-color: var(--accent-color) !important; color: #fff !important; border: 1px solid transparent; }
         .theme-accent-btn:hover { background-color: var(--accent-hover) !important; }
         .theme-pill { background-color: var(--accent-soft) !important; color: var(--accent-color) !important; border-color: var(--accent-color) !important; }
+
+
+        .legal-glass {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.96));
+            border: 1px solid rgba(148, 163, 184, 0.26);
+            backdrop-filter: blur(12px);
+            box-shadow: 0 16px 34px rgba(15, 23, 42, 0.08);
+        }
+
+        .trust-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #1e3a8a;
+            border: 1px solid #bfdbfe;
+            padding: 0.32rem 0.72rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .cta-primary {
+            background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+            color: #fff;
+            border: 1px solid #1d4ed8;
+            box-shadow: 0 8px 20px rgba(30, 64, 175, 0.24);
+        }
+        .cta-primary:hover { filter: brightness(0.97); }
 
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
@@ -1534,17 +1575,33 @@
             const monthlyIncome = safeAppointments.filter(a => a.status === 'Paid').reduce((sum, a) => sum + parseFloat(a.fee || 0), 0);
 
             return (
-                <div className="p-6 space-y-6 pb-24">
+                <div className="p-4 md:p-6 space-y-5 pb-24">
+                    <div className="legal-glass rounded-2xl p-4 md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Operations Center</p>
+                            <h2 className="text-xl md:text-2xl font-semibold text-slate-900 mt-1">Secure Notary Workflow</h2>
+                            <p className="text-sm text-slate-600 mt-1">Monitor appointments, compliance, and payments in one trusted workspace.</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <span className="trust-pill"><i className="fas fa-shield-alt"></i> Compliance Ready</span>
+                            <span className="trust-pill"><i className="fas fa-lock"></i> Encrypted Cloud Sync</span>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden"><div className="absolute right-0 top-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4"></div><div className="relative"><div className="text-gray-500 text-xs font-bold uppercase mb-1">Monthly Income</div><div className="text-2xl font-bold text-gray-800">${monthlyIncome.toFixed(2)}</div>
+                        <div className="legal-glass p-5 rounded-2xl relative overflow-hidden"><div className="absolute right-0 top-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4"></div><div className="relative"><div className="text-slate-500 text-xs font-bold uppercase mb-1">Monthly Income</div><div className="text-2xl font-semibold text-slate-900">${monthlyIncome.toFixed(2)}</div>
                             <IncomeChart appointments={safeAppointments} />
                         </div></div>
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden"><div className="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4"></div><div className="relative"><div className="text-gray-500 text-xs font-bold uppercase mb-1">Today's Jobs</div><div className="text-2xl font-bold text-gray-800">{todaysJobs.length}</div></div></div>
-                        <div onClick={() => setView('credentials')} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50 relative overflow-hidden"><div className={`absolute right-0 top-0 w-24 h-24 rounded-bl-full -mr-4 -mt-4 ${expiringCreds.length > 0 ? 'bg-red-50' : 'bg-gray-50'}`}></div><div className="relative"><div className="text-gray-500 text-xs font-bold uppercase mb-1">Compliance Alerts</div><div className={`text-2xl font-bold ${expiringCreds.length > 0 ? 'text-red-600' : 'text-green-600'}`}>{expiringCreds.length}</div></div></div>
+                        <div className="legal-glass p-5 rounded-2xl relative overflow-hidden"><div className="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4"></div><div className="relative"><div className="text-slate-500 text-xs font-bold uppercase mb-1">Today's Jobs</div><div className="text-2xl font-semibold text-slate-900">{todaysJobs.length}</div><p className="text-sm text-slate-600 mt-2">Keep each signer informed with clear next-step updates.</p></div></div>
+                        <div onClick={() => setView('credentials')} className="legal-glass p-5 rounded-2xl cursor-pointer hover:bg-white/90 relative overflow-hidden"><div className={`absolute right-0 top-0 w-24 h-24 rounded-bl-full -mr-4 -mt-4 ${expiringCreds.length > 0 ? 'bg-red-50' : 'bg-slate-100'}`}></div><div className="relative"><div className="text-slate-500 text-xs font-bold uppercase mb-1">Compliance Alerts</div><div className={`text-2xl font-semibold ${expiringCreds.length > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{expiringCreds.length}</div><p className="text-sm text-slate-600 mt-2">Tap to review credentials and avoid service interruptions.</p></div></div>
                     </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-800 mb-4">Today's Agenda</h3>
-                        {todaysJobs.length === 0 ? <EmptyState icon="fa-calendar-day" title="No jobs today" description="Schedule clear. Good day for marketing or training!" actionLabel="Add Job" onAction={() => setView('addAppointment')} colorClass="text-blue-600" bgClass="bg-blue-50" /> : <div className="space-y-3">{todaysJobs.map(j => <div key={j.id} className="bg-white p-4 rounded shadow">{j.clientName}</div>)}</div>}
+
+                    <div className="legal-glass rounded-2xl p-4 md:p-5">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                            <h3 className="text-lg font-semibold text-slate-900">Today's Agenda</h3>
+                            <button onClick={() => setView('addAppointment')} className="cta-primary px-4 py-2 rounded-lg text-sm font-semibold w-full sm:w-auto">Create Appointment</button>
+                        </div>
+                        {todaysJobs.length === 0 ? <EmptyState icon="fa-calendar-day" title="No jobs today" description="Schedule clear. Good day for outreach, training, or compliance prep." actionLabel="Add Job" onAction={() => setView('addAppointment')} colorClass="text-blue-700" bgClass="bg-blue-50" /> : <div className="space-y-3">{todaysJobs.map(j => <div key={j.id} className="bg-white/90 p-4 rounded-xl border border-slate-200"><p className="font-semibold text-slate-900">{j.clientName}</p><p className="text-sm text-slate-600 mt-1">{j.time} • {j.type || 'General Notarization'}</p></div>)}</div>}
                     </div>
                 </div>
             );
