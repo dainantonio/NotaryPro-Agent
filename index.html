@@ -1235,17 +1235,14 @@
         const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout, userName, userPlan, userRole, onSettings, onUpgrade }) => {
             const [isCollapsed, setIsCollapsed] = useState(false);
             const [canInstall, setCanInstall] = useState(false);
+            const touchStart = useRef(0);
             
             useEffect(() => {
                 const checkInstall = () => {
-                    // Check if prompt was captured
                     if (window.deferredPrompt) setCanInstall(true);
                 };
-                
                 window.addEventListener('pwa-ready', checkInstall);
-                // Also check immediately in case it fired before render
                 if (window.deferredPrompt) setCanInstall(true);
-                
                 return () => window.removeEventListener('pwa-ready', checkInstall);
             }, []);
 
@@ -1257,6 +1254,18 @@
                     setCanInstall(false);
                 }
                 window.deferredPrompt = null;
+            };
+
+            const handleTouchStart = (e) => {
+                touchStart.current = e.targetTouches[0].clientX;
+            };
+
+            const handleTouchMove = (e) => {
+                const touchEnd = e.targetTouches[0].clientX;
+                // If swipe left more than 50px
+                if (touchStart.current - touchEnd > 50) {
+                    onClose();
+                }
             };
 
             const menuItems = [
@@ -1274,18 +1283,22 @@
 
             return (
                 <>
-                    <div className={`fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden ${isOpen ? 'block' : 'hidden'}`} onClick={onClose}></div>
-                    <div className={`fixed inset-y-0 left-0 bg-slate-900 text-white z-50 transform transition-all duration-300 ease-in-out lg:static lg:flex lg:flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${isCollapsed ? 'w-20' : 'w-64'} lg:translate-x-0`}>
+                    <div className={`fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
+                    <div 
+                        className={`fixed inset-y-0 left-0 bg-slate-900 text-white z-50 transform transition-transform duration-300 ease-in-out lg:static lg:flex lg:flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${isCollapsed ? 'w-20' : 'w-64'} lg:translate-x-0 shadow-2xl lg:shadow-none`}
+                        onTouchStart={handleTouchStart}
+                        onTouchMove={handleTouchMove}
+                    >
                         <div className="p-4 flex justify-between items-center border-b border-slate-700 h-16">
                             {!isCollapsed && <span className="font-bold text-xl">NotaryOS</span>}
                             <button onClick={() => setIsCollapsed(!isCollapsed)} className="hidden lg:block text-gray-400 hover:text-white"><i className={`fas ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'}`}></i></button>
-                            <button onClick={onClose} className="lg:hidden text-gray-400"><i className="fas fa-times"></i></button>
+                            <button onClick={onClose} className="lg:hidden text-gray-400 p-2"><i className="fas fa-times text-xl"></i></button>
                         </div>
                         <nav className="flex-1 p-2 space-y-2 overflow-y-auto">
                             {menuItems.map(item => {
                                 const locked = item.access && !hasFeatureAccess({ plan: userPlan, role: userRole }, item.access);
                                 return (
-                                    <button key={item.id} onClick={() => { if (locked) onUpgrade(); else { setView(item.id); onClose(); } }} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors hover:bg-slate-800 ${currentView === item.id ? 'bg-blue-600 text-white' : 'text-gray-400'} ${isCollapsed ? 'justify-center' : ''}`} title={locked ? `${item.label} (Upgrade required)` : item.label}>
+                                    <button key={item.id} onClick={() => { if (locked) onUpgrade(); else { setView(item.id); onClose(); } }} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all active:scale-95 active:bg-slate-800 ${currentView === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-gray-400 hover:bg-slate-800 hover:text-white'} ${isCollapsed ? 'justify-center' : ''}`} title={locked ? `${item.label} (Upgrade required)` : item.label}>
                                             <i className={`fas ${item.icon} text-lg ${currentView !== item.id ? item.color : ''}`}></i>
                                             {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
                                             {!isCollapsed && locked && <i className="fas fa-lock text-[10px] ml-auto text-amber-300"></i>}
@@ -1295,12 +1308,12 @@
                         </nav>
                         <div className="p-4 border-t border-slate-700 space-y-2">
                              {canInstall && (
-                                <button onClick={handleInstall} className={`w-full flex items-center gap-3 px-3 py-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-lg shadow-lg hover:shadow-pink-500/20 transition-all group ${isCollapsed ? 'justify-center' : ''}`}>
+                                <button onClick={handleInstall} className={`w-full flex items-center gap-3 px-3 py-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-lg shadow-lg hover:shadow-pink-500/20 transition-all active:scale-95 group ${isCollapsed ? 'justify-center' : ''}`}>
                                     <i className="fas fa-download"></i>
                                     {!isCollapsed && <span className="text-xs font-bold">Install App</span>}
                                 </button>
                              )}
-                             <button onClick={onSettings} className={`w-full flex items-center gap-3 px-3 py-2 hover:bg-slate-800 rounded transition-colors group ${isCollapsed ? 'justify-center' : ''}`}>
+                             <button onClick={onSettings} className={`w-full flex items-center gap-3 px-3 py-2 hover:bg-slate-800 rounded transition-colors active:scale-95 group ${isCollapsed ? 'justify-center' : ''}`}>
                                 <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-blue-300 flex-shrink-0">{userName ? userName.substring(0,2).toUpperCase() : 'US'}</div>
                                 {!isCollapsed && (
                                     <div className="flex-1 overflow-hidden text-left">
@@ -1310,27 +1323,27 @@
                                 )}
                                 {!isCollapsed && <i className="fas fa-cog text-slate-500 group-hover:text-white ml-auto"></i>}
                             </button>
-                             <button onClick={onLogout} className={`w-full flex items-center gap-2 text-red-400 hover:text-white ${isCollapsed ? 'justify-center' : ''}`}><i className="fas fa-sign-out-alt"></i> {!isCollapsed && "Logout"}</button>
+                             <button onClick={onLogout} className={`w-full flex items-center gap-2 text-red-400 hover:text-white active:scale-95 ${isCollapsed ? 'justify-center' : ''}`}><i className="fas fa-sign-out-alt"></i> {!isCollapsed && "Logout"}</button>
                         </div>
                     </div>
                 </>
             );
         };
 
-        const MobileNav = ({ setView, onOpenMenu }) => (
-            <div className="md:hidden fixed bottom-0 w-full bg-white/70 border-t border-slate-200/70 p-2 flex justify-around z-30 safe-area-pb shadow-sm backdrop-blur">
-                <button onClick={() => setView('dashboard')}><i className="fas fa-home text-slate-400 text-lg"></i></button>
-                <button onClick={() => setView('schedule')}><i className="fas fa-calendar-alt text-slate-400 text-lg"></i></button>
+        const MobileNav = ({ setView }) => (
+            <div className="md:hidden fixed bottom-0 w-full bg-white/90 border-t border-slate-200/70 p-2 flex justify-around z-30 safe-area-pb shadow-lg backdrop-blur-md">
+                <button onClick={() => setView('dashboard')} className="p-2 active:scale-90 transition-transform"><i className="fas fa-home text-slate-400 text-xl"></i></button>
+                <button onClick={() => setView('schedule')} className="p-2 active:scale-90 transition-transform"><i className="fas fa-calendar-alt text-slate-400 text-xl"></i></button>
                 
                 {/* IMPROVED FAB/ADD BUTTON FOR MOBILE */}
-                <button onClick={() => setView('addAppointment')} className="-mt-8 bg-blue-600 text-white rounded-full p-4 shadow-xl border-4 border-white active:scale-95 transition-transform"><i className="fas fa-plus text-2xl"></i></button>
+                <button onClick={() => setView('addAppointment')} className="-mt-8 bg-blue-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-xl border-4 border-white active:scale-90 transition-transform active:bg-blue-700"><i className="fas fa-plus text-2xl"></i></button>
                 
-                <button onClick={() => setView('trainer')}><i className="fas fa-robot text-slate-400 text-lg"></i></button>
-                <button onClick={onOpenMenu}><i className="fas fa-bars text-slate-400 text-lg"></i></button>
+                <button onClick={() => setView('journal')} className="p-2 active:scale-90 transition-transform"><i className="fas fa-book text-slate-400 text-xl"></i></button>
+                <button onClick={() => setView('trainer')} className="p-2 active:scale-90 transition-transform"><i className="fas fa-robot text-slate-400 text-xl"></i></button>
             </div>
         );
 
-        const Header = ({ title, onNotify, onSyncNow }) => {
+        const Header = ({ title, onNotify, onSyncNow, onOpenMenu }) => {
             const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
             useEffect(() => {
                 const onOnline = () => setIsOnline(true);
@@ -1343,8 +1356,11 @@
                 };
             }, []);
             return (
-                <div className="theme-surface theme-border border-b p-4 flex justify-between items-center z-20">
-                    <h2 className="font-bold theme-text text-lg">{title}</h2>
+                <div className="theme-surface theme-border border-b p-4 flex justify-between items-center z-20 sticky top-0 bg-white/90 backdrop-blur-sm">
+                    <div className="flex items-center gap-3">
+                        <button onClick={onOpenMenu} className="lg:hidden text-slate-600 p-1 active:bg-slate-100 rounded-lg transition-colors"><i className="fas fa-bars text-xl"></i></button>
+                        <h2 className="font-bold theme-text text-lg">{title}</h2>
+                    </div>
                     <div className="flex gap-2 items-center">
                         <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full theme-pill border"><i className="fas fa-shield-alt"></i> Trusted Workflow</span>
                         <button onClick={onSyncNow} className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full border ${isOnline ? 'theme-pill' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>
@@ -1359,7 +1375,7 @@
 
         // --- CORE MODULES ---
 
-        // CLIENTS MODULE
+        // ... [Clients, IncomeChart, Dashboard, AppointmentForm, Schedule, PaymentModal, ClientPortal remain unchanged] ...
         const Clients = () => {
             const [clients, setClients] = useState([]);
             const [showForm, setShowForm] = useState(false);
@@ -1404,7 +1420,6 @@
             );
         };
 
-        // Feature #1: Income Chart
         const IncomeChart = ({ appointments }) => {
             const canvasRef = useRef(null);
 
@@ -1970,22 +1985,62 @@
             const [idCapture, setIdCapture] = useState(null);
             const [idPreview, setIdPreview] = useState('');
             const [selectedEntry, setSelectedEntry] = useState(null);
+            
+            // New State for Voice Input
+            const [formState, setFormState] = useState({ date: '', signer: '', docType: '', fee: '', notes: '' });
+
             useEffect(() => { DataManager.get('notary_journal').then(setEntries); }, []);
+            
+            const handleInputChange = (field, value) => {
+                setFormState(prev => ({ ...prev, [field]: value }));
+            };
+
+            const startDictation = (field) => {
+                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
+                    showToast("Speech recognition not supported in this browser.", "error");
+                    return;
+                }
+                
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'en-US';
+                recognition.interimResults = false;
+                recognition.maxAlternatives = 1;
+
+                showToast("Listening...", "success");
+                recognition.start();
+
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    setFormState(prev => ({
+                        ...prev,
+                        [field]: prev[field] ? `${prev[field]} ${transcript}` : transcript
+                    }));
+                    showToast("Text added!");
+                };
+
+                recognition.onerror = (event) => {
+                    console.error("Speech recognition error", event.error);
+                    showToast("Did not catch that. Try again.", "error");
+                };
+            };
+
             const handleSave = async (e) => {
                 e.preventDefault();
-                const fd = new FormData(e.target);
                 const encryptedId = idCapture ? encryptPayload(idCapture) : null;
                 await DataManager.save('notary_journal', {
                     id: Date.now().toString(),
-                    date: fd.get('date'),
-                    signer: fd.get('signer'),
-                    docType: fd.get('docType'),
-                    fee: fd.get('fee'),
+                    date: formState.date,
+                    signer: formState.signer,
+                    docType: formState.docType,
+                    fee: formState.fee,
+                    notes: formState.notes,
                     idCapture: encryptedId
                 });
                 setShowForm(false);
                 setIdCapture(null);
                 setIdPreview('');
+                setFormState({ date: '', signer: '', docType: '', fee: '', notes: '' }); // Reset form
                 setEntries(await DataManager.get('notary_journal'));
                 showToast("Entry Logged");
             };
@@ -2003,7 +2058,7 @@
                 };
                 reader.readAsDataURL(file);
             };
-            const handleExport = () => { if (user.plan !== 'pro') { onUpgrade(); return; } if (window.jspdf) PDFGenerator.createReport("Notary Journal", ["Date", "Signer", "Doc", "Fee"], entries.map(e => [e.date, e.signer, e.docType, `$${e.fee}`]), "journal.pdf"); };
+            const handleExport = () => { if (user.plan !== 'pro') { onUpgrade(); return; } if (window.jspdf) PDFGenerator.createReport("Notary Journal", ["Date", "Signer", "Doc", "Fee", "Notes"], entries.map(e => [e.date, e.signer, e.docType, `$${e.fee}`, e.notes || '']), "journal.pdf"); };
             return (
                 <div className="p-6 pb-24">
                     <div className="flex justify-between items-center mb-6">
@@ -2011,15 +2066,26 @@
                             <h3 className="text-lg font-bold text-gray-800">Journal</h3>
                             <button onClick={handleExport} className="text-gray-400 hover:text-blue-600"><i className="fas fa-file-export"></i></button>
                         </div>
-                        <button onClick={() => setShowForm(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Log</button>
+                        <button onClick={() => { setShowForm(true); setFormState({ date: new Date().toISOString().split('T')[0], signer: '', docType: '', fee: '', notes: '' }); }} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Log</button>
                     </div>
                     {showForm && (
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
                             <form onSubmit={handleSave} className="space-y-4">
-                                <input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" />
-                                <input required name="signer" type="text" placeholder="Signer" className="w-full p-3 bg-gray-50 border rounded-xl" />
-                                <input name="docType" type="text" placeholder="Document Type" className="w-full p-3 bg-gray-50 border rounded-xl" />
-                                <input name="fee" type="number" placeholder="Fee" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" value={formState.date} onChange={e => handleInputChange('date', e.target.value)} />
+                                
+                                <div className="relative">
+                                    <input required name="signer" type="text" placeholder="Signer Name" className="w-full p-3 bg-gray-50 border rounded-xl pr-10" value={formState.signer} onChange={e => handleInputChange('signer', e.target.value)} />
+                                    <button type="button" onClick={() => startDictation('signer')} className="absolute right-3 top-3 text-gray-400 hover:text-purple-600"><i className="fas fa-microphone"></i></button>
+                                </div>
+
+                                <input name="docType" type="text" placeholder="Document Type" className="w-full p-3 bg-gray-50 border rounded-xl" value={formState.docType} onChange={e => handleInputChange('docType', e.target.value)} />
+                                <input name="fee" type="number" placeholder="Fee" className="w-full p-3 bg-gray-50 border rounded-xl" value={formState.fee} onChange={e => handleInputChange('fee', e.target.value)} />
+                                
+                                <div className="relative">
+                                    <textarea name="notes" placeholder="Notes (e.g. credible witness used...)" className="w-full p-3 bg-gray-50 border rounded-xl pr-10" rows="2" value={formState.notes} onChange={e => handleInputChange('notes', e.target.value)}></textarea>
+                                    <button type="button" onClick={() => startDictation('notes')} className="absolute right-3 top-3 text-gray-400 hover:text-purple-600"><i className="fas fa-microphone"></i></button>
+                                </div>
+
                                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
                                     <label className="text-xs font-bold text-slate-500 uppercase block">Audit-Proof Capture (ID/Thumbprint)</label>
                                     <input type="file" accept="image/*" capture="environment" onChange={(e) => handleIdUpload(e.target.files?.[0])} className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200" />
@@ -2035,7 +2101,7 @@
                     )}
                     <div className="space-y-3">
                         {entries.length === 0 ? (
-                            <EmptyState icon="fa-book" title="Journal Empty" description="Log your notarial acts." actionLabel="Log" onAction={()=>setShowForm(true)} colorClass="text-purple-600" bgClass="bg-purple-50" />
+                            <EmptyState icon="fa-book" title="Journal Empty" description="Log your notarial acts." actionLabel="Log" onAction={()=>{ setShowForm(true); setFormState({ date: new Date().toISOString().split('T')[0], signer: '', docType: '', fee: '', notes: '' }); }} colorClass="text-purple-600" bgClass="bg-purple-50" />
                         ) : entries.map(e => {
                             const decrypted = e.idCapture ? decryptPayload(e.idCapture) : null;
                             return (
@@ -2044,6 +2110,7 @@
                                         <div>
                                             <h4 className="font-semibold text-gray-800">{e.signer}</h4>
                                             <p className="text-xs text-gray-500">{e.docType || 'Notarial Entry'}</p>
+                                            {e.notes && <p className="text-xs text-gray-400 mt-1 italic">"{e.notes}"</p>}
                                         </div>
                                         {e.idCapture && (
                                             <button onClick={() => setSelectedEntry({ ...e, decrypted })} className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">View Capture</button>
@@ -2713,7 +2780,7 @@
                         onSettings={() => setShowSettings(true)}
                     />
                     <main className="flex-1 flex flex-col h-screen md:ml-64 relative theme-app-bg">
-                        <Header title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} onNotify={handleNotify} onSyncNow={handleSyncNow} />
+                        <Header title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} onNotify={handleNotify} onSyncNow={handleSyncNow} onOpenMenu={() => setShowMobileMenu(true)} />
                         <div className="flex-1 overflow-y-auto relative">{renderView()}</div>
                         <MobileNav currentView={currentView} setView={setCurrentView} onOpenMenu={() => setShowMobileMenu(true)} />
                     </main>
