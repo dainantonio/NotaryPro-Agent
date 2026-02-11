@@ -233,6 +233,8 @@
                     localStorage.removeItem('notary_assignments');
                     localStorage.removeItem('notary_esignatures');
                     localStorage.removeItem('notary_active_trip');
+                    localStorage.removeItem('notary_onboarded');
+                    localStorage.removeItem('notary_tour_completed');
                 } catch (e) {
                     console.error('Reset failed', e);
                 }
@@ -324,6 +326,15 @@
             }
         };
 
+        const safeParse = (value, fallback) => {
+            if (value === null || value === undefined) return fallback;
+            try {
+                return JSON.parse(value);
+            } catch (err) {
+                return fallback;
+            }
+        };
+
         // --- DATA MANAGER ---
         const DataManager = {
             isCloud: () => typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser !== null,
@@ -369,15 +380,6 @@
                 const newList = list.filter(i => i.id !== id);
                 localStorage.setItem(key, JSON.stringify(newList));
                 return newList;
-            }
-        };
-
-        const safeParse = (value, fallback) => {
-            if (value === null || value === undefined) return fallback;
-            try {
-                return JSON.parse(value);
-            } catch (err) {
-                return fallback;
             }
         };
 
@@ -662,6 +664,54 @@
             );
         };
 
+        const WelcomeTour = ({ onComplete }) => {
+            const [step, setStep] = useState(1);
+            const totalSteps = 5;
+
+            const steps = [
+                { id: 1, icon: 'fa-rocket', color: 'text-blue-600', bg: 'bg-blue-50', title: 'Welcome to NotaryOS', desc: 'Your all-in-one operating system for running a modern notary business.' },
+                { id: 2, icon: 'fa-chart-pie', color: 'text-emerald-600', bg: 'bg-emerald-50', title: 'Business Dashboard', desc: 'Track your monthly income, upcoming jobs, and get alerts for expiring credentials.' },
+                { id: 3, icon: 'fa-calendar-check', color: 'text-purple-600', bg: 'bg-purple-50', title: 'Schedule & Journal', desc: 'Manage appointments with Calendar view and log every signing for state compliance.' },
+                { id: 4, icon: 'fa-robot', color: 'text-indigo-600', bg: 'bg-indigo-50', title: 'AI Training Center', desc: 'Get instant answers to state laws and practice difficult scenarios with your AI mentor.' },
+                { id: 5, icon: 'fa-cog', color: 'text-slate-600', bg: 'bg-slate-50', title: 'You\'re All Set', desc: 'Customize your profile, set up your branding, and start accepting appointments!' }
+            ];
+
+            const current = steps[step - 1];
+
+            return (
+                <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center relative overflow-hidden font-sans">
+                        {/* Progress Bar */}
+                        <div className="absolute top-0 left-0 h-1 bg-gray-100 w-full">
+                            <div className="h-full bg-blue-600 transition-all duration-300" style={{ width: `${(step / totalSteps) * 100}%` }}></div>
+                        </div>
+
+                        <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center text-3xl mb-6 shadow-sm ${current.bg} ${current.color} transition-colors duration-300`}>
+                            <i className={`fas ${current.icon}`}></i>
+                        </div>
+
+                        <h2 className="text-2xl font-bold text-gray-800 mb-3 transition-opacity duration-300">{current.title}</h2>
+                        <p className="text-gray-500 mb-8 leading-relaxed h-16">{current.desc}</p>
+
+                        <div className="flex items-center gap-3">
+                            {step > 1 && (
+                                <button onClick={() => setStep(s => s - 1)} className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold hover:bg-gray-50">
+                                    Back
+                                </button>
+                            )}
+                            <button onClick={() => step < totalSteps ? setStep(s => s + 1) : onComplete()} className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-all">
+                                {step < totalSteps ? 'Next Step' : 'Get Started'}
+                            </button>
+                        </div>
+
+                        <button onClick={onComplete} className="mt-6 text-xs text-gray-400 font-semibold uppercase tracking-wide hover:text-gray-600">
+                            Skip Tour
+                        </button>
+                    </div>
+                </div>
+            );
+        };
+
         const LandingPage = ({ onNavigate }) => {
             const [activeTab, setActiveTab] = useState('before');
             const [weeklyAppts, setWeeklyAppts] = useState(5);
@@ -675,42 +725,6 @@
             const dragStateRef = React.useRef({ isDragging: false, startX: 0, scrollLeft: 0 });
 
             const hoursSaved = Math.round((weeklyAppts * adminMins * 52) / 60);
-
-            const scrollPhoneFlow = (direction = 1) => {
-                const el = flowScrollRef.current;
-                if (!el) return;
-                el.scrollBy({ left: direction * 320, behavior: 'smooth' });
-            };
-
-            const handleFlowPointerDown = (e) => {
-                const el = flowScrollRef.current;
-                if (!el) return;
-                dragStateRef.current = {
-                    isDown: true,
-                    startX: e.clientX,
-                    scrollLeft: el.scrollLeft
-                };
-            };
-
-            const handleFlowPointerMove = (e) => {
-                const el = flowScrollRef.current;
-                if (!el || !dragStateRef.current.isDown) return;
-                const walk = (e.clientX - dragStateRef.current.startX) * 1.15;
-                el.scrollLeft = dragStateRef.current.scrollLeft - walk;
-            };
-
-            const handleFlowPointerUp = () => {
-                dragStateRef.current.isDown = false;
-            };
-
-            const handleFlowWheel = (e) => {
-                const el = flowScrollRef.current;
-                if (!el) return;
-                if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
-                    e.preventDefault();
-                    el.scrollLeft += e.deltaY;
-                }
-            };
             const dollarsSaved = (hoursSaved * 50).toLocaleString();
 
             const handleDemoAsk = (e) => {
@@ -743,16 +757,6 @@
 
             const onMouseLeave = () => {
                 dragStateRef.current.isDragging = false;
-            };
-
-            // Arrow button scrolling
-            const scrollPhoneFlow = (direction) => {
-                if (!carouselRef.current) return;
-                const scrollAmount = 300;
-                carouselRef.current.scrollBy({
-                    left: direction === 'left' ? -scrollAmount : scrollAmount,
-                    behavior: 'smooth'
-                });
             };
 
             return (
@@ -933,17 +937,17 @@
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4 relative">
                                                 <div className="flex justify-between items-center mb-6">
-                                                    <h3 className="font-bold text-lg text-gray-800">Today</h3>
+                                                    <h3 className="font-bold text-lg text-gray-800">Today's Route</h3>
                                                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xs font-bold">JD</div>
                                                 </div>
                                                 <div className="space-y-3">
-                                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
                                                         <div className="flex justify-between mb-2">
                                                             <span className="text-xs font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded">LOAN SIGNING</span>
                                                             <span className="text-xs text-gray-400">2:00 PM</span>
                                                         </div>
                                                         <h4 className="font-bold text-gray-800">Sarah Johnson</h4>
-                                                        <p className="text-xs text-gray-500 mt-1">123 Maple Dr, Seattle</p>
+                                                        <p className="text-xs text-gray-500 mt-1"><i className="fas fa-map-marker-alt text-red-400 mr-1"></i> 123 Maple Dr, Seattle</p>
                                                     </div>
                                                     <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
                                                         <div className="flex justify-between mb-2">
@@ -951,14 +955,7 @@
                                                             <span className="text-xs text-gray-400">4:30 PM</span>
                                                         </div>
                                                         <h4 className="font-bold text-gray-800">Mike Chen</h4>
-                                                        <p className="text-xs text-gray-500 mt-1">Starbucks, 4th Ave</p>
-                                                    </div>
-                                                </div>
-                                                <div className="absolute top-20 left-4 right-4 bg-gray-900/90 backdrop-blur text-white p-3 rounded-xl shadow-lg border border-gray-700 animate-bounce flex items-center gap-3">
-                                                    <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center"><i className="fas fa-check"></i></div>
-                                                    <div>
-                                                        <p className="text-xs font-bold">Payment Received</p>
-                                                        <p className="text-[10px] text-gray-300">$150.00 from Sarah Johnson</p>
+                                                        <p className="text-xs text-gray-500 mt-1"><i className="fas fa-map-marker-alt text-gray-300 mr-1"></i> Starbucks, 4th Ave</p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -968,14 +965,14 @@
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4">
                                                 <div className="flex justify-between items-center mb-6">
-                                                    <h3 className="font-bold text-lg text-gray-800">Journal</h3>
+                                                    <h3 className="font-bold text-lg text-gray-800">Journal Entry</h3>
                                                     <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">Synced</span>
                                                 </div>
                                                 <div className="space-y-3">
                                                     <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
                                                         <p className="text-[10px] uppercase font-bold text-slate-400">Signer</p>
-                                                        <p className="font-bold text-gray-800">Alyssa Gomez</p>
-                                                        <p className="text-xs text-gray-500 mt-1">Power of Attorney • 11:30 AM</p>
+                                                        <p className="font-bold text-gray-800">Sarah Johnson</p>
+                                                        <p className="text-xs text-gray-500 mt-1">Loan Signing • 2:15 PM</p>
                                                     </div>
                                                     <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
                                                         <p className="text-[10px] uppercase font-bold text-slate-400">ID Verified</p>
@@ -985,8 +982,10 @@
                                                         </div>
                                                     </div>
                                                     <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                                                        <p className="text-[10px] uppercase font-bold text-slate-400">Notes</p>
-                                                        <p className="text-xs text-gray-600 mt-1">Signer requested copy emailed after notarization.</p>
+                                                        <p className="text-[10px] uppercase font-bold text-slate-400">Evidence</p>
+                                                        <div className="mt-2 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs border border-dashed border-gray-300">
+                                                            <i className="fas fa-camera mr-2"></i> ID Image Captured
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
@@ -1005,7 +1004,7 @@
                                                         <p className="text-2xl font-extrabold text-gray-800 mt-1">$3,420</p>
                                                         <div className="text-[11px] text-emerald-600 mt-1 font-semibold"><i className="fas fa-arrow-up"></i> 18% vs last month</div>
                                                     </div>
-                                                    <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+                                                    <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between border-l-4 border-l-emerald-500">
                                                         <div>
                                                             <p className="text-xs font-semibold text-gray-800">Invoice #2948</p>
                                                             <p className="text-[11px] text-gray-500">Paid by Sarah Johnson</p>
@@ -2298,7 +2297,64 @@
             );
         };
 
-        const TrainerModule = ({ stateDB, courseMods, user, onUpgrade }) => { const [selectedStateKey, setSelectedStateKey] = useState('CA'); const [mode, setMode] = useState('study'); const [messages, setMessages] = useState([{ role: 'assistant', content: "Hello! I am your AI Mentor. Ask me anything about notary laws." }]); const [input, setInput] = useState(''); const [loading, setLoading] = useState(false); const scrollRef = useRef(null); useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages]); const sendMessage = async () => { if (!input.trim()) return; const newMsgs = [...messages, { role: 'user', content: input }]; setMessages(newMsgs); setInput(''); setLoading(true); setTimeout(() => { setMessages([...newMsgs, { role: 'assistant', content: "This is a simulated AI response. Please configure your API Key." }]); setLoading(false); }, 800); }; return (<div className="flex flex-col h-full bg-white relative pb-20 md:pb-0"><div className="border-b px-4 py-3 flex justify-between items-center bg-gray-50"><select value={selectedStateKey} onChange={e => setSelectedStateKey(e.target.value)} className="bg-white border rounded p-1">{Object.keys(stateDB).map(k => <option key={k} value={k}>{stateDB[k].state}</option>)}</select><div className="flex gap-2"><button onClick={() => setMode('study')} className={`px-2 py-1 text-xs rounded ${mode==='study' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Study</button><button onClick={() => setMode('course')} className={`px-2 py-1 text-xs rounded ${mode==='course' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Course</button><button onClick={() => setMode('sim')} className={`px-2 py-1 text-xs rounded ${mode==='sim' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Sim</button></div></div><div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4">{messages.map((m, i) => <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[85%] p-3 rounded-lg text-sm ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>{m.content}</div></div>)}{loading && <div className="text-xs text-gray-400 ml-4">Thinking...</div>}<div ref={scrollRef} /></div><div className="p-4 border-t bg-white flex gap-2 pb-24 md:pb-4 safe-area-pb"><input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} placeholder="Ask AI..." className="flex-1 p-2 border rounded" /><button onClick={sendMessage} className="bg-blue-600 text-white px-4 rounded">Send</button></div></div>); };
+        const TrainerModule = ({ stateDB, courseMods, user, onUpgrade }) => {
+            const [selectedStateKey, setSelectedStateKey] = useState('CA');
+            const [mode, setMode] = useState('study');
+            const [messages, setMessages] = useState([{ role: 'assistant', content: "Hello! I am your AI Mentor. Ask me anything about notary laws." }]);
+            const [input, setInput] = useState('');
+            const [loading, setLoading] = useState(false);
+            const scrollRef = useRef(null);
+
+            useEffect(() => {
+                scrollRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, [messages]);
+
+            const sendMessage = async () => {
+                if (!input.trim()) return;
+                const newMsgs = [...messages, { role: 'user', content: input }];
+                setMessages(newMsgs);
+                setInput('');
+                setLoading(true);
+
+                // Simulation logic - In a real app this would connect to Gemini
+                setTimeout(() => {
+                    setMessages([...newMsgs, { role: 'assistant', content: "This is a simulated AI response. Please configure your API Key in Settings to enable the full AI Mentor experience." }]);
+                    setLoading(false);
+                }, 800);
+            };
+
+            return (
+                <div className="flex flex-col h-full bg-white relative pb-20 md:pb-0">
+                    <div className="border-b px-4 py-3 flex justify-between items-center bg-gray-50">
+                        <select value={selectedStateKey} onChange={e => setSelectedStateKey(e.target.value)} className="bg-white border rounded p-1">
+                            {Object.keys(stateDB).map(k => <option key={k} value={k}>{stateDB[k].state}</option>)}
+                        </select>
+                        <div className="flex gap-2">
+                            <button onClick={() => setMode('study')} className={`px-2 py-1 text-xs rounded ${mode==='study' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Study</button>
+                            <button onClick={() => setMode('course')} className={`px-2 py-1 text-xs rounded ${mode==='course' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Course</button>
+                            <button onClick={() => setMode('sim')} className={`px-2 py-1 text-xs rounded ${mode==='sim' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Sim</button>
+                        </div>
+                    </div>
+                    
+                    <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4">
+                        {messages.map((m, i) => (
+                            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                <div className={`max-w-[85%] p-3 rounded-lg text-sm ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
+                                    {m.content}
+                                </div>
+                            </div>
+                        ))}
+                        {loading && <div className="text-xs text-gray-400 ml-4">Thinking...</div>}
+                        <div ref={scrollRef} />
+                    </div>
+                    
+                    <div className="p-4 border-t bg-white flex gap-2 pb-24 md:pb-4 safe-area-pb">
+                        <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} placeholder="Ask AI..." className="flex-1 p-2 border rounded" />
+                        <button onClick={sendMessage} className="bg-blue-600 text-white px-4 rounded">Send</button>
+                    </div>
+                </div>
+            );
+        };
 
         const AdminPanel = ({ stateDB }) => {
             const [activeTab, setActiveTab] = useState('states');
@@ -2339,6 +2395,7 @@
             const [showPricing, setShowPricing] = useState(false);
             const [showSettings, setShowSettings] = useState(false);
             const [showOnboarding, setShowOnboarding] = useState(false);
+            const [showWelcomeTour, setShowWelcomeTour] = useState(false);
             const [showAIModal, setShowAIModal] = useState(false); 
             const [showWhatsNew, setShowWhatsNew] = useState(() => !!user && !localStorage.getItem('notary_whats_new_seen_v2'));
             const [theme, setTheme] = useState(() => localStorage.getItem('notary_theme') || 'default');
@@ -2346,7 +2403,18 @@
             useEffect(() => {
                 DataManager.get('notary_appointments').then(setAppointments);
                 DataManager.get('notary_credentials').then(setCredentials);
-                if (user && !localStorage.getItem('notary_onboarded')) setShowOnboarding(true);
+                
+                // Onboarding Logic Flow
+                if (user) {
+                    const isOnboarded = localStorage.getItem('notary_onboarded');
+                    const isTourComplete = localStorage.getItem('notary_tour_completed');
+                    
+                    if (!isOnboarded) {
+                        setShowOnboarding(true);
+                    } else if (!isTourComplete) {
+                        setShowWelcomeTour(true);
+                    }
+                }
             }, [user]);
 
             useEffect(() => {
@@ -2365,8 +2433,7 @@
                 localStorage.setItem('notary_user_profile', JSON.stringify(profile));
                 setUser(profile);
                 setCurrentView('dashboard');
-                if (!localStorage.getItem('notary_onboarded')) setShowOnboarding(true);
-                if (!localStorage.getItem('notary_whats_new_seen_v2')) setShowWhatsNew(true);
+                // Onboarding triggers will handle the rest via useEffect
                 showToast("Welcome Back!");
             };
 
@@ -2398,7 +2465,17 @@
                 localStorage.setItem('notary_user_profile', JSON.stringify(nextUser));
                 localStorage.setItem('notary_onboarded', 'true');
                 setShowOnboarding(false);
+                
+                // Show tour immediately after role selection
+                setShowWelcomeTour(true);
+                
                 if (selectedRole === 'agency' && !hasFeatureAccess(nextUser, 'agency')) setShowPricing(true);
+            };
+
+            const handleTourComplete = () => {
+                localStorage.setItem('notary_tour_completed', 'true');
+                setShowWelcomeTour(false);
+                showToast("You're all set!");
             };
 
             const handleSaveAppt = async (appt) => {
@@ -2477,6 +2554,8 @@
                     {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={handleUpgrade} />}
                     {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} onSave={handleUpdateProfile} />}
                     {showOnboarding && <OnboardingTour onComplete={handleOnboardingComplete} />}
+                    {showWelcomeTour && <WelcomeTour onComplete={handleTourComplete} />}
+                    
                     {showWhatsNew && (
                         <div className="fixed top-4 left-1/2 -translate-x-1/2 z-40 max-w-xl w-[92%] bg-white border border-blue-100 rounded-2xl shadow-xl p-4 font-sans">
                             <div className="flex items-start justify-between gap-3">
