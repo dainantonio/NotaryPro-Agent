@@ -196,7 +196,7 @@
             scroll-behavior: smooth;
             cursor: grab;
             user-select: none;
-            scroll-padding: 50%; /* Centers the snapped item */
+            scroll-snap-type: x mandatory;
         }
 
         .phone-flow-carousel:active {
@@ -210,13 +210,18 @@
         .phone-flow-card {
             transition: transform 0.3s ease, opacity 0.3s ease, filter 0.3s ease;
             scroll-snap-align: center;
-            scroll-snap-stop: always;
         }
 
-        @media (max-width: 767px) {
-            .phone-flow-carousel {
-                scroll-padding-inline: calc(50% - 140px); /* Centers 280px wide cards */
-            }
+        .phone-flow-card {
+            transform: scale(0.92);
+            opacity: 0.78;
+            filter: saturate(0.8);
+        }
+
+        .phone-flow-card:first-child {
+            transform: scale(1);
+            opacity: 1;
+            filter: saturate(1);
         }
 
         @media (min-width: 768px) {
@@ -225,7 +230,7 @@
                 cursor: default;
                 user-select: auto;
                 touch-action: auto;
-                scroll-padding: 0;
+                scroll-snap-type: none;
             }
 
             .phone-flow-track {
@@ -239,13 +244,62 @@
                 transform: none;
                 opacity: 1;
                 filter: none;
-                scroll-snap-align: unset;
+                scroll-snap-align: none;
             }
         }
 
         /* Notary Gold Accent */
         .text-notary-gold { color: #fbbf24; }
         .bg-notary-gold { background-color: #fbbf24; }
+
+        /* Mobile Centering Fixes */
+        @media (max-width: 767px) {
+            /* Centered Mobile Content */
+            .mobile-centered-content {
+                text-align: center;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                width: 100%;
+                max-width: 100vw;
+                overflow-x: hidden;
+            }
+
+            /* Centered Phone Carousel */
+            .phone-carousel-container {
+                display: flex;
+                justify-content: center;
+                width: 100%;
+                padding-left: 0;
+                padding-right: 0;
+            }
+
+            .phone-flow-carousel {
+                width: 100%;
+                padding-left: calc(50% - 140px);
+                padding-right: calc(50% - 140px);
+            }
+
+            .phone-flow-track {
+                padding-left: calc(50% - 140px);
+                padding-right: calc(50% - 140px);
+            }
+
+            .phone-flow-card {
+                min-width: 280px;
+                margin-right: 1rem;
+                scroll-snap-align: center;
+                flex-shrink: 0;
+            }
+
+            /* Prevent text overflow */
+            .mobile-text-wrap {
+                word-wrap: break-word;
+                overflow-wrap: break-word;
+                hyphens: auto;
+            }
+        }
     </style>
 </head>
 <body>
@@ -1009,17 +1063,18 @@
                     {/* Mobile-First Demo Section - Alternating Background: Dark Slate 900 */}
                     <div className="py-24 bg-slate-900 w-full border-t border-slate-800 font-sans">
                         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-[1.2fr_1fr] gap-16 items-center">
-                            <div className="order-2 lg:order-1">
+                            {/* Carousel Section */}
+                            <div className="order-2 lg:order-1 phone-carousel-container">
                                 <div 
                                     ref={carouselRef}
-                                    className="phone-flow-carousel overflow-x-auto scrollbar-hide pb-3 snap-x snap-mandatory flex justify-center md:justify-start"
+                                    className="phone-flow-carousel overflow-x-auto scrollbar-hide pb-3 mx-auto snap-x snap-mandatory px-4"
                                     onMouseDown={onMouseDown}
                                     onMouseMove={onMouseMove}
                                     onMouseUp={onMouseUp}
                                     onMouseLeave={onMouseLeave}
                                 >
-                                    <div className="phone-flow-track flex gap-5 px-4 md:px-0">
-                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
+                                    <div className="phone-flow-track flex gap-5 justify-center md:justify-start">
+                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden">
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4 relative">
                                                 <div className="flex justify-between items-center mb-6">
@@ -1047,7 +1102,7 @@
                                             </div>
                                         </div>
 
-                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
+                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden">
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4">
                                                 <div className="flex justify-between items-center mb-6">
@@ -1077,7 +1132,7 @@
                                             </div>
                                         </div>
 
-                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
+                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden">
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4">
                                                 <div className="flex justify-between items-center mb-6">
@@ -1111,23 +1166,25 @@
                                 </div>
                                 <p className="text-xs text-slate-400 mt-3 text-center md:text-left">Swipe on mobile to focus each screen, or view all 3 at once on larger displays.</p>
                             </div>
-                            <div className="order-1 lg:order-2 text-center lg:text-left flex flex-col items-center lg:items-start">
-                                <h3 className="text-3xl font-bold text-white mb-6">Run your business from your pocket.</h3>
-                                <p className="text-slate-400 text-lg mb-8 leading-relaxed max-w-prose">
+                            
+                            {/* Run Your Business Section - FIXED: Centered on Mobile */}
+                            <div className="order-1 lg:order-2 mobile-centered-content">
+                                <h3 className="text-3xl font-bold text-white mb-6 text-center lg:text-left mobile-text-wrap">Run your business from your pocket.</h3>
+                                <p className="text-slate-400 text-lg mb-8 leading-relaxed text-center lg:text-left mobile-text-wrap">
                                     From booking to signature capture to final payout, NotaryOS mirrors how real mobile appointments happen. Start with your daily schedule, complete ID/journal checks at the table, then send and track payment before you drive to the next stop.
                                 </p>
-                                <ul className="space-y-4 w-full max-w-prose">
+                                <ul className="space-y-4">
                                     <li className="flex items-center gap-3 text-slate-300">
-                                        <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs flex-shrink-0"><i className="fas fa-mobile-alt"></i></div>
-                                        <span>1) Confirm today's route and appointment details</span>
+                                        <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs"><i className="fas fa-mobile-alt"></i></div>
+                                        <span className="text-left">1) Confirm today's route and appointment details</span>
                                     </li>
                                     <li className="flex items-center gap-3 text-slate-300">
-                                        <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs flex-shrink-0"><i className="fas fa-map-marker-alt"></i></div>
-                                        <span>2) Capture signer details and journal proof on site</span>
+                                        <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs"><i className="fas fa-map-marker-alt"></i></div>
+                                        <span className="text-left">2) Capture signer details and journal proof on site</span>
                                     </li>
                                     <li className="flex items-center gap-3 text-slate-300">
-                                        <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs flex-shrink-0"><i className="fas fa-bell"></i></div>
-                                        <span>3) Send invoice and track paid/pending status instantly</span>
+                                        <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs"><i className="fas fa-bell"></i></div>
+                                        <span className="text-left">3) Send invoice and track paid/pending status instantly</span>
                                     </li>
                                 </ul>
                             </div>
