@@ -203,6 +203,7 @@
         }
 
         .phone-flow-track {
+            /* Modified for improved mobile centering */
             width: max-content;
         }
 
@@ -1013,13 +1014,13 @@
                             <div className="order-2 lg:order-1">
                                 <div 
                                     ref={carouselRef}
-                                    className="phone-flow-carousel overflow-x-auto scrollbar-hide pb-3 -mx-2 px-8 md:px-0 snap-x snap-mandatory"
+                                    className="phone-flow-carousel overflow-x-auto scrollbar-hide pb-6 -mx-6 px-6 md:mx-0 md:px-0 snap-x snap-mandatory flex md:block"
                                     onMouseDown={onMouseDown}
                                     onMouseMove={onMouseMove}
                                     onMouseUp={onMouseUp}
                                     onMouseLeave={onMouseLeave}
                                 >
-                                    <div className="phone-flow-track flex gap-5">
+                                    <div className="phone-flow-track flex md:grid md:grid-cols-3 gap-6 md:gap-5 w-max md:w-full mx-auto">
                                         <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4 relative">
@@ -1110,25 +1111,25 @@
                                         </div>
                                     </div>
                                 </div>
-                                <p className="text-xs text-slate-400 mt-3 text-center md:text-left">Swipe on mobile to focus each screen, or view all 3 at once on larger displays.</p>
+                                <p className="text-xs text-slate-400 mt-6 text-center md:text-left">Swipe on mobile to focus each screen, or view all 3 at once on larger displays.</p>
                             </div>
-                            <div className="order-1 lg:order-2">
+                            <div className="order-1 lg:order-2 text-center lg:text-left">
                                 <h3 className="text-3xl font-bold text-white mb-6">Run your business from your pocket.</h3>
                                 <p className="text-slate-400 text-lg mb-8 leading-relaxed">
                                     From booking to signature capture to final payout, NotaryOS mirrors how real mobile appointments happen. Start with your daily schedule, complete ID/journal checks at the table, then send and track payment before you drive to the next stop.
                                 </p>
-                                <ul className="space-y-4">
-                                    <li className="flex items-center gap-3 text-slate-300">
-                                        <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs"><i className="fas fa-mobile-alt"></i></div>
-                                        1) Confirm today's route and appointment details
+                                <ul className="space-y-4 inline-block text-left lg:block lg:text-left w-full">
+                                    <li className="flex items-center gap-3 text-slate-300 justify-center lg:justify-start">
+                                        <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs shrink-0"><i className="fas fa-mobile-alt"></i></div>
+                                        <span>1) Confirm today's route and appointment details</span>
                                     </li>
-                                    <li className="flex items-center gap-3 text-slate-300">
-                                        <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs"><i className="fas fa-map-marker-alt"></i></div>
-                                        2) Capture signer details and journal proof on site
+                                    <li className="flex items-center gap-3 text-slate-300 justify-center lg:justify-start">
+                                        <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs shrink-0"><i className="fas fa-map-marker-alt"></i></div>
+                                        <span>2) Capture signer details and journal proof on site</span>
                                     </li>
-                                    <li className="flex items-center gap-3 text-slate-300">
-                                        <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs"><i className="fas fa-bell"></i></div>
-                                        3) Send invoice and track paid/pending status instantly
+                                    <li className="flex items-center gap-3 text-slate-300 justify-center lg:justify-start">
+                                        <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs shrink-0"><i className="fas fa-bell"></i></div>
+                                        <span>3) Send invoice and track paid/pending status instantly</span>
                                     </li>
                                 </ul>
                             </div>
