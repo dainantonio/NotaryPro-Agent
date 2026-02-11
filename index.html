@@ -4,7 +4,31 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NotaryOS</title>
+    
+    <!-- PWA Configuration -->
+    <meta name="theme-color" content="#f8fafc">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="NotaryOS">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%234f46e5%22 rx=%2220%22/><text x=%2250%22 y=%2250%22 font-size=%2250%22 text-anchor=%22middle%22 dy=%22.35em%22>📜</text></svg>">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📜</text></svg>">
+    
+    <!-- Dynamic Manifest for PWA Install -->
+    <link rel="manifest" href='data:application/manifest+json,{
+        "name": "NotaryOS",
+        "short_name": "NotaryOS",
+        "start_url": ".",
+        "display": "standalone",
+        "background_color": "#f8fafc",
+        "theme_color": "#f8fafc",
+        "orientation": "portrait",
+        "icons": [{
+            "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%234f46e5%22 rx=%2220%22/><text x=%2250%22 y=%2250%22 font-size=%2250%22 text-anchor=%22middle%22 dy=%22.35em%22>📜</text></svg>",
+            "sizes": "192x192",
+            "type": "image/svg+xml",
+            "purpose": "any maskable"
+        }]
+    }'>
 
     <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -56,6 +80,15 @@
         } catch (e) {
             console.error("Firebase Init Error:", e);
         }
+
+        // PWA Install Prompt Logic
+        let deferredPrompt;
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            // Dispatch custom event to notify UI
+            window.dispatchEvent(new Event('pwa-ready'));
+        });
     </script>
 
     <style>
@@ -301,53 +334,20 @@
         };
 
         // --- HELPER FUNCTIONS ---
-        // Added simple feature access check to prevent undefined errors
         const hasFeatureAccess = (user, feature) => {
             if (!user) return false;
             if (user.role === 'agency') return true;
             if (user.plan === 'pro' || user.plan === 'team') return true;
-            
-            // Basic logic for free tier
             if (feature === 'agency' && user.role !== 'agency') return false;
             if (feature === 'trainer' && user.plan !== 'pro' && user.plan !== 'team') return false;
-            
             return true;
         };
 
-        // Added mock encryption/decryption to prevent ReferenceErrors in Journal
-        const encryptPayload = (str) => {
-            try { return btoa(str); } catch (e) { return str; }
-        };
-        const decryptPayload = (str) => {
-            try { return atob(str); } catch (e) { return str; }
-        };
-
-        const safeStorageGet = (key, fallback = null) => {
-            try {
-                const value = localStorage.getItem(key);
-                return value === null ? fallback : value;
-            } catch (e) {
-                return fallback;
-            }
-        };
-
-        const safeStorageSet = (key, value) => {
-            try {
-                localStorage.setItem(key, value);
-                return true;
-            } catch (e) {
-                return false;
-            }
-        };
-
-        const safeParse = (value, fallback) => {
-            if (value === null || value === undefined) return fallback;
-            try {
-                return JSON.parse(value);
-            } catch (err) {
-                return fallback;
-            }
-        };
+        const encryptPayload = (str) => { try { return btoa(str); } catch (e) { return str; } };
+        const decryptPayload = (str) => { try { return atob(str); } catch (e) { return str; } };
+        const safeStorageGet = (key, fallback = null) => { try { const value = localStorage.getItem(key); return value === null ? fallback : value; } catch (e) { return fallback; } };
+        const safeStorageSet = (key, value) => { try { localStorage.setItem(key, value); return true; } catch (e) { return false; } };
+        const safeParse = (value, fallback) => { if (value === null || value === undefined) return fallback; try { return JSON.parse(value); } catch (err) { return fallback; } };
 
         // --- DATA MANAGER ---
         const DataManager = {
@@ -416,14 +416,7 @@
                 doc.autoTable({ startY: 80, head: [['Description', 'Date', 'Amount']], body: [[appt.type || 'Notary Service', appt.date, `$${appt.fee}`]], theme: 'grid', headStyles: { fillColor: primaryColor } });
                 const finalY = doc.lastAutoTable.finalY + 10;
                 doc.setFontSize(12); doc.text(`Total Due: $${appt.fee}`, 160, finalY, { align: 'right' });
-
-                // --- BUSINESS LOGO/SEAL IF UPLOADED ---
-                if(user.logoUrl) {
-                    try {
-                        doc.addImage(user.logoUrl, 'PNG', 20, 5, 30, 30);
-                    } catch(e) { console.log("Image error", e); }
-                }
-
+                if(user.logoUrl) { try { doc.addImage(user.logoUrl, 'PNG', 20, 5, 30, 30); } catch(e) { console.log("Image error", e); } }
                 doc.save(`invoice_${appt.clientName}.pdf`);
                 showToast("Invoice Downloaded");
             },
@@ -513,7 +506,6 @@
 
         // --- COMPONENTS ---
 
-        // 1. Modals & Helpers
         const TermsModal = ({ onClose }) => (
             <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm z-[100]">
                 <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-fade-in font-sans">
@@ -726,7 +718,6 @@
             );
         };
 
-        // NEW: Reusable Empty State Component
         const EmptyState = ({ icon, title, description, actionLabel, onAction, colorClass = "text-blue-600", bgClass = "bg-blue-50" }) => (
             <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in bg-white rounded-2xl border border-gray-100 shadow-sm font-sans">
                 <div className={`w-20 h-20 ${bgClass} ${colorClass} rounded-full flex items-center justify-center mb-6 text-3xl shadow-inner`}><i className={`fas ${icon}`}></i></div>
@@ -1243,6 +1234,31 @@
 
         const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout, userName, userPlan, userRole, onSettings, onUpgrade }) => {
             const [isCollapsed, setIsCollapsed] = useState(false);
+            const [canInstall, setCanInstall] = useState(false);
+            
+            useEffect(() => {
+                const checkInstall = () => {
+                    // Check if prompt was captured
+                    if (window.deferredPrompt) setCanInstall(true);
+                };
+                
+                window.addEventListener('pwa-ready', checkInstall);
+                // Also check immediately in case it fired before render
+                if (window.deferredPrompt) setCanInstall(true);
+                
+                return () => window.removeEventListener('pwa-ready', checkInstall);
+            }, []);
+
+            const handleInstall = async () => {
+                if (!window.deferredPrompt) return;
+                window.deferredPrompt.prompt();
+                const { outcome } = await window.deferredPrompt.userChoice;
+                if (outcome === 'accepted') {
+                    setCanInstall(false);
+                }
+                window.deferredPrompt = null;
+            };
+
             const menuItems = [
                 { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', color: 'text-blue-400' },
                 { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule', color: 'text-green-400' },
@@ -1277,8 +1293,14 @@
                                 );
                             })}
                         </nav>
-                        <div className="p-4 border-t border-slate-700">
-                             <button onClick={onSettings} className={`w-full flex items-center gap-3 px-3 py-2 mb-2 hover:bg-slate-800 rounded transition-colors group ${isCollapsed ? 'justify-center' : ''}`}>
+                        <div className="p-4 border-t border-slate-700 space-y-2">
+                             {canInstall && (
+                                <button onClick={handleInstall} className={`w-full flex items-center gap-3 px-3 py-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-lg shadow-lg hover:shadow-pink-500/20 transition-all group ${isCollapsed ? 'justify-center' : ''}`}>
+                                    <i className="fas fa-download"></i>
+                                    {!isCollapsed && <span className="text-xs font-bold">Install App</span>}
+                                </button>
+                             )}
+                             <button onClick={onSettings} className={`w-full flex items-center gap-3 px-3 py-2 hover:bg-slate-800 rounded transition-colors group ${isCollapsed ? 'justify-center' : ''}`}>
                                 <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-blue-300 flex-shrink-0">{userName ? userName.substring(0,2).toUpperCase() : 'US'}</div>
                                 {!isCollapsed && (
                                     <div className="flex-1 overflow-hidden text-left">
