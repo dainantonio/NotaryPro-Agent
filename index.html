@@ -213,6 +213,44 @@
             }
         }
 
+        .phone-flow-card {
+            transition: transform 0.3s ease, opacity 0.3s ease, filter 0.3s ease;
+        }
+
+        .phone-flow-card {
+            transform: scale(0.92);
+            opacity: 0.78;
+            filter: saturate(0.8);
+        }
+
+        .phone-flow-card:first-child {
+            transform: scale(1);
+            opacity: 1;
+            filter: saturate(1);
+        }
+
+        @media (min-width: 768px) {
+            .phone-flow-carousel {
+                overflow: visible;
+                cursor: default;
+                user-select: auto;
+                touch-action: auto;
+            }
+
+            .phone-flow-track {
+                width: 100%;
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 1rem;
+            }
+
+            .phone-flow-card {
+                transform: none;
+                opacity: 1;
+                filter: none;
+            }
+        }
+
         /* Notary Gold Accent */
         .text-notary-gold { color: #fbbf24; }
         .bg-notary-gold { background-color: #fbbf24; }
@@ -939,10 +977,10 @@
                     {/* Mobile-First Demo Section - Alternating Background: Dark Slate 900 */}
                     <div className="py-24 bg-slate-900 w-full border-t border-slate-800 font-sans">
                         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-[1.2fr_1fr] gap-16 items-center">
-                            <div className="order-2 lg:order-1 min-w-0">
+                            <div className="order-2 lg:order-1">
                                 <div 
                                     ref={carouselRef}
-                                    className="phone-flow-carousel w-full max-w-full overflow-x-auto scrollbar-hide pb-3 px-2 md:px-0 snap-x snap-mandatory"
+                                    className="phone-flow-carousel overflow-x-auto scrollbar-hide pb-3 -mx-2 px-8 md:px-0 snap-x snap-mandatory"
                                     onMouseDown={onMouseDown}
                                     onMouseMove={onMouseMove}
                                     onMouseUp={onMouseUp}
@@ -1041,7 +1079,7 @@
                                 </div>
                                 <p className="text-xs text-slate-400 mt-3 text-center md:text-left">Swipe on mobile to focus each screen, or view all 3 at once on larger displays.</p>
                             </div>
-                            <div className="order-1 lg:order-2 min-w-0">
+                            <div className="order-1 lg:order-2">
                                 <h3 className="text-3xl font-bold text-white mb-6">Run your business from your pocket.</h3>
                                 <p className="text-slate-400 text-lg mb-8 leading-relaxed">
                                     From booking to signature capture to final payout, NotaryOS mirrors how real mobile appointments happen. Start with your daily schedule, complete ID/journal checks at the table, then send and track payment before you drive to the next stop.
