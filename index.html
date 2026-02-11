@@ -71,30 +71,6 @@
             --accent-soft: #e0e7ff;
         }
 
-        body[data-theme='midnight'] {
-            --app-bg: #020617;
-            --surface-bg: #0f172a;
-            --surface-muted: #1e293b;
-            --text-primary: #e2e8f0;
-            --text-muted: #94a3b8;
-            --border-color: #334155;
-            --accent-color: #38bdf8;
-            --accent-hover: #0ea5e9;
-            --accent-soft: #082f49;
-        }
-
-        body[data-theme='sunset'] {
-            --app-bg: #fff7ed;
-            --surface-bg: #fffbeb;
-            --surface-muted: #ffedd5;
-            --text-primary: #7c2d12;
-            --text-muted: #9a3412;
-            --border-color: #fdba74;
-            --accent-color: #ea580c;
-            --accent-hover: #c2410c;
-            --accent-soft: #fed7aa;
-        }
-
         body { font-family: 'Merriweather', serif; background-color: var(--app-bg); color: var(--text-primary); transition: background-color .25s ease, color .25s ease; }
         h1, h2, h3, h4, h5, h6, button, .font-sans { font-family: 'Poppins', sans-serif; }
 
@@ -1211,25 +1187,6 @@
                 <button onClick={onOpenMenu}><i className="fas fa-bars text-slate-400 text-lg"></i></button>
             </div>
         );
-
-        const ThemeToggle = ({ theme, setTheme }) => {
-            const themes = [
-                { value: 'default', label: 'Classic' },
-                { value: 'midnight', label: 'Midnight' },
-                { value: 'sunset', label: 'Sunset' }
-            ];
-
-            return (
-                <div className="fixed top-4 right-4 z-50">
-                    <div className="theme-surface theme-border border rounded-xl shadow-md px-3 py-2">
-                        <label htmlFor="theme-select" className="text-[10px] font-bold uppercase tracking-wide theme-text-muted">Theme</label>
-                        <select id="theme-select" value={theme} onChange={e => setTheme(e.target.value)} className="mt-1 text-xs theme-surface theme-text theme-border border rounded-lg px-2 py-1 focus:outline-none">
-                            {themes.map(option => <option key={option.value} value={option.value}>{option.label}</option>)}
-                        </select>
-                    </div>
-                </div>
-            );
-        };
 
         const Header = ({ title, onNotify, onSyncNow }) => {
             const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
@@ -2398,7 +2355,7 @@
             const [showWelcomeTour, setShowWelcomeTour] = useState(false);
             const [showAIModal, setShowAIModal] = useState(false); 
             const [showWhatsNew, setShowWhatsNew] = useState(() => !!user && !localStorage.getItem('notary_whats_new_seen_v2'));
-            const [theme, setTheme] = useState(() => localStorage.getItem('notary_theme') || 'default');
+            const theme = 'default';
 
             useEffect(() => {
                 DataManager.get('notary_appointments').then(setAppointments);
@@ -2419,7 +2376,6 @@
 
             useEffect(() => {
                 document.body.setAttribute('data-theme', theme);
-                localStorage.setItem('notary_theme', theme);
             }, [theme]);
 
             const handleUpdateProfile = (updatedData) => {
@@ -2535,13 +2491,12 @@
                 }
             };
 
-            if (!user && currentView !== 'landing' && currentView !== 'auth') { return <><ThemeToggle theme={theme} setTheme={setTheme} /><LandingPage onNavigate={() => setCurrentView('auth')} /></>; }
-            if (currentView === 'landing' || currentView === 'auth') return <><ThemeToggle theme={theme} setTheme={setTheme} />{renderView()}</>;
+            if (!user && currentView !== 'landing' && currentView !== 'auth') { return <LandingPage onNavigate={() => setCurrentView('auth')} />; }
+            if (currentView === 'landing' || currentView === 'auth') return renderView();
 
             return (
                 <div className="flex h-screen overflow-hidden font-sans theme-app-bg">
                     <ToastContainer />
-                    <ThemeToggle theme={theme} setTheme={setTheme} />
 
                     {/* Hide FAB on Trainer Page to avoid overlap/redundancy */}
                     {currentView !== 'trainer' && (
