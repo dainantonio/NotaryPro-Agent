@@ -180,14 +180,20 @@
             z-index: 10;
         }
 
-        .phone-flow-scroll {
+        .phone-flow-carousel {
             -webkit-overflow-scrolling: touch;
             overscroll-behavior-x: contain;
             touch-action: pan-x;
             scroll-behavior: smooth;
+            cursor: grab;
+            user-select: none;
         }
 
-        .phone-flow-row {
+        .phone-flow-carousel:active {
+            cursor: grabbing;
+        }
+
+        .phone-flow-track {
             width: max-content;
         }
 
@@ -298,6 +304,24 @@
         };
         const decryptPayload = (str) => {
             try { return atob(str); } catch (e) { return str; }
+        };
+
+        const safeStorageGet = (key, fallback = null) => {
+            try {
+                const value = localStorage.getItem(key);
+                return value === null ? fallback : value;
+            } catch (e) {
+                return fallback;
+            }
+        };
+
+        const safeStorageSet = (key, value) => {
+            try {
+                localStorage.setItem(key, value);
+                return true;
+            } catch (e) {
+                return false;
+            }
         };
 
         // --- DATA MANAGER ---
@@ -645,8 +669,48 @@
             const [billing, setBilling] = useState('monthly');
             const [demoQuestion, setDemoQuestion] = useState("");
             const [demoResponse, setDemoResponse] = useState(null);
+            
+            // Carousel interaction refs and state
+            const carouselRef = React.useRef(null);
+            const dragStateRef = React.useRef({ isDragging: false, startX: 0, scrollLeft: 0 });
+
             const hoursSaved = Math.round((weeklyAppts * adminMins * 52) / 60);
 
+            const scrollPhoneFlow = (direction = 1) => {
+                const el = flowScrollRef.current;
+                if (!el) return;
+                el.scrollBy({ left: direction * 320, behavior: 'smooth' });
+            };
+
+            const handleFlowPointerDown = (e) => {
+                const el = flowScrollRef.current;
+                if (!el) return;
+                dragStateRef.current = {
+                    isDown: true,
+                    startX: e.clientX,
+                    scrollLeft: el.scrollLeft
+                };
+            };
+
+            const handleFlowPointerMove = (e) => {
+                const el = flowScrollRef.current;
+                if (!el || !dragStateRef.current.isDown) return;
+                const walk = (e.clientX - dragStateRef.current.startX) * 1.15;
+                el.scrollLeft = dragStateRef.current.scrollLeft - walk;
+            };
+
+            const handleFlowPointerUp = () => {
+                dragStateRef.current.isDown = false;
+            };
+
+            const handleFlowWheel = (e) => {
+                const el = flowScrollRef.current;
+                if (!el) return;
+                if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+                    e.preventDefault();
+                    el.scrollLeft += e.deltaY;
+                }
+            };
             const dollarsSaved = (hoursSaved * 50).toLocaleString();
 
             const handleDemoAsk = (e) => {
@@ -655,6 +719,40 @@
                 setTimeout(() => {
                     setDemoResponse("In California, the maximum fee for a jurat is $15 per signature, including the oath or affirmation. Always check the latest handbook!");
                 }, 1500);
+            };
+
+            // Desktop drag handlers for carousel
+            const onMouseDown = (e) => {
+                if (!carouselRef.current) return;
+                dragStateRef.current.isDragging = true;
+                dragStateRef.current.startX = e.pageX - carouselRef.current.offsetLeft;
+                dragStateRef.current.scrollLeft = carouselRef.current.scrollLeft;
+            };
+
+            const onMouseMove = (e) => {
+                if (!dragStateRef.current.isDragging || !carouselRef.current) return;
+                e.preventDefault();
+                const x = e.pageX - carouselRef.current.offsetLeft;
+                const walk = (x - dragStateRef.current.startX) * 2;
+                carouselRef.current.scrollLeft = dragStateRef.current.scrollLeft - walk;
+            };
+
+            const onMouseUp = () => {
+                dragStateRef.current.isDragging = false;
+            };
+
+            const onMouseLeave = () => {
+                dragStateRef.current.isDragging = false;
+            };
+
+            // Arrow button scrolling
+            const scrollPhoneFlow = (direction) => {
+                if (!carouselRef.current) return;
+                const scrollAmount = 300;
+                carouselRef.current.scrollBy({
+                    left: direction === 'left' ? -scrollAmount : scrollAmount,
+                    behavior: 'smooth'
+                });
             };
 
             return (
@@ -822,15 +920,20 @@
                     <div className="py-24 bg-slate-900 w-full border-t border-slate-800 font-sans">
                         <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-16 items-center">
                             <div className="order-2 md:order-1">
-                                <div
-                                    className="overflow-x-auto scrollbar-hide pb-3 -mx-2 px-2 phone-flow-scroll"
-                                                                    >
-                                    <div className="flex gap-5 phone-flow-row">
-                                        <div className="phone-mockup min-w-[280px] w-[280px] h-[560px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden">
+                                <div 
+                                    ref={carouselRef}
+                                    className="phone-flow-carousel overflow-x-auto scrollbar-hide pb-3 -mx-2 px-2 snap-x snap-mandatory"
+                                    onMouseDown={onMouseDown}
+                                    onMouseMove={onMouseMove}
+                                    onMouseUp={onMouseUp}
+                                    onMouseLeave={onMouseLeave}
+                                >
+                                    <div className="phone-flow-track flex gap-5">
+                                        <div className="phone-mockup min-w-[280px] w-[280px] h-[560px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4 relative">
                                                 <div className="flex justify-between items-center mb-6">
-                                                    <h3 className="font-bold text-lg text-gray-800">1. Schedule</h3>
+                                                    <h3 className="font-bold text-lg text-gray-800">Today</h3>
                                                     <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xs font-bold">JD</div>
                                                 </div>
                                                 <div className="space-y-3">
@@ -861,11 +964,11 @@
                                             </div>
                                         </div>
 
-                                        <div className="phone-mockup min-w-[280px] w-[280px] h-[560px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden">
+                                        <div className="phone-mockup min-w-[280px] w-[280px] h-[560px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4">
                                                 <div className="flex justify-between items-center mb-6">
-                                                    <h3 className="font-bold text-lg text-gray-800">2. Signing Log</h3>
+                                                    <h3 className="font-bold text-lg text-gray-800">Journal</h3>
                                                     <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">Synced</span>
                                                 </div>
                                                 <div className="space-y-3">
@@ -889,11 +992,11 @@
                                             </div>
                                         </div>
 
-                                        <div className="phone-mockup min-w-[280px] w-[280px] h-[560px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden">
+                                        <div className="phone-mockup min-w-[280px] w-[280px] h-[560px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4">
                                                 <div className="flex justify-between items-center mb-6">
-                                                    <h3 className="font-bold text-lg text-gray-800">3. Get Paid</h3>
+                                                    <h3 className="font-bold text-lg text-gray-800">Payments</h3>
                                                     <button className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">Send Invoice</button>
                                                 </div>
                                                 <div className="space-y-3">
@@ -921,9 +1024,7 @@
                                         </div>
                                     </div>
                                 </div>
-                                <div className="mt-3 flex items-center justify-between gap-3">
-                                    <p className="text-xs text-slate-400 text-center md:text-left">Swipe horizontally on the phone cards to follow the real notary workflow.</p>
-                                </div>
+                                <p className="text-xs text-slate-400 mt-3 text-center md:text-left">Swipe on mobile or drag/click on desktop to preview the complete mobile workflow.</p>
                             </div>
                             <div className="order-1 md:order-2">
                                 <h3 className="text-3xl font-bold text-white mb-6">Run your business from your pocket.</h3>
@@ -2229,7 +2330,7 @@
         };
 
         const App = () => {
-            const [user, setUser] = useState(() => safeParse(localStorage.getItem('notary_user_profile'), null));
+            const [user, setUser] = useState(() => safeParse(safeStorageGet('notary_user_profile', null), null));
             const [currentView, setCurrentView] = useState(user ? 'dashboard' : 'landing');
             const [appointments, setAppointments] = useState([]);
             const [credentials, setCredentials] = useState([]);
@@ -2409,12 +2510,20 @@
             );
         };
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(
-            <AppErrorBoundary>
-                <App />
-            </AppErrorBoundary>
-        );
+        try {
+            const root = ReactDOM.createRoot(document.getElementById('root'));
+            root.render(
+                <AppErrorBoundary>
+                    <App />
+                </AppErrorBoundary>
+            );
+        } catch (e) {
+            const mount = document.getElementById('root');
+            if (mount) {
+                mount.innerHTML = `<div style="min-height:100vh;display:grid;place-items:center;padding:24px;font-family:sans-serif;background:#f8fafc;color:#0f172a;"><div style="max-width:520px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:20px;box-shadow:0 10px 25px rgba(2,6,23,.08);"><h2 style="margin:0 0 8px;font-size:20px;">NotaryOS failed to load</h2><p style="margin:0 0 10px;color:#475569;">A browser/runtime issue prevented startup. Refresh the page or clear site data and retry.</p><p style="margin:0;color:#64748b;font-size:12px;word-break:break-word;">${(e && e.message) ? e.message : 'Unknown startup error'}</p></div></div>`;
+            }
+            console.error('Root render failure:', e);
+        }
     </script>
 </body>
 </html>
