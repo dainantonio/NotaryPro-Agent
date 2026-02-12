@@ -861,8 +861,6 @@
                     answer: "Yes. The FAQ, guided onboarding, and explicit in-app explanations (especially around AI key setup and sync behavior) are meant to reduce ambiguity before users even contact support. That translates into faster activation and fewer repetitive troubleshooting requests."
                 }
             ];
-
-            const currentPlanLabel = "Starter Plan";
             
             const hoursSaved = Math.round((weeklyAppts * adminMins * 52) / 60);
             const dollarsSaved = (hoursSaved * 50).toLocaleString();
@@ -1114,6 +1112,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                <p className="text-xs text-slate-400 mt-3 text-center md:text-left">Two connected mobile views mirror the real appointment flow, from route prep to getting paid.</p>
                             </div>
                             <div className="order-1 lg:order-2">
                                 <h3 className="text-3xl font-bold text-white mb-6">Run your business from your pocket.</h3>
