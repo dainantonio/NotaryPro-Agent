@@ -6,7 +6,7 @@
     <title>NotaryOS</title>
     
     <!-- PWA Configuration -->
-    <meta name="theme-color" content="#f8fafc">
+    <meta name="theme-color" content="#0f172a">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="NotaryOS">
@@ -19,8 +19,8 @@
         "short_name": "NotaryOS",
         "start_url": ".",
         "display": "standalone",
-        "background_color": "#f8fafc",
-        "theme_color": "#f8fafc",
+        "background_color": "#0f172a",
+        "theme_color": "#0f172a",
         "orientation": "portrait",
         "icons": [{
             "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%234f46e5%22 rx=%2220%22/><text x=%2250%22 y=%2250%22 font-size=%2250%22 text-anchor=%22middle%22 dy=%22.35em%22>📜</text></svg>",
@@ -93,19 +93,65 @@
 
     <style>
         :root {
-            --app-bg: #f8fafc;
-            --surface-bg: #ffffff;
-            --surface-muted: #eef2ff;
-            --text-primary: #0f172a;
-            --text-muted: #64748b;
-            --border-color: #e2e8f0;
-            --accent-color: #4f46e5;
-            --accent-hover: #4338ca;
-            --accent-soft: #e0e7ff;
+            --color-bg: #f6f8fb;
+            --color-surface: #ffffff;
+            --color-surface-2: #f8fafc;
+            --color-border: #d9e1ea;
+            --color-text-primary: #0f172a;
+            --color-text-secondary: #475569;
+            --color-muted: #64748b;
+            --color-brand: #1d4ed8;
+            --color-success: #15803d;
+            --color-warning: #b45309;
+            --color-danger: #b91c1c;
+
+            --space-1: 4px;
+            --space-2: 8px;
+            --space-3: 12px;
+            --space-4: 16px;
+            --space-6: 24px;
+            --space-8: 32px;
+            --space-12: 48px;
+
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --radius-xl: 20px;
+
+            --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.06);
+            --shadow-md: 0 10px 24px rgba(15, 23, 42, 0.08);
+            --shadow-lg: 0 18px 42px rgba(15, 23, 42, 0.12);
+
+            --font-xs: 12px;
+            --font-sm: 14px;
+            --font-base: 16px;
+            --font-lg: 18px;
+            --font-xl: 22px;
+            --leading-tight: 1.25;
+            --leading-base: 1.5;
+            --leading-relaxed: 1.7;
+
+            --app-bg: var(--color-bg);
+            --surface-bg: var(--color-surface);
+            --surface-muted: var(--color-surface-2);
+            --text-primary: var(--color-text-primary);
+            --text-muted: var(--color-muted);
+            --border-color: var(--color-border);
+            --accent-color: var(--color-brand);
+            --accent-hover: #1e40af;
+            --accent-soft: #dbeafe;
         }
 
-        body { font-family: 'Merriweather', serif; background-color: var(--app-bg); color: var(--text-primary); transition: background-color .25s ease, color .25s ease; }
-        h1, h2, h3, h4, h5, h6, button, .font-sans { font-family: 'Poppins', sans-serif; }
+        * { transition: background-color 180ms ease, border-color 180ms ease, box-shadow 180ms ease, color 180ms ease; }
+
+        body {
+            font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+            background: var(--app-bg);
+            color: var(--text-primary);
+            letter-spacing: 0.005em;
+            line-height: var(--leading-base);
+        }
+        h1, h2, h3, h4, h5, h6, button, .font-sans { font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif; }
 
         .theme-app-bg { background-color: var(--app-bg) !important; }
         .theme-surface { background-color: var(--surface-bg) !important; }
@@ -116,6 +162,74 @@
         .theme-accent-btn { background-color: var(--accent-color) !important; color: #fff !important; border: 1px solid transparent; }
         .theme-accent-btn:hover { background-color: var(--accent-hover) !important; }
         .theme-pill { background-color: var(--accent-soft) !important; color: var(--accent-color) !important; border-color: var(--accent-color) !important; }
+
+        .ui-card {
+            background: var(--color-surface);
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .legal-glass {
+            background: rgba(255, 255, 255, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.24);
+            backdrop-filter: blur(10px);
+            box-shadow: var(--shadow-md);
+        }
+
+        .trust-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            border-radius: 999px;
+            background: #eff6ff;
+            color: #1e3a8a;
+            border: 1px solid #bfdbfe;
+            padding: 0.32rem 0.72rem;
+            font-size: 0.72rem;
+            font-weight: 600;
+            letter-spacing: 0.04em;
+            text-transform: uppercase;
+        }
+
+        .btn-primary, .cta-primary {
+            background: #1d4ed8;
+            color: #fff;
+            border: 1px solid #1d4ed8;
+            box-shadow: 0 6px 16px rgba(30, 64, 175, 0.2);
+        }
+        .btn-primary:hover, .cta-primary:hover { background: #1e40af; }
+
+        .btn-secondary {
+            background: #fff;
+            color: var(--color-text-secondary);
+            border: 1px solid var(--color-border);
+        }
+        .btn-secondary:hover { background: #f8fafc; }
+
+        .form-input {
+            width: 100%;
+            border: 1px solid var(--color-border);
+            background: #fff;
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            font-size: var(--font-sm);
+            color: var(--color-text-primary);
+        }
+        .form-input:focus-visible, .focus-ring:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+            border-color: #60a5fa;
+        }
+
+        .table-row-hover:hover { background: #f8fafc; }
+
+        .soft-empty {
+            background: #fff;
+            border: 1px solid var(--color-border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+        }
 
         .scrollbar-hide::-webkit-scrollbar { display: none; }
         .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
@@ -304,6 +418,41 @@
 </head>
 <body>
     <div id="root"></div>
+
+
+    <script>
+        (function () {
+            const isIgnorableCrossOriginError = (event) => {
+                const message = (event?.message || '').trim();
+                const filename = event?.filename || '';
+                if (message === 'Script error.' || message === 'Script error') return true;
+                if (!filename) return false;
+                const isRelative = filename.startsWith('/') || filename.startsWith('./');
+                const isSameOrigin = filename.startsWith(window.location.origin);
+                return !(isRelative || isSameOrigin);
+            };
+
+            const renderBootError = (message) => {
+                const mount = document.getElementById('root');
+                if (!mount || mount.childElementCount > 0 || window.__NOTARY_APP_MOUNTED__) return;
+                mount.innerHTML = `<div style="min-height:100vh;display:grid;place-items:center;padding:24px;font-family:Inter,Arial,sans-serif;background:#f8fafc;color:#0f172a;"><div style="max-width:560px;background:#fff;border:1px solid #dbe4ef;border-radius:16px;padding:20px;box-shadow:0 10px 25px rgba(15,23,42,.08);"><h2 style="margin:0 0 8px;font-size:20px;">NotaryOS couldn't start</h2><p style="margin:0 0 10px;color:#475569;">A temporary browser/runtime issue prevented the app from rendering. Please refresh and try again.</p><p style="margin:0;color:#64748b;font-size:12px;word-break:break-word;">${message || 'Unknown startup error'}</p></div></div>`;
+            };
+
+            window.addEventListener('error', function (event) {
+                if (window.__NOTARY_APP_MOUNTED__ || isIgnorableCrossOriginError(event)) return;
+                renderBootError(event?.message || 'Startup script error');
+            });
+
+            window.addEventListener('unhandledrejection', function (event) {
+                if (window.__NOTARY_APP_MOUNTED__) return;
+                renderBootError(event?.reason?.message || 'Unhandled startup rejection');
+            });
+
+            window.setTimeout(function () {
+                if (!window.__NOTARY_APP_MOUNTED__) renderBootError('Application mount timeout');
+            }, 10000);
+        })();
+    </script>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
@@ -771,12 +920,12 @@
             );
         };
 
-        const EmptyState = ({ icon, title, description, actionLabel, onAction, colorClass = "text-blue-600", bgClass = "bg-blue-50" }) => (
-            <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in bg-white rounded-2xl border border-gray-100 shadow-sm font-sans">
-                <div className={`w-20 h-20 ${bgClass} ${colorClass} rounded-full flex items-center justify-center mb-6 text-3xl shadow-inner`}><i className={`fas ${icon}`}></i></div>
-                <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
-                <p className="text-gray-500 max-w-xs mb-8 leading-relaxed text-sm">{description}</p>
-                {onAction && <button onClick={onAction} className={`px-8 py-3 ${colorClass.replace('text', 'bg')} text-white rounded-xl font-bold shadow-lg transform transition-all hover:scale-105 active:scale-95`}>{actionLabel}</button>}
+        const EmptyState = ({ icon, title, description, actionLabel, onAction, colorClass = "text-blue-700", bgClass = "bg-blue-50" }) => (
+            <div className="soft-empty flex flex-col items-center justify-center py-16 px-6 text-center animate-fade-in font-sans">
+                <div className={`w-16 h-16 ${bgClass} ${colorClass} rounded-full flex items-center justify-center mb-5 text-2xl`}><i className={`fas ${icon}`}></i></div>
+                <h3 className="text-lg font-semibold text-slate-900 mb-2">{title}</h3>
+                <p className="text-slate-500 max-w-sm mb-6 leading-relaxed text-sm">{description}</p>
+                {onAction && <button onClick={onAction} className="btn-primary focus-ring px-6 py-2.5 rounded-lg text-sm font-semibold">{actionLabel}</button>}
             </div>
         );
 
@@ -1392,7 +1541,7 @@
                 <button onClick={() => setView('schedule')} className="p-2 active:scale-90 transition-transform"><i className="fas fa-calendar-alt text-slate-400 text-xl"></i></button>
                 
                 {/* IMPROVED FAB/ADD BUTTON FOR MOBILE */}
-                <button onClick={() => setView('addAppointment')} className="-mt-8 bg-blue-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-xl border-4 border-white active:scale-90 transition-transform active:bg-blue-700"><i className="fas fa-plus text-2xl"></i></button>
+                <button onClick={() => setView('addAppointment')} className="-mt-8 btn-primary text-white rounded-full w-14 h-14 flex items-center justify-center border-4 border-white active:scale-90 transition-transform"><i className="fas fa-plus text-2xl"></i></button>
                 
                 <button onClick={() => setView('journal')} className="p-2 active:scale-90 transition-transform"><i className="fas fa-book text-slate-400 text-xl"></i></button>
                 <button onClick={() => setView('trainer')} className="p-2 active:scale-90 transition-transform"><i className="fas fa-robot text-slate-400 text-xl"></i></button>
@@ -1412,7 +1561,7 @@
                 };
             }, []);
             return (
-                <div className="theme-surface theme-border border-b p-4 flex justify-between items-center z-20 sticky top-0 bg-white/90 backdrop-blur-sm">
+                <div className="theme-surface theme-border border-b p-4 flex justify-between items-center z-20 sticky top-0 bg-white/95 backdrop-blur-sm">
                     <div className="flex items-center gap-3">
                         <button onClick={onOpenMenu} className="lg:hidden text-slate-600 p-1 active:bg-slate-100 rounded-lg transition-colors"><i className="fas fa-bars text-xl"></i></button>
                         <h2 className="font-bold theme-text text-lg">{title}</h2>
@@ -1456,8 +1605,8 @@
             const handleDelete = async (id) => { await DataManager.delete('notary_clients', id); setClients(await DataManager.get('notary_clients')); showToast("Client Deleted", 'error'); };
 
             return (
-                <div className="p-6 pb-24">
-                     <div className="flex justify-between mb-4"><h3 className="font-bold text-lg text-gray-800">Client Directory</h3><button onClick={()=>{setEditingClient(null); setShowForm(true);}} className="bg-pink-600 text-white px-3 py-1 rounded">Add</button></div>
+                <div className="p-4 md:p-6 pb-24">
+                     <div className="flex justify-between mb-4"><h3 className="font-bold text-lg text-gray-800">Client Directory</h3><button onClick={()=>{setEditingClient(null); setShowForm(true);}} className="btn-primary focus-ring text-white px-3 py-1 rounded-md text-sm">Add</button></div>
                     {showForm && <form onSubmit={handleSave} className="bg-white p-4 rounded shadow mb-4 space-y-2"><input name="name" defaultValue={editingClient?.name || ''} placeholder="Name" className="w-full border p-2 rounded" required /><input name="phone" defaultValue={editingClient?.phone || ''} placeholder="Phone" className="w-full border p-2 rounded" /><input name="email" defaultValue={editingClient?.email || ''} placeholder="Email" className="w-full border p-2 rounded" /><div className="flex gap-2"><button type="button" onClick={() => { setShowForm(false); setEditingClient(null); }} className="flex-1 bg-gray-100 rounded py-2">Cancel</button><button className="flex-1 bg-pink-600 text-white px-4 py-2 rounded">{editingClient ? 'Update' : 'Save'}</button></div></form>}
                     <div className="space-y-3">
                         {clients.length === 0 ? (
@@ -1470,7 +1619,7 @@
                                 colorClass="text-pink-600"
                                 bgClass="bg-pink-50"
                             />
-                        ) : clients.map(c => <div key={c.id} className="bg-white p-3 rounded shadow"><div className="flex justify-between items-start"><div><b>{c.name}</b><p className="text-sm text-gray-500">{c.phone}</p></div><div className="flex gap-2"><button onClick={() => { setEditingClient(c); setShowForm(true); }} className="text-blue-600 hover:text-blue-800 transition-colors"><i className="fas fa-edit"></i></button><button onClick={() => handleDelete(c.id)} className="text-red-400 hover:text-red-600 transition-colors"><i className="fas fa-trash"></i></button></div></div></div>)}
+                        ) : clients.map(c => <div key={c.id} className="ui-card p-3 rounded-lg"><div className="flex justify-between items-start"><div><b>{c.name}</b><p className="text-sm text-gray-500">{c.phone}</p></div><div className="flex gap-2"><button onClick={() => { setEditingClient(c); setShowForm(true); }} className="text-blue-600 hover:text-blue-800 transition-colors"><i className="fas fa-edit"></i></button><button onClick={() => handleDelete(c.id)} className="text-red-400 hover:text-red-600 transition-colors"><i className="fas fa-trash"></i></button></div></div></div>)}
                     </div>
                 </div>
             );
@@ -1534,17 +1683,33 @@
             const monthlyIncome = safeAppointments.filter(a => a.status === 'Paid').reduce((sum, a) => sum + parseFloat(a.fee || 0), 0);
 
             return (
-                <div className="p-6 space-y-6 pb-24">
+                <div className="p-4 md:p-6 space-y-5 pb-24">
+                    <div className="ui-card rounded-2xl p-4 md:p-5 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Operations Center</p>
+                            <h2 className="text-xl md:text-2xl font-semibold text-slate-900 mt-1">Secure Notary Workflow</h2>
+                            <p className="text-sm text-slate-600 mt-1">Monitor appointments, compliance, and payments in one trusted workspace.</p>
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                            <span className="trust-pill"><i className="fas fa-shield-alt"></i> Compliance Ready</span>
+                            <span className="trust-pill"><i className="fas fa-lock"></i> Encrypted Cloud Sync</span>
+                        </div>
+                    </div>
+
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden"><div className="absolute right-0 top-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4"></div><div className="relative"><div className="text-gray-500 text-xs font-bold uppercase mb-1">Monthly Income</div><div className="text-2xl font-bold text-gray-800">${monthlyIncome.toFixed(2)}</div>
+                        <div className="ui-card p-5 rounded-2xl relative overflow-hidden"><div className="absolute right-0 top-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4"></div><div className="relative"><div className="text-slate-500 text-xs font-bold uppercase mb-1">Monthly Income</div><div className="text-2xl font-semibold text-slate-900">${monthlyIncome.toFixed(2)}</div>
                             <IncomeChart appointments={safeAppointments} />
                         </div></div>
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden"><div className="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4"></div><div className="relative"><div className="text-gray-500 text-xs font-bold uppercase mb-1">Today's Jobs</div><div className="text-2xl font-bold text-gray-800">{todaysJobs.length}</div></div></div>
-                        <div onClick={() => setView('credentials')} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50 relative overflow-hidden"><div className={`absolute right-0 top-0 w-24 h-24 rounded-bl-full -mr-4 -mt-4 ${expiringCreds.length > 0 ? 'bg-red-50' : 'bg-gray-50'}`}></div><div className="relative"><div className="text-gray-500 text-xs font-bold uppercase mb-1">Compliance Alerts</div><div className={`text-2xl font-bold ${expiringCreds.length > 0 ? 'text-red-600' : 'text-green-600'}`}>{expiringCreds.length}</div></div></div>
+                        <div className="ui-card p-5 rounded-2xl relative overflow-hidden"><div className="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4"></div><div className="relative"><div className="text-slate-500 text-xs font-bold uppercase mb-1">Today's Jobs</div><div className="text-2xl font-semibold text-slate-900">{todaysJobs.length}</div><p className="text-sm text-slate-600 mt-2">Keep each signer informed with clear next-step updates.</p></div></div>
+                        <div onClick={() => setView('credentials')} className="ui-card p-5 rounded-2xl cursor-pointer hover:bg-slate-50 relative overflow-hidden"><div className={`absolute right-0 top-0 w-24 h-24 rounded-bl-full -mr-4 -mt-4 ${expiringCreds.length > 0 ? 'bg-red-50' : 'bg-slate-100'}`}></div><div className="relative"><div className="text-slate-500 text-xs font-bold uppercase mb-1">Compliance Alerts</div><div className={`text-2xl font-semibold ${expiringCreds.length > 0 ? 'text-red-600' : 'text-emerald-600'}`}>{expiringCreds.length}</div><p className="text-sm text-slate-600 mt-2">Tap to review credentials and avoid service interruptions.</p></div></div>
                     </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-800 mb-4">Today's Agenda</h3>
-                        {todaysJobs.length === 0 ? <EmptyState icon="fa-calendar-day" title="No jobs today" description="Schedule clear. Good day for marketing or training!" actionLabel="Add Job" onAction={() => setView('addAppointment')} colorClass="text-blue-600" bgClass="bg-blue-50" /> : <div className="space-y-3">{todaysJobs.map(j => <div key={j.id} className="bg-white p-4 rounded shadow">{j.clientName}</div>)}</div>}
+
+                    <div className="ui-card rounded-2xl p-4 md:p-5">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+                            <h3 className="text-lg font-semibold text-slate-900">Today's Agenda</h3>
+                            <button onClick={() => setView('addAppointment')} className="cta-primary px-4 py-2 rounded-lg text-sm font-semibold w-full sm:w-auto">Create Appointment</button>
+                        </div>
+                        {todaysJobs.length === 0 ? <EmptyState icon="fa-calendar-day" title="No jobs today" description="Schedule clear. Good day for outreach, training, or compliance prep." actionLabel="Add Job" onAction={() => setView('addAppointment')} colorClass="text-blue-700" bgClass="bg-blue-50" /> : <div className="space-y-3">{todaysJobs.map(j => <div key={j.id} className="bg-white/90 p-4 rounded-xl border border-slate-200"><p className="font-semibold text-slate-900">{j.clientName}</p><p className="text-sm text-slate-600 mt-1">{j.time} • {j.type || 'General Notarization'}</p></div>)}</div>}
                     </div>
                 </div>
             );
@@ -1615,17 +1780,17 @@
 
             return (
                 <div className="p-6 pb-24 max-w-2xl mx-auto">
-                    <div className="bg-white rounded-2xl shadow p-6">
+                    <div className="ui-card rounded-2xl p-6">
                         <h3 className="font-bold text-lg mb-4">{initialData ? 'Edit Appointment' : 'New Appointment'}</h3>
-                        <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                        <div className="mb-6 p-4 bg-blue-50/70 rounded-xl border border-blue-100">
                             <label className="text-xs font-bold text-blue-600 uppercase block mb-2"><i className="fas fa-magic"></i> Smart Fill</label>
-                            <div className="flex gap-2"><input value={magicInput} onChange={e=>setMagicInput(e.target.value)} className="flex-1 p-2 border rounded text-sm" placeholder="e.g. Loan signing with Sarah tomorrow at 2pm for $150..." /><button onClick={handleSmartFill} className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold">Fill</button></div>
+                            <div className="flex gap-2"><input value={magicInput} onChange={e=>setMagicInput(e.target.value)} className="form-input focus-ring flex-1 py-2 text-sm" placeholder="e.g. Loan signing with Sarah tomorrow at 2pm for $150..." /><button onClick={handleSmartFill} className="btn-primary focus-ring px-3 py-1 rounded-md text-xs font-semibold">Fill</button></div>
                         </div>
                         <form onSubmit={handleSubmit} className="space-y-4">
-                            <input className="w-full p-3 border rounded-xl" placeholder="Client Name" value={formData.clientName} onChange={e=>setFormData({...formData, clientName: e.target.value})} required />
-                            <div className="grid grid-cols-2 gap-4"><input type="date" className="w-full p-3 border rounded-xl" value={formData.date} onChange={e=>setFormData({...formData, date: e.target.value})} /><input type="time" className="w-full p-3 border rounded-xl" value={formData.time} onChange={e=>setFormData({...formData, time: e.target.value})} /></div>
-                            <input className="w-full p-3 border rounded-xl" type="number" placeholder="Fee ($)" value={formData.fee} onChange={e=>setFormData({...formData, fee: e.target.value})} />
-                            <div className="flex gap-3"><button type="button" onClick={onCancel} className="flex-1 py-3 bg-gray-100 rounded-xl">Cancel</button><button type="submit" className="flex-1 py-3 bg-blue-600 text-white rounded-xl">Save</button></div>
+                            <input className="form-input focus-ring" placeholder="Client Name" value={formData.clientName} onChange={e=>setFormData({...formData, clientName: e.target.value})} required />
+                            <div className="grid grid-cols-2 gap-4"><input type="date" className="form-input focus-ring" value={formData.date} onChange={e=>setFormData({...formData, date: e.target.value})} /><input type="time" className="form-input focus-ring" value={formData.time} onChange={e=>setFormData({...formData, time: e.target.value})} /></div>
+                            <input className="form-input focus-ring" type="number" placeholder="Fee ($)" value={formData.fee} onChange={e=>setFormData({...formData, fee: e.target.value})} />
+                            <div className="flex gap-3"><button type="button" onClick={onCancel} className="btn-secondary focus-ring flex-1 py-3 rounded-xl text-sm font-semibold">Cancel</button><button type="submit" className="btn-primary focus-ring flex-1 py-3 rounded-xl text-sm font-semibold">Save</button></div>
                         </form>
                     </div>
                 </div>
@@ -1691,11 +1856,11 @@
             };
             return (
                 <div className="p-6 pb-24">
-                    <div className="flex justify-between items-center mb-6"><h3 className="font-bold text-lg">Schedule</h3><div className="bg-gray-200 p-1 rounded-lg flex"><button onClick={()=>setViewMode('list')} className={`px-3 py-1 text-xs font-bold rounded-md ${viewMode==='list'?'bg-white shadow':''}`}>List</button><button onClick={()=>setViewMode('calendar')} className={`px-3 py-1 text-xs font-bold rounded-md ${viewMode==='calendar'?'bg-white shadow':''}`}>Calendar</button></div></div>
+                    <div className="flex justify-between items-center mb-6"><h3 className="font-semibold text-lg text-slate-900">Schedule</h3><div className="bg-slate-100 p-1 rounded-lg flex border border-slate-200"><button onClick={()=>setViewMode('list')} className={`px-3 py-1 text-xs font-semibold rounded-md ${viewMode==='list'?'bg-white shadow text-slate-900':'text-slate-500'}`}>List</button><button onClick={()=>setViewMode('calendar')} className={`px-3 py-1 text-xs font-semibold rounded-md ${viewMode==='calendar'?'bg-white shadow text-slate-900':'text-slate-500'}`}>Calendar</button></div></div>
                     {viewMode === 'calendar' ? <CalendarView /> : (
                         <div className="space-y-3">
                             {safeAppointments.length === 0 ? <EmptyState icon="fa-calendar-alt" title="Schedule Empty" description="Add your first signing." actionLabel="Add" onAction={() => setView('addAppointment')} colorClass="text-green-600" bgClass="bg-green-50" /> : safeAppointments.sort((a,b) => new Date(a.date) - new Date(b.date)).map(job => (
-                                <div key={job.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm relative group">
+                                <div key={job.id} className="ui-card p-4 rounded-xl relative group table-row-hover">
                                     <div className="cursor-pointer" onClick={() => onEdit(job)}>
                                         <div className="flex justify-between items-start mb-2">
                                             <div>
@@ -2323,7 +2488,7 @@
                                 bgClass="bg-blue-50"
                             />
                         ) : (
-                            activeTab === 'expenses' ? expenses.map(e => <div key={e.id} className="bg-white p-3 rounded shadow"><span>{e.desc}</span></div>) : mileage.map(m => <div key={m.id} className="bg-white p-3 rounded shadow"><span>{m.start} to {m.end}</span></div>)
+                            activeTab === 'expenses' ? expenses.map(e => <div key={e.id} className="ui-card p-3 rounded-lg"><span>{e.desc}</span></div>) : mileage.map(m => <div key={m.id} className="ui-card p-3 rounded-lg"><span>{m.start} to {m.end}</span></div>)
                         )}
                     </div>
                 </div>
@@ -2851,6 +3016,7 @@
                     <App />
                 </AppErrorBoundary>
             );
+            window.__NOTARY_APP_MOUNTED__ = true;
         } catch (e) {
             const mount = document.getElementById('root');
             if (mount) {
