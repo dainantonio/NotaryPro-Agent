@@ -1066,7 +1066,7 @@
                 { id: 1, icon: 'fa-rocket', color: 'text-blue-600', bg: 'bg-blue-50', title: 'Welcome to NotaryOS', desc: 'Your all-in-one operating system for running a modern notary business.' },
                 { id: 2, icon: 'fa-chart-pie', color: 'text-emerald-600', bg: 'bg-emerald-50', title: 'Business Dashboard', desc: 'Track your monthly income, upcoming jobs, and get alerts for expiring credentials.' },
                 { id: 3, icon: 'fa-calendar-check', color: 'text-purple-600', bg: 'bg-purple-50', title: 'Schedule & Journal', desc: 'Manage appointments with Calendar view and log every signing for state compliance.' },
-                { id: 4, icon: 'fa-robot', color: 'text-indigo-600', bg: 'bg-indigo-50', title: 'AI Training Center', desc: 'Get instant answers to state laws and practice difficult scenarios with your AI mentor.' },
+                { id: 4, icon: 'fa-robot', color: 'text-indigo-600', bg: 'bg-indigo-50', title: 'AI Training Center', desc: 'Get instant answers to state laws and practice difficult scenarios with your AI Coach.' },
                 { id: 5, icon: 'fa-cog', color: 'text-slate-600', bg: 'bg-slate-50', title: 'You\'re All Set', desc: 'Customize your profile, set up your branding, and start accepting appointments!' }
             ];
 
@@ -1278,7 +1278,7 @@
                                         </div>
                                         <div className="flex items-start gap-4 p-4 rounded-xl bg-teal-900/10 border border-teal-900/30">
                                             <div className="w-10 h-10 rounded-full bg-teal-900/30 flex items-center justify-center text-teal-400 shrink-0"><i className="fas fa-robot"></i></div>
-                                            <div><h4 className="font-bold text-teal-200">AI Guardian</h4><p className="text-sm text-slate-400">Your personal compliance coach answers state law questions 24/7.</p></div>
+                                            <div><h4 className="font-bold text-teal-200">AI Coach</h4><p className="text-sm text-slate-400">Your personal compliance coach answers state law questions 24/7.</p></div>
                                         </div>
                                         <div className="flex items-start gap-4 p-4 rounded-xl bg-teal-900/10 border border-teal-900/30">
                                             <div className="w-10 h-10 rounded-full bg-teal-900/30 flex items-center justify-center text-teal-400 shrink-0"><i className="fas fa-cloud-upload-alt"></i></div>
@@ -2100,26 +2100,29 @@
                 if (!canvasRef.current) return;
                 const ctx = canvasRef.current.getContext('2d');
 
-                // Group by Month
                 const monthlyData = {};
-                const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
-                months.forEach(m => monthlyData[m] = 0);
+                const monthOrder = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                monthOrder.forEach(m => monthlyData[m] = 0);
 
-                appointments.forEach(a => {
+                (appointments || []).forEach(a => {
+                    if (a.status !== 'Paid') return;
                     const date = new Date(a.date);
+                    if (isNaN(date.getTime())) return;
                     const m = date.toLocaleString('default', { month: 'short' });
-                    if(monthlyData[m] !== undefined) monthlyData[m] += parseFloat(a.fee || 0);
+                    if (monthlyData[m] !== undefined) monthlyData[m] += parseFloat(a.fee || 0);
                 });
 
                 const chart = new Chart(ctx, {
                     type: 'line',
                     data: {
-                        labels: months,
+                        labels: monthOrder,
                         datasets: [{
-                            label: 'Income',
+                            label: 'Revenue',
                             data: Object.values(monthlyData),
-                            borderColor: '#4F46E5',
-                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            borderColor: 'var(--accent-color)',
+                            backgroundColor: 'rgba(79, 70, 229, 0.08)',
+                            pointRadius: 0,
+                            borderWidth: 3,
                             fill: true,
                             tension: 0.4
                         }]
@@ -2127,41 +2130,212 @@
                     options: {
                         responsive: true,
                         maintainAspectRatio: false,
-                        plugins: { legend: { display: false } },
-                        scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
+                        plugins: { legend: { display: false }, tooltip: { intersect: false, mode: 'index' } },
+                        scales: {
+                            y: { beginAtZero: true, grid: { display: false }, ticks: { color: '#94a3b8' } },
+                            x: { grid: { display: false }, ticks: { color: '#94a3b8' } }
+                        }
                     }
                 });
 
                 return () => chart.destroy();
             }, [appointments]);
 
-            return <div className="h-24 w-full"><canvas ref={canvasRef}></canvas></div>;
+            return <div className="h-64 w-full"><canvas ref={canvasRef}></canvas></div>;
         };
 
-        const Dashboard = ({ appointments, credentials, setView, isCloud }) => {
-            const today = new Date().toISOString().split('T')[0];
-            const safeAppointments = Array.isArray(appointments) ? appointments : [];
-            const todaysJobs = safeAppointments.filter(a => a.date === today);
+        const Dashboard = ({ appointments, credentials, setView, user }) => {
+            const now = new Date();
+            const hour = now.getHours();
+            const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+            const dateLabel = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
+            const today = now.toISOString().split('T')[0];
 
+            const safeAppointments = Array.isArray(appointments) ? appointments : [];
             const safeCredentials = Array.isArray(credentials) ? credentials : [];
-            const expiringCreds = safeCredentials.filter(c => {
-                const exp = new Date(c.expiry);
-                return Math.ceil((exp - new Date()) / (1000 * 60 * 60 * 24)) <= 60;
-            });
-            const monthlyIncome = safeAppointments.filter(a => a.status === 'Paid').reduce((sum, a) => sum + parseFloat(a.fee || 0), 0);
+
+            const paidAppointments = safeAppointments.filter(a => a.status === 'Paid');
+            const ytdRevenue = paidAppointments.reduce((sum, a) => sum + parseFloat(a.fee || 0), 0);
+
+            const scheduled = safeAppointments.filter(a => a.status === 'Scheduled');
+            const nextScheduled = [...scheduled]
+                .map(a => ({ ...a, dt: new Date(`${a.date || ''}T${a.time || '00:00'}`) }))
+                .filter(a => !isNaN(a.dt.getTime()) && a.dt >= now)
+                .sort((a, b) => a.dt - b.dt)[0] || null;
+
+            const expiringCreds = safeCredentials
+                .map(c => ({ ...c, expDate: new Date(c.expiry) }))
+                .filter(c => !isNaN(c.expDate.getTime()))
+                .map(c => ({ ...c, daysLeft: Math.ceil((c.expDate - now) / (1000 * 60 * 60 * 24)) }))
+                .filter(c => c.daysLeft <= 60);
+
+            const urgentCred = expiringCreds.sort((a, b) => a.daysLeft - b.daysLeft)[0] || null;
+            const complianceState = urgentCred ? (urgentCred.daysLeft <= 30 ? 'critical' : 'warning') : 'clear';
+
+            const todaysJobs = safeAppointments.filter(a => a.date === today);
+            const unpaidInvoices = safeAppointments.filter(a => a.status === 'Completed').length;
+
+            const recentActivity = [...safeAppointments]
+                .map(a => ({ ...a, dt: new Date(`${a.date || ''}T${a.time || '00:00'}`) }))
+                .sort((a, b) => b.dt - a.dt)
+                .slice(0, 5);
+
+            const statusPill = (status) => {
+                if (status === 'Paid') return 'bg-emerald-100 text-emerald-700';
+                if (status === 'Completed') return 'bg-blue-100 text-blue-700';
+                if (status === 'Cancelled') return 'bg-red-100 text-red-700';
+                return 'bg-amber-100 text-amber-700';
+            };
+
+            const quickActions = [
+                { label: 'New Appointment', icon: 'fa-plus', onClick: () => setView('addAppointment') },
+                { label: 'Log Journal Entry', icon: 'fa-pen-to-square', onClick: () => setView('journal') },
+                { label: 'Add Expense', icon: 'fa-dollar-sign', onClick: () => setView('finances') },
+                { label: 'Ask AI Coach', icon: 'fa-robot', onClick: () => setView('trainer') }
+            ];
 
             return (
-                <div className="p-6 space-y-6 pb-24">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden"><div className="absolute right-0 top-0 w-24 h-24 bg-green-50 rounded-bl-full -mr-4 -mt-4"></div><div className="relative"><div className="text-gray-500 text-xs font-bold uppercase mb-1">Monthly Income</div><div className="text-2xl font-bold text-gray-800">${monthlyIncome.toFixed(2)}</div>
-                            <IncomeChart appointments={safeAppointments} />
-                        </div></div>
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 relative overflow-hidden"><div className="absolute right-0 top-0 w-24 h-24 bg-blue-50 rounded-bl-full -mr-4 -mt-4"></div><div className="relative"><div className="text-gray-500 text-xs font-bold uppercase mb-1">Today's Jobs</div><div className="text-2xl font-bold text-gray-800">{todaysJobs.length}</div></div></div>
-                        <div onClick={() => setView('credentials')} className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 cursor-pointer hover:bg-gray-50 relative overflow-hidden"><div className={`absolute right-0 top-0 w-24 h-24 rounded-bl-full -mr-4 -mt-4 ${expiringCreds.length > 0 ? 'bg-red-50' : 'bg-gray-50'}`}></div><div className="relative"><div className="text-gray-500 text-xs font-bold uppercase mb-1">Compliance Alerts</div><div className={`text-2xl font-bold ${expiringCreds.length > 0 ? 'text-red-600' : 'text-green-600'}`}>{expiringCreds.length}</div></div></div>
+                <div className="p-6 pb-24 space-y-6 font-sans">
+                    <div className="overflow-hidden">
+                        <h2 className="text-3xl font-bold theme-text truncate">{greeting}, {user?.name || 'Notary'}.</h2>
+                        <p className="theme-text-muted mt-1 truncate">{dateLabel}</p>
                     </div>
-                    <div>
-                        <h3 className="text-lg font-bold text-gray-800 mb-4">Today's Agenda</h3>
-                        {todaysJobs.length === 0 ? <EmptyState icon="fa-calendar-day" title="No jobs today" description="Schedule clear. Good day for marketing or training!" actionLabel="Add Job" onAction={() => setView('addAppointment')} colorClass="text-blue-600" bgClass="bg-blue-50" /> : <div className="space-y-3">{todaysJobs.map(j => <div key={j.id} className="bg-white p-4 rounded shadow">{j.clientName}</div>)}</div>}
+
+                    <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
+                        {quickActions.map(action => (
+                            <button
+                                key={action.label}
+                                onClick={action.onClick}
+                                className="flex-shrink-0 px-4 py-2.5 rounded-xl border theme-border theme-surface hover:-translate-y-0.5 shadow-sm hover:shadow-md transition-all duration-200 theme-text"
+                            >
+                                <i className={`fas ${action.icon} mr-2 theme-text-muted`}></i>{action.label}
+                            </button>
+                        ))}
+                    </div>
+
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div className="xl:col-span-2 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <div className="theme-surface theme-border border rounded-xl p-5 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 overflow-hidden">
+                                    <p className="theme-text-muted text-xs font-semibold uppercase tracking-wide mb-2">Revenue (YTD)</p>
+                                    <p className="text-3xl font-bold theme-text truncate">${ytdRevenue.toLocaleString()}</p>
+                                    <p className="text-emerald-600 text-xs mt-2 font-semibold"><i className="fas fa-arrow-trend-up mr-1"></i>+12.5% vs last month</p>
+                                </div>
+                                <div className="theme-surface theme-border border rounded-xl p-5 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 overflow-hidden">
+                                    <p className="theme-text-muted text-xs font-semibold uppercase tracking-wide mb-2">Upcoming Signings</p>
+                                    <p className="text-3xl font-bold theme-text">{scheduled.length}</p>
+                                    <p className="theme-text-muted text-xs mt-2 truncate">{nextScheduled ? `Next: ${nextScheduled.clientName || 'Client'} • ${nextScheduled.dt.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : 'No upcoming appointments'}</p>
+                                </div>
+                                <button onClick={() => setView('credentials')} className="text-left theme-surface theme-border border rounded-xl p-5 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 overflow-hidden">
+                                    <p className="theme-text-muted text-xs font-semibold uppercase tracking-wide mb-2">Compliance Status</p>
+                                    <p className={`text-2xl font-bold truncate ${complianceState === 'clear' ? 'text-emerald-600' : complianceState === 'warning' ? 'text-amber-600' : 'text-red-600'}`}>
+                                        {complianceState === 'clear' ? 'All Clear' : complianceState === 'warning' ? 'Attention Needed' : 'Critical'}
+                                    </p>
+                                    <p className="theme-text-muted text-xs mt-2 truncate">
+                                        {urgentCred ? `${urgentCred.name || 'Credential'} expires in ${urgentCred.daysLeft} days` : 'All credentials valid for 60+ days'}
+                                    </p>
+                                </button>
+                            </div>
+
+                            <div className="theme-surface theme-border border rounded-xl p-5 shadow-sm">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-bold theme-text">Revenue Trend</h3>
+                                    <button onClick={() => setView('finances')} className="text-xs font-semibold theme-text-muted hover:theme-text">Open Finances</button>
+                                </div>
+                                <IncomeChart appointments={safeAppointments} />
+                            </div>
+
+                            <div className="theme-surface theme-border border rounded-xl p-5 shadow-sm overflow-hidden">
+                                <h3 className="text-lg font-bold theme-text mb-4">Recent Activity</h3>
+                                {recentActivity.length === 0 ? (
+                                    <p className="theme-text-muted text-sm">No recent activity yet. Start by creating your first appointment.</p>
+                                ) : (
+                                    <div className="overflow-x-auto">
+                                        <table className="min-w-full text-sm">
+                                            <thead>
+                                                <tr className="theme-text-muted text-xs uppercase tracking-wide border-b theme-border">
+                                                    <th className="text-left py-2 pr-3">Client</th>
+                                                    <th className="text-left py-2 pr-3">Service</th>
+                                                    <th className="text-left py-2 pr-3">Date / Time</th>
+                                                    <th className="text-left py-2 pr-3">Fee</th>
+                                                    <th className="text-left py-2">Status</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {recentActivity.map(item => {
+                                                    const initials = (item.clientName || 'NA').split(' ').map(p => p[0]).join('').slice(0, 2).toUpperCase();
+                                                    return (
+                                                        <tr key={item.id} className="border-b theme-border">
+                                                            <td className="py-3 pr-3">
+                                                                <div className="flex items-center gap-2 min-w-0">
+                                                                    <div className="w-8 h-8 rounded-full theme-surface-muted flex items-center justify-center text-xs font-bold theme-text flex-shrink-0">{initials}</div>
+                                                                    <span className="theme-text truncate max-w-[160px]">{item.clientName || 'Unknown Client'}</span>
+                                                                </div>
+                                                            </td>
+                                                            <td className="py-3 pr-3 theme-text-muted truncate max-w-[140px]">{item.type || 'Notary Service'}</td>
+                                                            <td className="py-3 pr-3 theme-text-muted truncate max-w-[170px]">{isNaN(item.dt.getTime()) ? '—' : item.dt.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
+                                                            <td className="py-3 pr-3 theme-text font-semibold">${parseFloat(item.fee || 0).toFixed(2)}</td>
+                                                            <td className="py-3"><span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusPill(item.status)}`}>{item.status || 'Scheduled'}</span></td>
+                                                        </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+
+                        <div className="xl:col-span-1 space-y-6">
+                            <div className="theme-surface theme-border border rounded-xl p-5 shadow-sm">
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="text-lg font-bold theme-text">Today's Agenda</h3>
+                                    <button onClick={() => setView('schedule')} className="text-xs font-semibold theme-text-muted">View all</button>
+                                </div>
+                                {todaysJobs.length === 0 ? (
+                                    <div className="rounded-xl border border-dashed theme-border p-5 text-center">
+                                        <i className="fas fa-calendar-day text-2xl theme-text-muted"></i>
+                                        <p className="mt-2 font-semibold theme-text">Schedule clear. Great day for marketing!</p>
+                                        <button onClick={() => setView('addAppointment')} className="mt-4 px-4 py-2 rounded-lg theme-accent-btn text-sm">Add Appointment</button>
+                                    </div>
+                                ) : (
+                                    <div className="space-y-3">
+                                        {todaysJobs.map(job => {
+                                            const done = job.status === 'Completed' || job.status === 'Paid';
+                                            return (
+                                                <div key={job.id} className={`border-l-4 ${done ? 'border-emerald-500' : 'border-blue-500'} theme-surface-muted rounded-r-xl p-3`}> 
+                                                    <div className="flex items-start justify-between gap-2">
+                                                        <div className="min-w-0">
+                                                            <p className="text-xs theme-text-muted truncate">{job.time || 'TBD'}</p>
+                                                            <p className="font-semibold theme-text truncate">{job.clientName || 'Client'}</p>
+                                                            <p className="text-xs theme-text-muted truncate">{job.type || 'Notary Service'}</p>
+                                                        </div>
+                                                        <div className="flex gap-2 flex-shrink-0">
+                                                            <button className="w-7 h-7 rounded-lg border theme-border theme-text-muted"><i className="fas fa-map-marker-alt text-[11px]"></i></button>
+                                                            <button onClick={() => setView('schedule')} className="w-7 h-7 rounded-lg border theme-border theme-text-muted"><i className="fas fa-pen text-[11px]"></i></button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                )}
+                            </div>
+
+                            <div className="theme-surface theme-border border rounded-xl p-5 shadow-sm">
+                                <h3 className="text-lg font-bold theme-text mb-4">Action Items</h3>
+                                <div className="space-y-3">
+                                    <button onClick={() => setView('credentials')} className="w-full text-left p-3 rounded-xl theme-surface-muted hover:-translate-y-0.5 transition-all duration-200">
+                                        <p className="text-sm font-semibold theme-text truncate"><i className="fas fa-triangle-exclamation text-amber-500 mr-2"></i>{urgentCred ? `${urgentCred.name || 'Credential'} expires in ${urgentCred.daysLeft} days` : 'Credentials healthy'}</p>
+                                        <p className="text-xs theme-text-muted mt-1">Open Credentials</p>
+                                    </button>
+                                    <button onClick={() => setView('finances')} className="w-full text-left p-3 rounded-xl theme-surface-muted hover:-translate-y-0.5 transition-all duration-200">
+                                        <p className="text-sm font-semibold theme-text truncate"><i className="fas fa-file-invoice-dollar text-red-500 mr-2"></i>{unpaidInvoices} invoice{unpaidInvoices === 1 ? '' : 's'} unpaid</p>
+                                        <p className="text-xs theme-text-muted mt-1">Review Finances</p>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             );
@@ -3109,7 +3283,7 @@
         const TrainerModule = ({ stateDB, courseMods, user, onUpgrade }) => {
             const [selectedStateKey, setSelectedStateKey] = useState('CA');
             const [mode, setMode] = useState('study');
-            const [messages, setMessages] = useState([{ role: 'assistant', content: "Hello! I am your AI Mentor. Ask me anything about notary laws." }]);
+            const [messages, setMessages] = useState([{ role: 'assistant', content: "Hello! I am your AI Coach. Ask me anything about notary laws." }]);
             const [input, setInput] = useState('');
             const [loading, setLoading] = useState(false);
             const scrollRef = useRef(null);
@@ -3127,7 +3301,7 @@
 
                 // Simulation logic - In a real app this would connect to Gemini
                 setTimeout(() => {
-                    setMessages([...newMsgs, { role: 'assistant', content: "This is a simulated AI response. Please configure your API Key in Settings to enable the full AI Mentor experience." }]);
+                    setMessages([...newMsgs, { role: 'assistant', content: "This is a simulated AI response. Please configure your API Key in Settings to enable the full AI Coach experience." }]);
                     setLoading(false);
                 }, 800);
             };
@@ -3356,7 +3530,7 @@
                 switch(currentView) {
                     case 'landing': return <LandingPage onNavigate={() => setCurrentView('auth')} />;
                     case 'auth': return <AuthScreen onAuth={handleLogin} onBack={() => setCurrentView('landing')} />;
-                    case 'dashboard': return <Dashboard appointments={appointments} credentials={credentials} setView={setCurrentView} isCloud={isCloudConnected} />;
+                    case 'dashboard': return <Dashboard appointments={appointments} credentials={credentials} setView={setCurrentView} user={user} />;
                     case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onMarkPaid={handleMarkPaid} onEdit={handleEditAppt} onAdd={handleAddApptWithDate} />;
                     case 'addAppointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => { setEditingAppointment(null); setCurrentView('schedule'); }} initialData={editingAppointment} />;
                     case 'clients': return <Clients />;
