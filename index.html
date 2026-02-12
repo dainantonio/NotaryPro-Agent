@@ -833,6 +833,34 @@
             const [billing, setBilling] = useState('monthly');
             const [demoQuestion, setDemoQuestion] = useState("");
             const [demoResponse, setDemoResponse] = useState(null);
+            const [openFaqIndex, setOpenFaqIndex] = useState(0);
+
+            const faqItems = [
+                {
+                    question: "Does NotaryOS support state-specific journal and compliance requirements?",
+                    answer: "Yes. NotaryOS is designed as a guided workflow to help you capture the details typically required in notary journals (signer identity evidence, timestamp, document type, and audit notes). Because laws vary by state and can change, we pair in-app guidance with your final review so you can confidently stay aligned with your current handbook and commission rules."
+                },
+                {
+                    question: "Is my client data secure?",
+                    answer: "Security is built in at multiple layers: encrypted transport (HTTPS), authenticated access controls, and scoped data access by account. Sensitive signing details are displayed in role-appropriate views and your records stay tied to your account. We also emphasize least-privilege access patterns in the product architecture."
+                },
+                {
+                    question: "How does the Gemini API key work inside NotaryOS?",
+                    answer: "Your Gemini API key enables AI-powered compliance and workflow assistance. You provide your own key, which means usage and billing remain under your control. NotaryOS uses the key only to process the AI requests you initiate (for example, compliance Q&A or drafting help) and does not change your key ownership."
+                },
+                {
+                    question: "What is the difference between Local Storage and Cloud Sync?",
+                    answer: "Local Storage keeps data on your current device/browser only—great for quick starts but vulnerable if the device is lost, reset, or switched. Cloud Sync stores records to your secure account so you can continue work across phone and desktop, recover history, and keep your team aligned in real time."
+                },
+                {
+                    question: "Can I start on mobile and finish work later on desktop?",
+                    answer: "Absolutely. The product is built around real field operations: start the appointment in the car or at the table, capture signer details and evidence on mobile, then complete invoicing, follow-ups, and reporting on desktop without losing context."
+                },
+                {
+                    question: "Will this reduce support and setup confusion for my team?",
+                    answer: "Yes. The FAQ, guided onboarding, and explicit in-app explanations (especially around AI key setup and sync behavior) are meant to reduce ambiguity before users even contact support. That translates into faster activation and fewer repetitive troubleshooting requests."
+                }
+            ];
             
             const hoursSaved = Math.round((weeklyAppts * adminMins * 52) / 60);
             const dollarsSaved = (hoursSaved * 50).toLocaleString();
@@ -1105,6 +1133,48 @@
                                         3) Send invoice and track paid/pending status instantly
                                     </li>
                                 </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* FAQ Section - Trust, Security & Clarity */}
+                    <div className="bg-slate-950/80 py-24 w-full border-t border-slate-800 font-sans">
+                        <div className="max-w-5xl mx-auto px-6">
+                            <div className="text-center mb-12">
+                                <div className="inline-flex items-center gap-2 bg-slate-900/80 border border-slate-700 text-teal-300 px-4 py-2 rounded-full text-xs font-bold tracking-wide">
+                                    <i className="fas fa-shield-alt"></i>
+                                    TRUST & COMPLIANCE FAQ
+                                </div>
+                                <h3 className="text-3xl md:text-4xl font-bold text-white mt-5 mb-4">Questions every serious notary asks first.</h3>
+                                <p className="text-slate-400 max-w-3xl mx-auto">
+                                    Built for risk-aware professionals: get clear answers on compliance workflows, data security, AI key usage, and local vs cloud storage without cluttering the interface.
+                                </p>
+                            </div>
+
+                            <div className="space-y-4">
+                                {faqItems.map((item, index) => {
+                                    const isOpen = openFaqIndex === index;
+                                    return (
+                                        <div key={item.question} className="bg-slate-900/70 border border-slate-700 rounded-2xl overflow-hidden shadow-lg shadow-black/20">
+                                            <button
+                                                type="button"
+                                                className="w-full text-left px-6 py-5 flex items-center justify-between gap-4 hover:bg-slate-800/60 transition-colors"
+                                                onClick={() => setOpenFaqIndex(isOpen ? -1 : index)}
+                                                aria-expanded={isOpen}
+                                            >
+                                                <span className="text-white font-semibold leading-snug">{item.question}</span>
+                                                <span className={`text-teal-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : 'rotate-0'}`}>
+                                                    <i className="fas fa-chevron-down"></i>
+                                                </span>
+                                            </button>
+                                            {isOpen && (
+                                                <div className="px-6 pb-6 text-slate-300 leading-relaxed border-t border-slate-800">
+                                                    <p className="pt-4">{item.answer}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
