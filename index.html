@@ -2072,6 +2072,19 @@
                                         isLogin ? 'Sign In' : 'Create Account'
                                     )}
                                 </button>
+                                
+                                {!isLogin && (
+                                    <p className="text-xs text-slate-500 text-center mt-3 leading-relaxed">
+                                        By signing up, you agree to our{' '}
+                                        <button type="button" onClick={() => setShowTermsModal(true)} className="font-medium text-slate-700 hover:text-blue-600 hover:underline">
+                                            Terms of Service
+                                        </button>
+                                        {' '}and{' '}
+                                        <button type="button" onClick={() => setShowTermsModal(true)} className="font-medium text-slate-700 hover:text-blue-600 hover:underline">
+                                            Privacy Policy
+                                        </button>.
+                                    </p>
+                                )}
                             </form>
 
                             <div className="relative flex items-center py-6">
