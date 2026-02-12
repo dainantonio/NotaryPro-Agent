@@ -836,23 +836,31 @@
 
             const faqItems = [
                 {
-                    question: "Does this support all 50-state compliance workflows?",
-                    answer: "Yes. NotaryOS is built to support 50-state notarial operations with guided journal capture, compliance prompts, and structured records. Because regulations can evolve, your final notarial judgment and state handbook remain authoritative."
+                    question: "Does NotaryOS support state-specific journal and compliance requirements?",
+                    answer: "Yes. NotaryOS is designed as a guided workflow to help you capture the details typically required in notary journals (signer identity evidence, timestamp, document type, and audit notes). Because laws vary by state and can change, we pair in-app guidance with your final review so you can confidently stay aligned with your current handbook and commission rules."
                 },
                 {
                     question: "Is my client data secure?",
-                    answer: "Security is layered: encrypted transit, authenticated access controls, and account-scoped records. Sensitive signing and identity metadata are stored with least-privilege principles in mind."
+                    answer: "Security is built in at multiple layers: encrypted transport (HTTPS), authenticated access controls, and scoped data access by account. Sensitive signing details are displayed in role-appropriate views and your records stay tied to your account. We also emphasize least-privilege access patterns in the product architecture."
                 },
                 {
-                    question: "How does the AI assistant and Gemini API key work?",
-                    answer: "Your Gemini API key powers AI compliance guidance and drafting assistance. You control the key and usage. NotaryOS uses it only for the requests you trigger within the app."
+                    question: "How does the Gemini API key work inside NotaryOS?",
+                    answer: "Your Gemini API key enables AI-powered compliance and workflow assistance. You provide your own key, which means usage and billing remain under your control. NotaryOS uses the key only to process the AI requests you initiate (for example, compliance Q&A or drafting help) and does not change your key ownership."
                 },
                 {
-                    question: "What is the difference between local storage and cloud sync?",
-                    answer: "Local storage keeps data only on the current browser/device. Cloud sync allows secure multi-device continuity, backup recovery, and team-level visibility for growing operations."
+                    question: "What is the difference between Local Storage and Cloud Sync?",
+                    answer: "Local Storage keeps data on your current device/browser only—great for quick starts but vulnerable if the device is lost, reset, or switched. Cloud Sync stores records to your secure account so you can continue work across phone and desktop, recover history, and keep your team aligned in real time."
+                },
+                {
+                    question: "Can I start on mobile and finish work later on desktop?",
+                    answer: "Absolutely. The product is built around real field operations: start the appointment in the car or at the table, capture signer details and evidence on mobile, then complete invoicing, follow-ups, and reporting on desktop without losing context."
+                },
+                {
+                    question: "Will this reduce support and setup confusion for my team?",
+                    answer: "Yes. The FAQ, guided onboarding, and explicit in-app explanations (especially around AI key setup and sync behavior) are meant to reduce ambiguity before users even contact support. That translates into faster activation and fewer repetitive troubleshooting requests."
                 }
             ];
-
+            
             const hoursSaved = Math.round((weeklyAppts * adminMins * 52) / 60);
             const dollarsSaved = (hoursSaved * 50).toLocaleString();
 
@@ -1112,6 +1120,7 @@
                                         </div>
                                     </div>
                                 </div>
+                                <p className="text-xs text-slate-400 mt-3 text-center md:text-left">Two connected mobile views mirror the real appointment flow, from route prep to getting paid.</p>
                             </div>
                             <div className="order-1 lg:order-2">
                                 <h3 className="text-3xl font-bold text-white mb-6">Run your business from your pocket.</h3>
@@ -1132,52 +1141,6 @@
                                         3) Send invoice and track paid/pending status instantly
                                     </li>
                                 </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* How It Works */}
-                    <div className="py-24 bg-slate-950/70 border-t border-slate-800 w-full font-sans">
-                        <div className="max-w-6xl mx-auto px-6">
-                            <h3 className="text-3xl font-bold text-white text-center mb-3">How NotaryOS works</h3>
-                            <p className="text-slate-400 text-center max-w-2xl mx-auto mb-10">A streamlined workflow from booking to payout—designed for mobile-first notaries.</p>
-                            <div className="grid md:grid-cols-3 gap-6">
-                                <div className="bg-slate-900/70 border border-slate-700 rounded-2xl p-6">
-                                    <p className="text-xs text-teal-300 font-bold uppercase mb-3">Step 1</p>
-                                    <h4 className="text-xl font-semibold text-white mb-2"><i className="fas fa-calendar-check text-teal-400 mr-2"></i>Book the Job</h4>
-                                    <p className="text-slate-400 text-sm">Capture client info quickly with Smart Fill and appointment templates.</p>
-                                </div>
-                                <div className="bg-slate-900/70 border border-slate-700 rounded-2xl p-6">
-                                    <p className="text-xs text-teal-300 font-bold uppercase mb-3">Step 2</p>
-                                    <h4 className="text-xl font-semibold text-white mb-2"><i className="fas fa-mobile-alt text-indigo-400 mr-2"></i>Do the Signing</h4>
-                                    <p className="text-slate-400 text-sm">Use Mobile Journal flow for ID capture, proof, and compliant on-site execution.</p>
-                                </div>
-                                <div className="bg-slate-900/70 border border-slate-700 rounded-2xl p-6">
-                                    <p className="text-xs text-teal-300 font-bold uppercase mb-3">Step 3</p>
-                                    <h4 className="text-xl font-semibold text-white mb-2"><i className="fas fa-file-invoice-dollar text-emerald-400 mr-2"></i>Get Paid</h4>
-                                    <p className="text-slate-400 text-sm">Auto-generate invoices, track payment status, and close the loop instantly.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Built For */}
-                    <div className="py-24 bg-slate-900 border-t border-slate-800 w-full font-sans">
-                        <div className="max-w-6xl mx-auto px-6">
-                            <h3 className="text-3xl font-bold text-white text-center mb-10">Built for every modern notary business model</h3>
-                            <div className="grid md:grid-cols-3 gap-6">
-                                <div className="visual-card rounded-2xl p-6">
-                                    <h4 className="text-xl font-bold text-white mb-3"><i className="fas fa-car-side text-blue-400 mr-2"></i>Mobile Notaries</h4>
-                                    <p className="text-slate-400">Run route-based signings, capture compliant entries on-site, and complete admin later from desktop.</p>
-                                </div>
-                                <div className="visual-card rounded-2xl p-6">
-                                    <h4 className="text-xl font-bold text-white mb-3"><i className="fas fa-home text-purple-400 mr-2"></i>Loan Signing Agents</h4>
-                                    <p className="text-slate-400">Manage high-volume closings with reliable documentation, invoicing, and audit-ready workflows.</p>
-                                </div>
-                                <div className="visual-card rounded-2xl p-6">
-                                    <h4 className="text-xl font-bold text-white mb-3"><i className="fas fa-users text-teal-400 mr-2"></i>Signing Agencies</h4>
-                                    <p className="text-slate-400">Coordinate team dispatch, centralize records, and scale with standardized processes.</p>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -1236,7 +1199,7 @@
                                         <p className="text-slate-400 text-sm font-semibold">Current plan</p>
                                         <p className="text-slate-200">You are currently on the <span className="font-bold text-white">Starter Plan</span>.</p>
                                     </div>
-                                    <button type="button" onClick={onNavigate} className="shrink-0 px-4 py-2 rounded-lg border border-slate-600 text-slate-300 hover:text-white hover:border-slate-400 transition-colors text-sm">
+                                    <button type="button" className="shrink-0 px-4 py-2 rounded-lg border border-slate-600 text-slate-300 hover:text-white hover:border-slate-400 transition-colors text-sm">
                                         Manage
                                     </button>
                                 </div>
@@ -1343,73 +1306,16 @@
                                     </tbody>
                                 </table>
                             </div>
-
-                            <div className="mt-14 rounded-3xl border border-slate-700/80 bg-gradient-to-r from-slate-950 to-slate-900 px-8 py-10 text-center shadow-2xl shadow-blue-950/20">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-xs font-semibold mb-5">
-                                    <span className="w-2 h-2 rounded-full bg-indigo-300"></span>
-                                    For enterprise
-                                </div>
-                                <h4 className="text-3xl md:text-4xl font-bold text-white mb-4">SOC2 Type II • GDPR • 50-state compliance</h4>
-                                <p className="text-slate-300 text-lg max-w-3xl mx-auto mb-7">
-                                    NotaryOS is built for demanding legal and financial workflows with secure infrastructure, standardized controls, and support for all U.S. notarial jurisdictions.
-                                </p>
-                                <button onClick={onNavigate} className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-indigo-500/30 transition-colors">
-                                    Contact sales <i className="fas fa-arrow-right ml-2"></i>
-                                </button>
+                        </div>
+                        <div className="mt-16 border-t border-slate-700 pt-8 mx-6 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+                            <p>&copy; 2026 NotaryOS Inc. All rights reserved.</p>
+                            <div className="flex items-center gap-4 md:gap-6">
+                                <button type="button" className="hover:text-slate-300 transition-colors">Privacy</button>
+                                <button type="button" className="hover:text-slate-300 transition-colors">Terms</button>
+                                <button type="button" className="hover:text-slate-300 transition-colors">Security</button>
+                                <button type="button" className="hover:text-slate-300 transition-colors">Contact</button>
                             </div>
                         </div>
-                        <footer className="mt-16 border-t border-slate-700 pt-10 pb-8 px-6 bg-slate-950/40 rounded-t-2xl">
-                            <div className="max-w-6xl mx-auto grid sm:grid-cols-2 lg:grid-cols-5 gap-8 text-sm">
-                                <div>
-                                    <h4 className="text-white font-bold text-lg mb-3">NotaryOS</h4>
-                                    <p className="text-slate-400">Fortune-500-grade operating system for notaries and signing teams.</p>
-                                </div>
-                                <div>
-                                    <p className="text-white font-semibold mb-3">Product</p>
-                                    <ul className="space-y-2 text-slate-400">
-                                        <li>Scheduling</li>
-                                        <li>Mobile Journal</li>
-                                        <li>Auto Invoicing</li>
-                                        <li>Signer Portal</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <p className="text-white font-semibold mb-3">Legal</p>
-                                    <ul className="space-y-2 text-slate-400">
-                                        <li>Privacy Policy</li>
-                                        <li>Data Processing</li>
-                                        <li>Security Standards</li>
-                                        <li>Compliance Center</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <p className="text-white font-semibold mb-3">Terms</p>
-                                    <ul className="space-y-2 text-slate-400">
-                                        <li>Terms of Service</li>
-                                        <li>Subscription Terms</li>
-                                        <li>Acceptable Use</li>
-                                        <li>Cookie Policy</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <p className="text-white font-semibold mb-3">Support</p>
-                                    <ul className="space-y-2 text-slate-400">
-                                        <li>Help Center</li>
-                                        <li>Contact Support</li>
-                                        <li>System Status</li>
-                                        <li>Sales Team</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div className="max-w-6xl mx-auto mt-8 pt-5 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-                                <p>&copy; 2026 NotaryOS Inc. All rights reserved.</p>
-                                <div className="flex gap-4 text-slate-400 text-base">
-                                    <i className="fab fa-linkedin hover:text-white"></i>
-                                    <i className="fab fa-x-twitter hover:text-white"></i>
-                                    <i className="fab fa-youtube hover:text-white"></i>
-                                </div>
-                            </div>
-                        </footer>
                     </div>
                 </div>
             );
