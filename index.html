@@ -156,58 +156,89 @@
             z-index: 10;
         }
 
-        .phone-flow-carousel {
-            -webkit-overflow-scrolling: touch;
-            overscroll-behavior-x: contain;
-            touch-action: pan-x;
-            scroll-behavior: smooth;
-            cursor: grab;
-            user-select: none;
+        .phone-stack {
+            position: relative;
+            min-height: 36rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            isolation: isolate;
         }
 
-        .phone-flow-carousel:active {
-            cursor: grabbing;
+        .phone-stack::before,
+        .phone-stack::after {
+            content: '';
+            position: absolute;
+            width: 16rem;
+            height: 16rem;
+            border-radius: 9999px;
+            filter: blur(45px);
+            opacity: 0.45;
+            z-index: 0;
         }
 
-        .phone-flow-track {
-            width: max-content;
+        .phone-stack::before {
+            background: rgba(248, 113, 113, 0.7);
+            top: 8%;
+            left: 12%;
         }
 
-        .phone-flow-card {
-            transition: transform 0.3s ease, opacity 0.3s ease, filter 0.3s ease;
+        .phone-stack::after {
+            background: rgba(74, 222, 128, 0.65);
+            bottom: 10%;
+            right: 8%;
         }
 
-        .phone-flow-card {
-            transform: scale(0.92);
-            opacity: 0.78;
-            filter: saturate(0.8);
+        .phone-stack-card {
+            position: relative;
+            z-index: 2;
+            transition: transform 0.35s ease;
         }
 
-        .phone-flow-card:first-child {
-            transform: scale(1);
-            opacity: 1;
-            filter: saturate(1);
+        .phone-stack-card.left {
+            transform: rotate(-14deg) translate(12%, 4%);
         }
 
-        @media (min-width: 768px) {
-            .phone-flow-carousel {
-                overflow: visible;
-                cursor: default;
-                user-select: auto;
-                touch-action: auto;
+        .phone-stack-card.right {
+            transform: rotate(11deg) translate(-10%, -3%);
+            z-index: 1;
+        }
+
+        .phone-stack-card:hover {
+            transform: translateY(-8px) scale(1.01);
+        }
+
+        .phone-stack-card.left:hover {
+            transform: rotate(-12deg) translate(12%, -1%) scale(1.01);
+        }
+
+        .phone-stack-card.right:hover {
+            transform: rotate(10deg) translate(-10%, -7%) scale(1.01);
+        }
+
+        @media (max-width: 767px) {
+            .phone-stack {
+                min-height: auto;
+                flex-direction: column;
+                gap: 1.5rem;
+                padding: 1.5rem 0.5rem;
             }
 
-            .phone-flow-track {
-                width: 100%;
-                display: grid;
-                grid-template-columns: repeat(3, minmax(0, 1fr));
-                gap: 1rem;
+            .phone-stack::before {
+                top: 4%;
+                left: 8%;
             }
 
-            .phone-flow-card {
+            .phone-stack::after {
+                bottom: 4%;
+                right: 8%;
+            }
+
+            .phone-stack-card.left,
+            .phone-stack-card.right,
+            .phone-stack-card.left:hover,
+            .phone-stack-card.right:hover {
                 transform: none;
-                opacity: 1;
-                filter: none;
             }
         }
 
@@ -802,11 +833,35 @@
             const [billing, setBilling] = useState('monthly');
             const [demoQuestion, setDemoQuestion] = useState("");
             const [demoResponse, setDemoResponse] = useState(null);
-            
-            // Carousel interaction refs and state
-            const carouselRef = React.useRef(null);
-            const dragStateRef = React.useRef({ isDragging: false, startX: 0, scrollLeft: 0 });
+            const [openFaqIndex, setOpenFaqIndex] = useState(0);
 
+            const faqItems = [
+                {
+                    question: "Does NotaryOS support state-specific journal and compliance requirements?",
+                    answer: "Yes. NotaryOS is designed as a guided workflow to help you capture the details typically required in notary journals (signer identity evidence, timestamp, document type, and audit notes). Because laws vary by state and can change, we pair in-app guidance with your final review so you can confidently stay aligned with your current handbook and commission rules."
+                },
+                {
+                    question: "Is my client data secure?",
+                    answer: "Security is built in at multiple layers: encrypted transport (HTTPS), authenticated access controls, and scoped data access by account. Sensitive signing details are displayed in role-appropriate views and your records stay tied to your account. We also emphasize least-privilege access patterns in the product architecture."
+                },
+                {
+                    question: "How does the Gemini API key work inside NotaryOS?",
+                    answer: "Your Gemini API key enables AI-powered compliance and workflow assistance. You provide your own key, which means usage and billing remain under your control. NotaryOS uses the key only to process the AI requests you initiate (for example, compliance Q&A or drafting help) and does not change your key ownership."
+                },
+                {
+                    question: "What is the difference between Local Storage and Cloud Sync?",
+                    answer: "Local Storage keeps data on your current device/browser only—great for quick starts but vulnerable if the device is lost, reset, or switched. Cloud Sync stores records to your secure account so you can continue work across phone and desktop, recover history, and keep your team aligned in real time."
+                },
+                {
+                    question: "Can I start on mobile and finish work later on desktop?",
+                    answer: "Absolutely. The product is built around real field operations: start the appointment in the car or at the table, capture signer details and evidence on mobile, then complete invoicing, follow-ups, and reporting on desktop without losing context."
+                },
+                {
+                    question: "Will this reduce support and setup confusion for my team?",
+                    answer: "Yes. The FAQ, guided onboarding, and explicit in-app explanations (especially around AI key setup and sync behavior) are meant to reduce ambiguity before users even contact support. That translates into faster activation and fewer repetitive troubleshooting requests."
+                }
+            ];
+            
             const hoursSaved = Math.round((weeklyAppts * adminMins * 52) / 60);
             const dollarsSaved = (hoursSaved * 50).toLocaleString();
 
@@ -816,30 +871,6 @@
                 setTimeout(() => {
                     setDemoResponse("In California, the maximum fee for a jurat is $15 per signature, including the oath or affirmation. Always check the latest handbook!");
                 }, 1500);
-            };
-
-            // Desktop drag handlers for carousel
-            const onMouseDown = (e) => {
-                if (!carouselRef.current) return;
-                dragStateRef.current.isDragging = true;
-                dragStateRef.current.startX = e.pageX - carouselRef.current.offsetLeft;
-                dragStateRef.current.scrollLeft = carouselRef.current.scrollLeft;
-            };
-
-            const onMouseMove = (e) => {
-                if (!dragStateRef.current.isDragging || !carouselRef.current) return;
-                e.preventDefault();
-                const x = e.pageX - carouselRef.current.offsetLeft;
-                const walk = (x - dragStateRef.current.startX) * 2;
-                carouselRef.current.scrollLeft = dragStateRef.current.scrollLeft - walk;
-            };
-
-            const onMouseUp = () => {
-                dragStateRef.current.isDragging = false;
-            };
-
-            const onMouseLeave = () => {
-                dragStateRef.current.isDragging = false;
             };
 
             return (
@@ -1007,106 +1038,81 @@
                     <div className="py-24 bg-slate-900 w-full border-t border-slate-800 font-sans">
                         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-[1.2fr_1fr] gap-16 items-center">
                             <div className="order-2 lg:order-1">
-                                <div 
-                                    ref={carouselRef}
-                                    className="phone-flow-carousel overflow-x-auto scrollbar-hide pb-3 -mx-2 px-8 md:px-0 snap-x snap-mandatory"
-                                    onMouseDown={onMouseDown}
-                                    onMouseMove={onMouseMove}
-                                    onMouseUp={onMouseUp}
-                                    onMouseLeave={onMouseLeave}
-                                >
-                                    <div className="phone-flow-track flex gap-5">
-                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
-                                            <div className="phone-notch"></div>
-                                            <div className="h-full bg-gray-50 pt-10 px-4 relative">
-                                                <div className="flex justify-between items-center mb-6">
-                                                    <h3 className="font-bold text-lg text-gray-800">Today's Route</h3>
-                                                    <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xs font-bold">JD</div>
-                                                </div>
-                                                <div className="space-y-3">
-                                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
-                                                        <div className="flex justify-between mb-2">
-                                                            <span className="text-xs font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded">LOAN SIGNING</span>
-                                                            <span className="text-xs text-gray-400">2:00 PM</span>
-                                                        </div>
-                                                        <h4 className="font-bold text-gray-800">Sarah Johnson</h4>
-                                                        <p className="text-xs text-gray-500 mt-1"><i className="fas fa-map-marker-alt text-red-400 mr-1"></i> 123 Maple Dr, Seattle</p>
+                                <div className="phone-stack">
+                                    <div className="phone-mockup phone-stack-card left w-[285px] h-[575px] md:w-[300px] md:h-[600px] bg-white border-8 border-gray-900 rounded-[3rem] shadow-2xl overflow-hidden">
+                                        <div className="phone-notch"></div>
+                                        <div className="h-full bg-gray-50 pt-10 px-4">
+                                            <div className="flex justify-between items-center mb-6">
+                                                <h3 className="font-bold text-lg text-gray-800">Today's Route</h3>
+                                                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600 text-xs font-bold">JD</div>
+                                            </div>
+                                            <div className="space-y-3">
+                                                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
+                                                    <div className="flex justify-between mb-2">
+                                                        <span className="text-xs font-bold text-blue-500 bg-blue-50 px-2 py-1 rounded">LOAN SIGNING</span>
+                                                        <span className="text-xs text-gray-400">2:00 PM</span>
                                                     </div>
-                                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                                                        <div className="flex justify-between mb-2">
-                                                            <span className="text-xs font-bold text-purple-500 bg-purple-50 px-2 py-1 rounded">DEED</span>
-                                                            <span className="text-xs text-gray-400">4:30 PM</span>
-                                                        </div>
-                                                        <h4 className="font-bold text-gray-800">Mike Chen</h4>
-                                                        <p className="text-xs text-gray-500 mt-1"><i className="fas fa-map-marker-alt text-gray-300 mr-1"></i> Starbucks, 4th Ave</p>
+                                                    <h4 className="font-bold text-gray-800">Sarah Johnson</h4>
+                                                    <p className="text-xs text-gray-500 mt-1"><i className="fas fa-map-marker-alt text-red-400 mr-1"></i> 123 Maple Dr, Seattle</p>
+                                                </div>
+                                                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                                    <div className="flex justify-between mb-2">
+                                                        <span className="text-xs font-bold text-purple-500 bg-purple-50 px-2 py-1 rounded">DEED</span>
+                                                        <span className="text-xs text-gray-400">4:30 PM</span>
+                                                    </div>
+                                                    <h4 className="font-bold text-gray-800">Mike Chen</h4>
+                                                    <p className="text-xs text-gray-500 mt-1"><i className="fas fa-map-marker-alt text-gray-300 mr-1"></i> Starbucks, 4th Ave</p>
+                                                </div>
+                                                <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                                                    <p className="text-[10px] uppercase font-bold text-slate-400">Coverage</p>
+                                                    <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
+                                                        <span><i className="fas fa-signal text-emerald-500 mr-1"></i> Data: Unlimited</span>
+                                                        <span><i className="fas fa-phone text-blue-500 mr-1"></i> Calls: Unlimited</span>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
+                                    </div>
 
-                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
-                                            <div className="phone-notch"></div>
-                                            <div className="h-full bg-gray-50 pt-10 px-4">
-                                                <div className="flex justify-between items-center mb-6">
-                                                    <h3 className="font-bold text-lg text-gray-800">Journal Entry</h3>
-                                                    <span className="text-[10px] font-semibold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700">Synced</span>
-                                                </div>
-                                                <div className="space-y-3">
-                                                    <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                                                        <p className="text-[10px] uppercase font-bold text-slate-400">Signer</p>
-                                                        <p className="font-bold text-gray-800">Sarah Johnson</p>
-                                                        <p className="text-xs text-gray-500 mt-1">Loan Signing • 2:15 PM</p>
-                                                    </div>
-                                                    <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                                                        <p className="text-[10px] uppercase font-bold text-slate-400">ID Verified</p>
-                                                        <div className="mt-1 flex items-center justify-between">
-                                                            <span className="text-xs font-semibold text-gray-700">CA Driver License</span>
-                                                            <span className="text-[10px] bg-blue-50 text-blue-600 px-2 py-1 rounded">Last 4: 7284</span>
-                                                        </div>
-                                                    </div>
-                                                    <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
-                                                        <p className="text-[10px] uppercase font-bold text-slate-400">Evidence</p>
-                                                        <div className="mt-2 h-16 bg-gray-100 rounded-lg flex items-center justify-center text-gray-400 text-xs border border-dashed border-gray-300">
-                                                            <i className="fas fa-camera mr-2"></i> ID Image Captured
-                                                        </div>
-                                                    </div>
-                                                </div>
+                                    <div className="phone-mockup phone-stack-card right w-[285px] h-[575px] md:w-[300px] md:h-[600px] bg-white border-8 border-gray-900 rounded-[3rem] shadow-2xl overflow-hidden">
+                                        <div className="phone-notch"></div>
+                                        <div className="h-full bg-gray-50 pt-10 px-4">
+                                            <div className="flex justify-between items-center mb-6">
+                                                <h3 className="font-bold text-lg text-gray-800">Payments</h3>
+                                                <button className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">Send Invoice</button>
                                             </div>
-                                        </div>
-
-                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
-                                            <div className="phone-notch"></div>
-                                            <div className="h-full bg-gray-50 pt-10 px-4">
-                                                <div className="flex justify-between items-center mb-6">
-                                                    <h3 className="font-bold text-lg text-gray-800">Payments</h3>
-                                                    <button className="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-1 rounded">Send Invoice</button>
+                                            <div className="space-y-3">
+                                                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                                                    <p className="text-xs text-gray-500">April Revenue</p>
+                                                    <p className="text-2xl font-bold text-gray-800 mt-1">$3,420</p>
+                                                    <div className="text-[11px] text-emerald-600 mt-1 font-semibold"><i className="fas fa-arrow-up"></i> 18% vs last month</div>
                                                 </div>
-                                                <div className="space-y-3">
-                                                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
-                                                        <p className="text-xs text-gray-500">April Revenue</p>
-                                                        <p className="text-2xl font-bold text-gray-800 mt-1">$3,420</p>
-                                                        <div className="text-[11px] text-emerald-600 mt-1 font-semibold"><i className="fas fa-arrow-up"></i> 18% vs last month</div>
+                                                <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between border-l-4 border-l-emerald-500">
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-gray-800">Invoice #2948</p>
+                                                        <p className="text-[11px] text-gray-500">Paid by Sarah Johnson</p>
                                                     </div>
-                                                    <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between border-l-4 border-l-emerald-500">
-                                                        <div>
-                                                            <p className="text-xs font-semibold text-gray-800">Invoice #2948</p>
-                                                            <p className="text-[11px] text-gray-500">Paid by Sarah Johnson</p>
-                                                        </div>
-                                                        <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full">Paid</span>
+                                                    <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2 py-1 rounded-full">Paid</span>
+                                                </div>
+                                                <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
+                                                    <div>
+                                                        <p className="text-xs font-semibold text-gray-800">Invoice #2951</p>
+                                                        <p className="text-[11px] text-gray-500">Pending • Mike Chen</p>
                                                     </div>
-                                                    <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm flex items-center justify-between">
-                                                        <div>
-                                                            <p className="text-xs font-semibold text-gray-800">Invoice #2951</p>
-                                                            <p className="text-[11px] text-gray-500">Pending • Mike Chen</p>
-                                                        </div>
-                                                        <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded-full">Pending</span>
+                                                    <span className="text-xs font-bold text-amber-700 bg-amber-100 px-2 py-1 rounded-full">Pending</span>
+                                                </div>
+                                                <div className="bg-white p-3 rounded-xl border border-gray-100 shadow-sm">
+                                                    <p className="text-[10px] uppercase font-bold text-slate-400">Inbox</p>
+                                                    <div className="mt-2 flex items-center justify-between text-xs text-gray-600">
+                                                        <span><i className="fas fa-envelope text-indigo-500 mr-1"></i> Client follow-up</span>
+                                                        <span className="text-indigo-600 font-semibold">New</span>
                                                     </div>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
-                                <p className="text-xs text-slate-400 mt-3 text-center md:text-left">Swipe on mobile to focus each screen, or view all 3 at once on larger displays.</p>
+                                <p className="text-xs text-slate-400 mt-3 text-center md:text-left">Two connected mobile views mirror the real appointment flow, from route prep to getting paid.</p>
                             </div>
                             <div className="order-1 lg:order-2">
                                 <h3 className="text-3xl font-bold text-white mb-6">Run your business from your pocket.</h3>
@@ -1127,6 +1133,48 @@
                                         3) Send invoice and track paid/pending status instantly
                                     </li>
                                 </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* FAQ Section - Trust, Security & Clarity */}
+                    <div className="bg-slate-950/80 py-24 w-full border-t border-slate-800 font-sans">
+                        <div className="max-w-5xl mx-auto px-6">
+                            <div className="text-center mb-12">
+                                <div className="inline-flex items-center gap-2 bg-slate-900/80 border border-slate-700 text-teal-300 px-4 py-2 rounded-full text-xs font-bold tracking-wide">
+                                    <i className="fas fa-shield-alt"></i>
+                                    TRUST & COMPLIANCE FAQ
+                                </div>
+                                <h3 className="text-3xl md:text-4xl font-bold text-white mt-5 mb-4">Questions every serious notary asks first.</h3>
+                                <p className="text-slate-400 max-w-3xl mx-auto">
+                                    Built for risk-aware professionals: get clear answers on compliance workflows, data security, AI key usage, and local vs cloud storage without cluttering the interface.
+                                </p>
+                            </div>
+
+                            <div className="space-y-4">
+                                {faqItems.map((item, index) => {
+                                    const isOpen = openFaqIndex === index;
+                                    return (
+                                        <div key={item.question} className="bg-slate-900/70 border border-slate-700 rounded-2xl overflow-hidden shadow-lg shadow-black/20">
+                                            <button
+                                                type="button"
+                                                className="w-full text-left px-6 py-5 flex items-center justify-between gap-4 hover:bg-slate-800/60 transition-colors"
+                                                onClick={() => setOpenFaqIndex(isOpen ? -1 : index)}
+                                                aria-expanded={isOpen}
+                                            >
+                                                <span className="text-white font-semibold leading-snug">{item.question}</span>
+                                                <span className={`text-teal-400 transition-transform duration-300 ${isOpen ? 'rotate-180' : 'rotate-0'}`}>
+                                                    <i className="fas fa-chevron-down"></i>
+                                                </span>
+                                            </button>
+                                            {isOpen && (
+                                                <div className="px-6 pb-6 text-slate-300 leading-relaxed border-t border-slate-800">
+                                                    <p className="pt-4">{item.answer}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     </div>
