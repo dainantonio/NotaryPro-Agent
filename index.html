@@ -541,6 +541,98 @@
         const COURSE_MODULES = [ { id: 1, title: "Authority", topic: "Commissioning authority." } ];
         const PERSONA = `ROLE: NOTARY MENTOR. TONE: Helpful.`;
 
+        // --- FOOTER CONTENT DATA ---
+        const FOOTER_CONTENT = {
+            privacy: {
+                title: "Privacy Policy",
+                content: `
+                    <p><strong>Effective Date:</strong> February 2026</p>
+                    <h3 class="font-bold mt-4 mb-2">1. Information We Collect</h3>
+                    <p>We collect information you provide directly to us, such as when you create or modify your account, request on-demand services, contact customer support, or otherwise communicate with us. This information may include: name, email, phone number, postal address, profile picture, payment method, and other information you choose to provide.</p>
+                    <h3 class="font-bold mt-4 mb-2">2. How We Use Information</h3>
+                    <p>We may use the information we collect about you to provide, maintain, and improve our services, including to facilitate payments, send receipts, provide products and services you request (and send related information), develop new features, provide customer support to Users and Notaries, develop safety features, authenticate users, and send product updates and administrative messages.</p>
+                    <h3 class="font-bold mt-4 mb-2">3. Local Storage vs Cloud Sync</h3>
+                    <p>By default, NotaryOS operates in a "local-first" mode. Client data, journal entries, and appointments are stored locally in your browser/device. If you opt into Pro or Agency tiers and enable Cloud Sync, data is securely transmitted and encrypted at rest on our servers.</p>
+                `
+            },
+            terms: {
+                title: "Terms of Service",
+                content: `
+                    <p><strong>Effective Date:</strong> February 2026</p>
+                    <h3 class="font-bold mt-4 mb-2">1. Acceptance of Terms</h3>
+                    <p>By accessing and using NotaryOS, you accept and agree to be bound by the terms and provision of this agreement. In addition, when using these particular services, you shall be subject to any posted guidelines or rules applicable to such services.</p>
+                    <h3 class="font-bold mt-4 mb-2">2. Not Legal Advice</h3>
+                    <p>NotaryOS is a management and educational tool. The AI Trainer and compliance alerts provide information based on general state data. This tool does NOT constitute legal advice. You are a commissioned public official and must always verify procedures with your official state handbook and commissioning authority.</p>
+                    <h3 class="font-bold mt-4 mb-2">3. User Responsibility</h3>
+                    <p>You are solely responsible for all notarial acts performed. NotaryOS is not liable for any errors, omissions, rejected documents, lost fees, or legal actions resulting from your use of this software or your performance as a notary public.</p>
+                `
+            },
+            security: {
+                title: "Data Security",
+                content: `
+                    <h3 class="font-bold mt-4 mb-2">Bank-Grade Security</h3>
+                    <p>Security is built into NotaryOS at multiple layers. All data transmitted between your device and our cloud servers (if Cloud Sync is enabled) is encrypted using TLS 1.3. Data at rest is encrypted using AES-256 encryption.</p>
+                    <h3 class="font-bold mt-4 mb-2">Local-First Privacy</h3>
+                    <p>For users on our Starter plan, or those who opt out of Cloud Sync, your journal entries and client PII remain strictly on your local device's storage. We cannot access, read, or recover this data.</p>
+                    <h3 class="font-bold mt-4 mb-2">Audit Capture</h3>
+                    <p>Images of IDs or thumbprints captured for your journal are lightly encrypted before being stored. These are retained purely for your compliance audit requirements and are not used for any external processing or machine learning.</p>
+                `
+            },
+            compliance: {
+                title: "Compliance Commitment",
+                content: `
+                    <h3 class="font-bold mt-4 mb-2">50-State Architecture</h3>
+                    <p>NotaryOS is designed to support the diverse and ever-changing landscape of US notary laws. Our state database provides contextual hints for maximum fees, credible witness rules, and ID expiration allowances.</p>
+                    <h3 class="font-bold mt-4 mb-2">Journal Requirements</h3>
+                    <p>Our digital journal workflow is built to capture the standard requirements of the most stringent states (like California and Texas), including signer signatures, ID details, fee tracking, and thumbprint/ID capture where legally mandated or permitted.</p>
+                    <h3 class="font-bold mt-4 mb-2">Your Duty as a Notary</h3>
+                    <p>While we strive for accuracy, laws change. The ultimate responsibility for compliance rests with the commissioned notary. NotaryOS serves as an organizational aid, not a substitute for knowing your state's laws.</p>
+                `
+            },
+            help: {
+                title: "Help Center & Support",
+                content: `
+                    <h3 class="font-bold mt-4 mb-2">Welcome to NotaryOS Support</h3>
+                    <p>If you need assistance with your account, billing, or technical issues, our team is here to help.</p>
+                    <ul class="list-disc pl-5 mt-4 space-y-2">
+                        <li><strong>Email Support:</strong> support@notaryos.com (24-48 hr response time)</li>
+                        <li><strong>Pro/Agency Priority:</strong> Access live chat directly inside the app dashboard.</li>
+                        <li><strong>Feature Requests:</strong> Visit our Community board to upvote new features!</li>
+                    </ul>
+                `
+            },
+            handbooks: {
+                title: "State Handbooks",
+                content: `
+                    <p>Quick access to official state commissioning authorities is available directly inside the NotaryOS application via the <strong>Admin & Curriculum</strong> modules. Please log in or sign up to access our directory of 50-state handbook links and regulatory portals.</p>
+                `
+            },
+            community: {
+                title: "NotaryOS Community",
+                content: `
+                    <h3 class="font-bold mt-4 mb-2">Join the Conversation</h3>
+                    <p>Our community forum is currently in beta and available to Pro and Agency users. Inside, you can:</p>
+                    <ul class="list-disc pl-5 mt-2 space-y-1">
+                        <li>Discuss state-specific edge cases with other experienced notaries.</li>
+                        <li>Share marketing strategies for loan signing agents.</li>
+                        <li>Provide direct feedback to the NotaryOS development team.</li>
+                    </ul>
+                    <p class="mt-4">Log in to your account and navigate to the Community tab to get started.</p>
+                `
+            },
+            contact: {
+                title: "Contact Us",
+                content: `
+                    <div class="space-y-4">
+                        <p><strong>General Inquiries:</strong> hello@notaryos.com</p>
+                        <p><strong>Technical Support:</strong> support@notaryos.com</p>
+                        <p><strong>Enterprise & Agency Sales:</strong> sales@notaryos.com</p>
+                        <p><strong>Mailing Address:</strong><br/>NotaryOS Inc.<br/>100 Innovation Drive<br/>Suite 300<br/>San Francisco, CA 94111</p>
+                    </div>
+                `
+            }
+        };
+
         // --- COMPONENTS ---
 
         // 1. Modals & Helpers
@@ -582,7 +674,6 @@
         const SettingsModal = ({ user, onClose, onSave }) => {
             const [data, setData] = useState(user || {});
 
-            // Handle logo upload simulation
             const handleLogoUpload = (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -594,7 +685,6 @@
                 }
             };
 
-            // --- DATA BACKUP & RESTORE LOGIC ---
             const handleExportData = () => {
                 const exportData = {};
                 const keys = [
@@ -743,9 +833,23 @@
             );
         };
 
-        // NEW: Reusable Empty State Component
+        const InfoModal = ({ title, content, onClose }) => (
+            <div className="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm font-sans">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[85vh] flex flex-col auth-fade-in">
+                    <div className="flex justify-between items-center mb-4 border-b pb-4">
+                        <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times"></i></button>
+                    </div>
+                    <div className="text-sm text-gray-600 space-y-4 overflow-y-auto pr-2" dangerouslySetInnerHTML={{ __html: content }}></div>
+                    <div className="mt-6 pt-4 border-t border-gray-100 text-right">
+                        <button onClick={onClose} className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors">Close</button>
+                    </div>
+                </div>
+            </div>
+        );
+
         const EmptyState = ({ icon, title, description, actionLabel, onAction, colorClass = "text-blue-600", bgClass = "bg-blue-50" }) => (
-            <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in bg-white rounded-2xl border border-gray-100 shadow-sm font-sans">
+            <div className="flex flex-col items-center justify-center py-20 px-6 text-center auth-fade-in bg-white rounded-2xl border border-gray-100 shadow-sm font-sans">
                 <div className={`w-20 h-20 ${bgClass} ${colorClass} rounded-full flex items-center justify-center mb-6 text-3xl shadow-inner`}><i className={`fas ${icon}`}></i></div>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
                 <p className="text-gray-500 max-w-xs mb-8 leading-relaxed text-sm">{description}</p>
@@ -753,25 +857,202 @@
             </div>
         );
 
-        const OnboardingTour = ({ onComplete }) => {
-            const [selectedRole, setSelectedRole] = useState('solo');
+        const OnboardingTour = ({ onComplete, stateDB }) => {
+            const [step, setStep] = useState(1);
+            const [data, setData] = useState({
+                roleDesc: 'Mobile Notary',
+                name: '',
+                state: 'CA',
+                apiKey: ''
+            });
+
+            const handleNext = () => setStep(s => Math.min(s + 1, 4));
+            const handleBack = () => setStep(s => Math.max(s - 1, 1));
+            
+            const handleFinish = (skipApiKey = false) => {
+                const finalData = { ...data };
+                if (skipApiKey) finalData.apiKey = '';
+                onComplete(finalData);
+            };
+
+            const stepsContent = [
+                { id: 1, title: 'Welcome' },
+                { id: 2, title: 'Identity' },
+                { id: 3, title: 'Features' },
+                { id: 4, title: 'AI Setup' }
+            ];
+
             return (
-                <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl p-8 text-center max-w-md font-sans">
-                        <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🚀</div>
-                        <h2 className="text-2xl font-bold mb-2">Welcome to NotaryOS</h2>
-                        <p className="text-gray-500 mb-6">Choose your setup so we can tailor features and guidance.</p>
-                        <div className="grid grid-cols-1 gap-3 mb-6 text-left">
-                            <button onClick={() => setSelectedRole('solo')} className={`p-3 rounded-xl border ${selectedRole === 'solo' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-                                <p className="font-semibold text-gray-800">Solo Notary</p>
-                                <p className="text-xs text-gray-500">Best for independent mobile notaries.</p>
-                            </button>
-                            <button onClick={() => setSelectedRole('agency')} className={`p-3 rounded-xl border ${selectedRole === 'agency' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200'}`}>
-                                <p className="font-semibold text-gray-800">Agency / Team</p>
-                                <p className="text-xs text-gray-500">Manage multiple notaries and assignments.</p>
-                            </button>
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col min-h-[500px] auth-fade-in font-sans border border-slate-200/50">
+                        {/* Header / Progress */}
+                        <div className="px-8 pt-8 pb-4 flex flex-col items-center">
+                            <div className="flex gap-2 mb-6">
+                                {stepsContent.map((s) => (
+                                    <div key={s.id} className={`h-1.5 rounded-full transition-all duration-300 ${step >= s.id ? 'w-8 bg-blue-600' : 'w-4 bg-slate-200'}`}></div>
+                                ))}
+                            </div>
                         </div>
-                        <button onClick={() => onComplete(selectedRole)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg">Continue</button>
+
+                        {/* Content Area */}
+                        <div className="flex-1 px-4 sm:px-8 overflow-y-auto">
+                            {step === 1 && (
+                                <div className="auth-fade-in space-y-6">
+                                    <div className="text-center">
+                                        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner text-3xl">
+                                            <i className="fas fa-rocket"></i>
+                                        </div>
+                                        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">Welcome to NotaryOS.</h2>
+                                        <p className="text-slate-500 text-base sm:text-lg">Let's set up your command center. How do you primarily work?</p>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                                        {['Mobile Notary', 'Loan Signing Agent', 'Signing Agency'].map(role => (
+                                            <button 
+                                                key={role}
+                                                onClick={() => setData({...data, roleDesc: role})}
+                                                className={`p-5 rounded-2xl border-2 text-left transition-all group ${data.roleDesc === role ? 'border-blue-600 bg-blue-50/50 shadow-md shadow-blue-500/10' : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}
+                                            >
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-4 transition-colors ${data.roleDesc === role ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600'}`}>
+                                                    <i className={`fas ${role === 'Mobile Notary' ? 'fa-car' : role === 'Loan Signing Agent' ? 'fa-home' : 'fa-building'}`}></i>
+                                                </div>
+                                                <h4 className="font-bold text-slate-900 mb-1">{role}</h4>
+                                                <p className="text-xs text-slate-500">
+                                                    {role === 'Mobile Notary' && 'I travel to clients for general notary work.'}
+                                                    {role === 'Loan Signing Agent' && 'I specialize in real estate closings.'}
+                                                    {role === 'Signing Agency' && 'I manage a team of notaries.'}
+                                                </p>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 2 && (
+                                <div className="auth-fade-in space-y-6 max-w-md mx-auto">
+                                    <div className="text-center mb-8">
+                                        <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Business Identity</h2>
+                                        <p className="text-slate-500">Personalize your dashboard and set up state compliance.</p>
+                                    </div>
+                                    <div className="space-y-5">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1.5">Full Name</label>
+                                            <input 
+                                                type="text" 
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all outline-none text-slate-900"
+                                                placeholder="Your legal commissioned name"
+                                                value={data.name}
+                                                onChange={e => setData({...data, name: e.target.value})}
+                                                autoFocus
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1.5">Commissioned State</label>
+                                            <select 
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all outline-none text-slate-900 bg-white"
+                                                value={data.state}
+                                                onChange={e => setData({...data, state: e.target.value})}
+                                            >
+                                                {Object.keys(stateDB).filter(k => k !== 'certificates').map(k => (
+                                                    <option key={k} value={k}>{stateDB[k].state}</option>
+                                                ))}
+                                            </select>
+                                            <p className="text-xs text-slate-500 mt-2"><i className="fas fa-info-circle text-blue-500 mr-1"></i> Critical for AI Coach accuracy and fee limits.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 3 && (
+                                <div className="auth-fade-in space-y-6">
+                                    <div className="text-center mb-8">
+                                        <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Your New Superpowers</h2>
+                                        <p className="text-slate-500">What you can do with NotaryOS:</p>
+                                    </div>
+                                    <div className="space-y-4 max-w-lg mx-auto">
+                                        <div className="flex items-start gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-lg transition-all group">
+                                            <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">🪄</div>
+                                            <div>
+                                                <h4 className="font-bold text-slate-900 text-lg mb-1">Smart Fill</h4>
+                                                <p className="text-sm text-slate-600">Turn messy emails and texts into booked appointments instantly using AI extraction.</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-start gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-lg transition-all group">
+                                            <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">⚖️</div>
+                                            <div>
+                                                <h4 className="font-bold text-slate-900 text-lg mb-1">AI Compliance Coach</h4>
+                                                <p className="text-sm text-slate-600">Get instant, reliable answers to state-specific questions without flipping through handbooks.</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-start gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-lg transition-all group">
+                                            <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">📊</div>
+                                            <div>
+                                                <h4 className="font-bold text-slate-900 text-lg mb-1">Automated Dashboard</h4>
+                                                <p className="text-sm text-slate-600">Track revenue, manage client portals, and monitor credential expirations effortlessly.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 4 && (
+                                <div className="auth-fade-in space-y-6 max-w-md mx-auto text-center">
+                                    <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner text-4xl">
+                                        <i className="fas fa-robot"></i>
+                                    </div>
+                                    <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Activate Your AI Assistant</h2>
+                                    <p className="text-slate-500 mb-8 text-sm sm:text-base">
+                                        Unlock Smart Fill and the Compliance Coach by entering your secure Gemini API key. Your key stays locally on your device.
+                                    </p>
+                                    <div className="text-left space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1.5">Gemini API Key</label>
+                                            <input 
+                                                type="password" 
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all outline-none text-slate-900 font-mono tracking-widest placeholder-slate-400 placeholder-tracking-normal"
+                                                placeholder="AIzaSy..."
+                                                value={data.apiKey}
+                                                onChange={e => setData({...data, apiKey: e.target.value})}
+                                            />
+                                            <p className="text-xs text-slate-500 mt-2 flex justify-between">
+                                                <span><i className="fas fa-lock text-slate-400 mr-1"></i> Stored securely on device</span>
+                                                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">Get a free key</a>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer / Actions */}
+                        <div className="px-4 sm:px-8 py-6 border-t border-slate-100 flex items-center justify-between bg-slate-50/50 mt-4 rounded-b-3xl">
+                            {step > 1 ? (
+                                <button onClick={handleBack} className="px-4 sm:px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition-colors">
+                                    Back
+                                </button>
+                            ) : <div></div>}
+                            
+                            {step < 4 ? (
+                                <button 
+                                    onClick={handleNext} 
+                                    disabled={step === 2 && !data.name.trim()}
+                                    className="px-6 sm:px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all transform active:scale-95 disabled:opacity-50 disabled:active:scale-100 ml-auto"
+                                >
+                                    Continue
+                                </button>
+                            ) : (
+                                <div className="flex items-center gap-3 sm:gap-4 ml-auto">
+                                    <button onClick={() => handleFinish(true)} className="text-sm font-bold text-slate-500 hover:text-slate-700">
+                                        Skip for now
+                                    </button>
+                                    <button 
+                                        onClick={() => handleFinish()} 
+                                        className="px-6 sm:px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition-all transform active:scale-95"
+                                    >
+                                        Finish Setup
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             );
@@ -794,32 +1075,23 @@
             return (
                 <div className="fixed inset-0 bg-black/80 z-[60] flex items-center justify-center p-4 backdrop-blur-sm">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center relative overflow-hidden font-sans">
-                        {/* Progress Bar */}
                         <div className="absolute top-0 left-0 h-1 bg-gray-100 w-full">
                             <div className="h-full bg-blue-600 transition-all duration-300" style={{ width: `${(step / totalSteps) * 100}%` }}></div>
                         </div>
-
                         <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center text-3xl mb-6 shadow-sm ${current.bg} ${current.color} transition-colors duration-300`}>
                             <i className={`fas ${current.icon}`}></i>
                         </div>
-
                         <h2 className="text-2xl font-bold text-gray-800 mb-3 transition-opacity duration-300">{current.title}</h2>
                         <p className="text-gray-500 mb-8 leading-relaxed h-16">{current.desc}</p>
-
                         <div className="flex items-center gap-3">
                             {step > 1 && (
-                                <button onClick={() => setStep(s => s - 1)} className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold hover:bg-gray-50">
-                                    Back
-                                </button>
+                                <button onClick={() => setStep(s => s - 1)} className="px-6 py-3 rounded-xl border border-gray-200 text-gray-600 font-bold hover:bg-gray-50">Back</button>
                             )}
                             <button onClick={() => step < totalSteps ? setStep(s => s + 1) : onComplete()} className="flex-1 bg-blue-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-blue-500/30 hover:bg-blue-700 transition-all">
                                 {step < totalSteps ? 'Next Step' : 'Get Started'}
                             </button>
                         </div>
-
-                        <button onClick={onComplete} className="mt-6 text-xs text-gray-400 font-semibold uppercase tracking-wide hover:text-gray-600">
-                            Skip Tour
-                        </button>
+                        <button onClick={onComplete} className="mt-6 text-xs text-gray-400 font-semibold uppercase tracking-wide hover:text-gray-600">Skip Tour</button>
                     </div>
                 </div>
             );
@@ -833,26 +1105,35 @@
             const [demoQuestion, setDemoQuestion] = useState("");
             const [demoResponse, setDemoResponse] = useState(null);
             const [openFaqIndex, setOpenFaqIndex] = useState(0);
+            const [infoContent, setInfoContent] = useState(null);
 
             const faqItems = [
                 {
-                    question: "Does this support all 50-state compliance workflows?",
-                    answer: "Yes. NotaryOS is built to support 50-state notarial operations with guided journal capture, compliance prompts, and structured records. Because regulations can evolve, your final notarial judgment and state handbook remain authoritative."
+                    question: "Does NotaryOS support state-specific journal and compliance requirements?",
+                    answer: "Yes. NotaryOS is designed as a guided workflow to help you capture the details typically required in notary journals (signer identity evidence, timestamp, document type, and audit notes). Because laws vary by state and can change, we pair in-app guidance with your final review so you can confidently stay aligned with your current handbook and commission rules."
                 },
                 {
                     question: "Is my client data secure?",
-                    answer: "Security is layered: encrypted transit, authenticated access controls, and account-scoped records. Sensitive signing and identity metadata are stored with least-privilege principles in mind."
+                    answer: "Security is built in at multiple layers: encrypted transport (HTTPS), authenticated access controls, and scoped data access by account. Sensitive signing details are displayed in role-appropriate views and your records stay tied to your account. We also emphasize least-privilege access patterns in the product architecture."
                 },
                 {
-                    question: "How does the AI assistant and Gemini API key work?",
-                    answer: "Your Gemini API key powers AI compliance guidance and drafting assistance. You control the key and usage. NotaryOS uses it only for the requests you trigger within the app."
+                    question: "How does the Gemini API key work inside NotaryOS?",
+                    answer: "Your Gemini API key enables AI-powered compliance and workflow assistance. You provide your own key, which means usage and billing remain under your control. NotaryOS uses the key only to process the AI requests you initiate (for example, compliance Q&A or drafting help) and does not change your key ownership."
                 },
                 {
-                    question: "What is the difference between local storage and cloud sync?",
-                    answer: "Local storage keeps data only on the current browser/device. Cloud sync allows secure multi-device continuity, backup recovery, and team-level visibility for growing operations."
+                    question: "What is the difference between Local Storage and Cloud Sync?",
+                    answer: "Local Storage keeps data on your current device/browser only—great for quick starts but vulnerable if the device is lost, reset, or switched. Cloud Sync stores records to your secure account so you can continue work across phone and desktop, recover history, and keep your team aligned in real time."
+                },
+                {
+                    question: "Can I start on mobile and finish work later on desktop?",
+                    answer: "Absolutely. The product is built around real field operations: start the appointment in the car or at the table, capture signer details and evidence on mobile, then complete invoicing, follow-ups, and reporting on desktop without losing context."
+                },
+                {
+                    question: "Will this reduce support and setup confusion for my team?",
+                    answer: "Yes. The FAQ, guided onboarding, and explicit in-app explanations (especially around AI key setup and sync behavior) are meant to reduce ambiguity before users even contact support. That translates into faster activation and fewer repetitive troubleshooting requests."
                 }
             ];
-
+            
             const hoursSaved = Math.round((weeklyAppts * adminMins * 52) / 60);
             const dollarsSaved = (hoursSaved * 50).toLocaleString();
 
@@ -866,6 +1147,7 @@
 
             return (
                 <div className="min-h-screen landing-bg text-white font-inter flex flex-col relative overflow-x-hidden">
+                    {infoContent && <InfoModal title={infoContent.title} content={infoContent.content} onClose={() => setInfoContent(null)} />}
                     <div className="w-full p-6 flex justify-between items-center z-20 container mx-auto">
                         <div className="flex items-center gap-2">
                             <i className="fas fa-file-signature text-xl text-teal-400"></i>
@@ -974,7 +1256,7 @@
                                 </div>
 
                                 {activeTab === 'before' ? (
-                                    <div className="space-y-4 animate-fade-in">
+                                    <div className="space-y-4 auth-fade-in">
                                         <div className="flex items-start gap-4 p-4 rounded-xl bg-red-900/10 border border-red-900/30">
                                             <div className="w-10 h-10 rounded-full bg-red-900/30 flex items-center justify-center text-red-400 shrink-0"><i className="fas fa-file-invoice-dollar"></i></div>
                                             <div><h4 className="font-bold text-red-200">Lost Invoices</h4><p className="text-sm text-slate-400">Tracking payments in Excel or paper logs leads to missed revenue.</p></div>
@@ -989,7 +1271,7 @@
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="space-y-4 animate-fade-in">
+                                    <div className="space-y-4 auth-fade-in">
                                         <div className="flex items-start gap-4 p-4 rounded-xl bg-teal-900/10 border border-teal-900/30">
                                             <div className="w-10 h-10 rounded-full bg-teal-900/30 flex items-center justify-center text-teal-400 shrink-0"><i className="fas fa-magic"></i></div>
                                             <div><h4 className="font-bold text-teal-200">One-Click Invoicing</h4><p className="text-sm text-slate-400">Generate professional PDF invoices instantly from your appointment data.</p></div>
@@ -1132,52 +1414,6 @@
                                         3) Send invoice and track paid/pending status instantly
                                     </li>
                                 </ul>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* How It Works */}
-                    <div className="py-24 bg-slate-950/70 border-t border-slate-800 w-full font-sans">
-                        <div className="max-w-6xl mx-auto px-6">
-                            <h3 className="text-3xl font-bold text-white text-center mb-3">How NotaryOS works</h3>
-                            <p className="text-slate-400 text-center max-w-2xl mx-auto mb-10">A streamlined workflow from booking to payout—designed for mobile-first notaries.</p>
-                            <div className="grid md:grid-cols-3 gap-6">
-                                <div className="bg-slate-900/70 border border-slate-700 rounded-2xl p-6">
-                                    <p className="text-xs text-teal-300 font-bold uppercase mb-3">Step 1</p>
-                                    <h4 className="text-xl font-semibold text-white mb-2"><i className="fas fa-calendar-check text-teal-400 mr-2"></i>Book the Job</h4>
-                                    <p className="text-slate-400 text-sm">Capture client info quickly with Smart Fill and appointment templates.</p>
-                                </div>
-                                <div className="bg-slate-900/70 border border-slate-700 rounded-2xl p-6">
-                                    <p className="text-xs text-teal-300 font-bold uppercase mb-3">Step 2</p>
-                                    <h4 className="text-xl font-semibold text-white mb-2"><i className="fas fa-mobile-alt text-indigo-400 mr-2"></i>Do the Signing</h4>
-                                    <p className="text-slate-400 text-sm">Use Mobile Journal flow for ID capture, proof, and compliant on-site execution.</p>
-                                </div>
-                                <div className="bg-slate-900/70 border border-slate-700 rounded-2xl p-6">
-                                    <p className="text-xs text-teal-300 font-bold uppercase mb-3">Step 3</p>
-                                    <h4 className="text-xl font-semibold text-white mb-2"><i className="fas fa-file-invoice-dollar text-emerald-400 mr-2"></i>Get Paid</h4>
-                                    <p className="text-slate-400 text-sm">Auto-generate invoices, track payment status, and close the loop instantly.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Built For */}
-                    <div className="py-24 bg-slate-900 border-t border-slate-800 w-full font-sans">
-                        <div className="max-w-6xl mx-auto px-6">
-                            <h3 className="text-3xl font-bold text-white text-center mb-10">Built for every modern notary business model</h3>
-                            <div className="grid md:grid-cols-3 gap-6">
-                                <div className="visual-card rounded-2xl p-6">
-                                    <h4 className="text-xl font-bold text-white mb-3"><i className="fas fa-car-side text-blue-400 mr-2"></i>Mobile Notaries</h4>
-                                    <p className="text-slate-400">Run route-based signings, capture compliant entries on-site, and complete admin later from desktop.</p>
-                                </div>
-                                <div className="visual-card rounded-2xl p-6">
-                                    <h4 className="text-xl font-bold text-white mb-3"><i className="fas fa-home text-purple-400 mr-2"></i>Loan Signing Agents</h4>
-                                    <p className="text-slate-400">Manage high-volume closings with reliable documentation, invoicing, and audit-ready workflows.</p>
-                                </div>
-                                <div className="visual-card rounded-2xl p-6">
-                                    <h4 className="text-xl font-bold text-white mb-3"><i className="fas fa-users text-teal-400 mr-2"></i>Signing Agencies</h4>
-                                    <p className="text-slate-400">Coordinate team dispatch, centralize records, and scale with standardized processes.</p>
-                                </div>
                             </div>
                         </div>
                     </div>
@@ -1343,104 +1579,323 @@
                                     </tbody>
                                 </table>
                             </div>
+                        </div>
+                    </div>
 
-                            <div className="mt-14 rounded-3xl border border-slate-700/80 bg-gradient-to-r from-slate-950 to-slate-900 px-8 py-10 text-center shadow-2xl shadow-blue-950/20">
-                                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 border border-indigo-400/30 text-indigo-200 text-xs font-semibold mb-5">
-                                    <span className="w-2 h-2 rounded-full bg-indigo-300"></span>
-                                    For enterprise
+                    <footer className="bg-slate-950 border-t border-slate-800 pt-16 pb-8 w-full font-sans relative z-10">
+                        <div className="max-w-6xl mx-auto px-6 grid grid-cols-2 md:grid-cols-5 gap-8 mb-12">
+                            <div className="col-span-2">
+                                <div className="flex items-center gap-2 mb-4">
+                                    <i className="fas fa-file-signature text-xl text-teal-400"></i>
+                                    <span className="text-xl font-bold tracking-tight text-white">NotaryOS</span>
                                 </div>
-                                <h4 className="text-3xl md:text-4xl font-bold text-white mb-4">SOC2 Type II • GDPR • 50-state compliance</h4>
-                                <p className="text-slate-300 text-lg max-w-3xl mx-auto mb-7">
-                                    NotaryOS is built for demanding legal and financial workflows with secure infrastructure, standardized controls, and support for all U.S. notarial jurisdictions.
+                                <p className="text-slate-400 text-sm mb-6 leading-relaxed pr-4 max-w-sm">
+                                    The complete operating system for modern mobile notaries and signing agents. Focus on your signings, we handle the compliance.
                                 </p>
-                                <button onClick={onNavigate} className="bg-indigo-500 hover:bg-indigo-600 text-white font-bold px-6 py-3 rounded-xl shadow-lg shadow-indigo-500/30 transition-colors">
-                                    Contact sales <i className="fas fa-arrow-right ml-2"></i>
-                                </button>
+                                <div className="flex gap-4">
+                                    <button type="button" className="text-slate-400 hover:text-teal-400 transition-colors text-lg" aria-label="Twitter"><i className="fab fa-twitter"></i></button>
+                                    <button type="button" className="text-slate-400 hover:text-teal-400 transition-colors text-lg" aria-label="LinkedIn"><i className="fab fa-linkedin"></i></button>
+                                    <button type="button" className="text-slate-400 hover:text-teal-400 transition-colors text-lg" aria-label="Facebook"><i className="fab fa-facebook"></i></button>
+                                    <button type="button" className="text-slate-400 hover:text-teal-400 transition-colors text-lg" aria-label="Instagram"><i className="fab fa-instagram"></i></button>
+                                </div>
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold mb-4">Product</h4>
+                                <ul className="space-y-3 text-sm text-slate-400">
+                                    <li><button type="button" onClick={onNavigate} className="hover:text-teal-400 transition-colors">Features</button></li>
+                                    <li><button type="button" onClick={onNavigate} className="hover:text-teal-400 transition-colors">Pricing</button></li>
+                                    <li><button type="button" onClick={onNavigate} className="hover:text-teal-400 transition-colors">AI Mentor</button></li>
+                                    <li><button type="button" onClick={onNavigate} className="hover:text-teal-400 transition-colors">Client Portal</button></li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold mb-4">Support</h4>
+                                <ul className="space-y-3 text-sm text-slate-400">
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.help)} className="hover:text-teal-400 transition-colors">Help Center</button></li>
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.handbooks)} className="hover:text-teal-400 transition-colors">State Handbooks</button></li>
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.community)} className="hover:text-teal-400 transition-colors">Community</button></li>
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.contact)} className="hover:text-teal-400 transition-colors">Contact Us</button></li>
+                                </ul>
+                            </div>
+                            <div>
+                                <h4 className="text-white font-bold mb-4">Legal</h4>
+                                <ul className="space-y-3 text-sm text-slate-400">
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.privacy)} className="hover:text-teal-400 transition-colors">Privacy Policy</button></li>
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.terms)} className="hover:text-teal-400 transition-colors">Terms of Service</button></li>
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.security)} className="hover:text-teal-400 transition-colors">Data Security</button></li>
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.compliance)} className="hover:text-teal-400 transition-colors">Compliance</button></li>
+                                </ul>
                             </div>
                         </div>
-                        <footer className="mt-16 border-t border-slate-700 pt-10 pb-8 px-6 bg-slate-950/40 rounded-t-2xl">
-                            <div className="max-w-6xl mx-auto grid sm:grid-cols-2 lg:grid-cols-5 gap-8 text-sm">
-                                <div>
-                                    <h4 className="text-white font-bold text-lg mb-3">NotaryOS</h4>
-                                    <p className="text-slate-400">Fortune-500-grade operating system for notaries and signing teams.</p>
-                                </div>
-                                <div>
-                                    <p className="text-white font-semibold mb-3">Product</p>
-                                    <ul className="space-y-2 text-slate-400">
-                                        <li>Scheduling</li>
-                                        <li>Mobile Journal</li>
-                                        <li>Auto Invoicing</li>
-                                        <li>Signer Portal</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <p className="text-white font-semibold mb-3">Legal</p>
-                                    <ul className="space-y-2 text-slate-400">
-                                        <li>Privacy Policy</li>
-                                        <li>Data Processing</li>
-                                        <li>Security Standards</li>
-                                        <li>Compliance Center</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <p className="text-white font-semibold mb-3">Terms</p>
-                                    <ul className="space-y-2 text-slate-400">
-                                        <li>Terms of Service</li>
-                                        <li>Subscription Terms</li>
-                                        <li>Acceptable Use</li>
-                                        <li>Cookie Policy</li>
-                                    </ul>
-                                </div>
-                                <div>
-                                    <p className="text-white font-semibold mb-3">Support</p>
-                                    <ul className="space-y-2 text-slate-400">
-                                        <li>Help Center</li>
-                                        <li>Contact Support</li>
-                                        <li>System Status</li>
-                                        <li>Sales Team</li>
-                                    </ul>
-                                </div>
-                            </div>
-                            <div className="max-w-6xl mx-auto mt-8 pt-5 border-t border-slate-800 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
-                                <p>&copy; 2026 NotaryOS Inc. All rights reserved.</p>
-                                <div className="flex gap-4 text-slate-400 text-base">
-                                    <i className="fab fa-linkedin hover:text-white"></i>
-                                    <i className="fab fa-x-twitter hover:text-white"></i>
-                                    <i className="fab fa-youtube hover:text-white"></i>
-                                </div>
-                            </div>
-                        </footer>
-                    </div>
+                        <div className="max-w-6xl mx-auto px-6 border-t border-slate-800 pt-8 flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+                            <p>&copy; {new Date().getFullYear()} NotaryOS Inc. All rights reserved.</p>
+                            <p>Designed with <i className="fas fa-heart text-red-500/70 mx-1"></i> for Notaries Public.</p>
+                        </div>
+                    </footer>
                 </div>
             );
         };
 
-        // 2. Auth Screen (Redesigned + Terms)
         const AuthScreen = ({ onAuth, onBack }) => {
             const [isLogin, setIsLogin] = useState(true);
             const [formData, setFormData] = useState({ name: '', email: '', password: '' });
             const [showTermsModal, setShowTermsModal] = useState(false);
             const [error, setError] = useState('');
+            const [isLoading, setIsLoading] = useState(false);
+            const [showPassword, setShowPassword] = useState(false);
+            const [agreedToTerms, setAgreedToTerms] = useState(false);
 
-            const handleAuth = (e) => {
+            const handleAuth = async (e) => {
                 e.preventDefault();
                 setError('');
-                onAuth({ id: '1', name: isLogin ? 'User' : formData.name, email: formData.email, plan: 'free', role: 'solo' });
+
+                if (!isLogin && !agreedToTerms) {
+                    setError('You must agree to the Terms of Service and Privacy Policy to continue.');
+                    return;
+                }
+
+                setIsLoading(true);
+
+                // Simulate network request for enterprise UI feel
+                setTimeout(() => {
+                    setIsLoading(false);
+                    onAuth({ id: '1', name: isLogin ? 'User' : formData.name, email: formData.email, plan: 'free', role: 'solo' });
+                }, 800);
             };
 
-            const handleGoogleAuth = async () => { try { const provider = new firebase.auth.GoogleAuthProvider(); await firebase.auth().signInWithPopup(provider); } catch (err) { setError(err.message); } };
+            const handleGoogleAuth = async () => {
+                setIsLoading(true);
+                try { 
+                    const provider = new firebase.auth.GoogleAuthProvider(); 
+                    await firebase.auth().signInWithPopup(provider); 
+                } catch (err) { 
+                    setError(err.message); 
+                    setIsLoading(false);
+                } 
+            };
 
             return (
-                <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4 font-inter">
-                    {showTermsModal && <TermsModal onClose={() => setShowTermsModal(false)} onAccept={() => setShowTermsModal(false)} />}
-                    <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl flex overflow-hidden min-h-[600px] animate-fade-in">
-                        <div className="w-1/2 bg-slate-900 text-white p-12 hidden md:flex flex-col justify-center relative overflow-hidden"><button onClick={onBack} className="absolute top-8 left-8 text-slate-400 hover:text-white flex items-center gap-2 text-sm font-medium z-20"><i className="fas fa-arrow-left"></i> Back</button><div className="absolute -top-20 -right-20 w-64 h-64 bg-blue-600/20 rounded-full blur-3xl"></div><div className="absolute -bottom-20 -left-20 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl"></div><div className="relative z-10"><div className="mb-6"><div className="w-12 h-12 bg-blue-600 rounded-xl flex items-center justify-center text-2xl mb-4 shadow-lg shadow-blue-500/30"><i className="fas fa-user-tie"></i></div><h1 className="text-4xl font-bold mb-2">NotaryOS</h1><p className="text-blue-200 text-lg">The Operating System for Modern Notaries.</p></div><div className="space-y-4 mt-8"><div className="flex items-center gap-3"><i className="fas fa-check-circle text-emerald-400 text-xl"></i><span className="font-medium">Business Management Suite</span></div><div className="flex items-center gap-3"><i className="fas fa-check-circle text-emerald-400 text-xl"></i><span className="font-medium">AI-Powered Compliance Coach</span></div><div className="flex items-center gap-3"><i className="fas fa-check-circle text-emerald-400 text-xl"></i><span className="font-medium">50-State Law Database</span></div></div></div></div>
-                        <div className="w-full md:w-1/2 p-12 flex flex-col justify-center"><div className="max-w-sm mx-auto w-full"><h2 className="text-3xl font-bold text-slate-900 mb-8">{isLogin ? 'Welcome Back' : 'Create Account'}</h2>{error && <div className="bg-red-100 text-red-700 p-3 rounded mb-4 text-xs">{error}</div>}<form onSubmit={handleAuth} className="space-y-5">{!isLogin && (<div><label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wide">Full Name</label><input type="text" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={formData.name} onChange={e=>setFormData({...formData, name: e.target.value})} placeholder="Jane Doe" /></div>)}<div><label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wide">Email Address</label><input type="email" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all" value={formData.email} onChange={e=>setFormData({...formData, email: e.target.value})} placeholder="name@example.com" /></div><div><label className="block text-xs font-bold text-slate-500 uppercase mb-2 tracking-wide">Password</label><input type="password" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all text-xl tracking-widest" value={formData.password} onChange={e=>setFormData({...formData, password: e.target.value})} placeholder="••••••••" /></div><button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-lg shadow-md transition-all transform active:scale-95 mt-4">{isLogin ? 'Sign In' : 'Create Account'}</button></form><div className="relative flex py-6 items-center"><div className="flex-grow border-t border-slate-200"></div><span className="flex-shrink-0 mx-4 text-slate-400 text-xs font-medium uppercase">OR</span><div className="flex-grow border-t border-slate-200"></div></div><button className="w-full bg-white border border-slate-200 text-slate-700 font-bold py-3.5 rounded-lg hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm"><i className="fab fa-google text-red-500 text-lg"></i><span>Continue with Google</span></button><div className="mt-8 text-center text-sm text-slate-500">{isLogin ? "New to NotaryOS?" : "Already have an account?"} <button onClick={() => setIsLogin(!isLogin)} className="text-blue-600 font-bold hover:underline ml-1">{isLogin ? 'Create Account' : 'Log In'}</button></div>
-                            <div className="mt-8 pt-4 border-t border-slate-100 text-xs text-center text-slate-400">
-                                By continuing, you agree to our
-                                <button onClick={() => setShowTermsModal(true)} className="underline cursor-pointer hover:text-slate-600 ml-1">Terms of Service</button>.
+                <div className="min-h-screen flex bg-white font-sans">
+                    {showTermsModal && <TermsModal onClose={() => setShowTermsModal(false)} onAccept={() => { setShowTermsModal(false); setAgreedToTerms(true); }} />}
+
+                    {/* Left Panel - Branding & Trust (Hidden on Mobile) */}
+                    <div className="hidden lg:flex lg:w-1/2 bg-slate-900 relative overflow-hidden flex-col justify-between p-12 text-white">
+                        {/* Animated Background Elements */}
+                        <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-blue-600/30 rounded-full blur-[100px] animate-pulse"></div>
+                        <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] animate-pulse" style={{ animationDelay: '2s' }}></div>
+
+                        {/* Top Section */}
+                        <div className="relative z-10">
+                            <button onClick={onBack} className="text-slate-400 hover:text-white flex items-center gap-2 text-sm font-medium mb-12 transition-colors w-fit">
+                                <i className="fas fa-arrow-left"></i> Back to Home
+                            </button>
+                            <div className="flex items-center gap-3 mb-6">
+                                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-xl shadow-lg shadow-blue-500/30">
+                                    <i className="fas fa-file-signature"></i>
+                                </div>
+                                <h1 className="text-2xl font-bold tracking-tight">NotaryOS</h1>
                             </div>
-                        </div></div>
+                            <h2 className="text-4xl md:text-5xl font-extrabold mb-6 leading-tight tracking-tight max-w-lg">
+                                The Operating System for Modern Notaries.
+                            </h2>
+                            <ul className="space-y-4 text-slate-300 text-lg">
+                                <li className="flex items-center gap-3"><i className="fas fa-check-circle text-blue-400"></i> Seamless Invoicing & Payments</li>
+                                <li className="flex items-center gap-3"><i className="fas fa-check-circle text-blue-400"></i> Smart 50-State Journal</li>
+                                <li className="flex items-center gap-3"><i className="fas fa-check-circle text-blue-400"></i> AI Compliance Coach</li>
+                            </ul>
+                        </div>
+
+                        {/* Bottom Section: Testimonial & Badges */}
+                        <div className="relative z-10 space-y-8">
+                            {/* Testimonial Card (Glassmorphism) */}
+                            <div className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-2xl max-w-md shadow-2xl">
+                                <div className="flex gap-1 text-amber-400 mb-3 text-sm">
+                                    <i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i><i className="fas fa-star"></i>
+                                </div>
+                                <p className="text-slate-200 text-sm leading-relaxed mb-4">
+                                    "NotaryOS saves my signing agency 15 hours a week. The automated invoicing and compliant digital journal completely changed how we operate."
+                                </p>
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-bold text-sm">SJ</div>
+                                    <div>
+                                        <p className="font-bold text-sm text-white">Sarah Jenkins</p>
+                                        <p className="text-xs text-slate-400">Owner, Jenkins Mobile Notary</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Security Badges */}
+                            <div className="flex items-center gap-6 text-slate-400 text-sm font-medium">
+                                <div className="flex items-center gap-2"><i className="fas fa-lock text-slate-500"></i> 256-bit Encryption</div>
+                                <div className="flex items-center gap-2"><i className="fas fa-shield-alt text-slate-500"></i> SOC2 Compliant</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Right Panel - Form (Full width on mobile) */}
+                    <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 sm:p-12 relative bg-white">
+                        {/* Mobile Back Button & Logo (Visible only on mobile) */}
+                        <div className="lg:hidden absolute top-6 left-6 right-6 flex justify-between items-center">
+                            <button onClick={onBack} className="text-slate-500 hover:text-slate-800 flex items-center gap-2 text-sm font-medium">
+                                <i className="fas fa-arrow-left"></i> Back
+                            </button>
+                            <div className="flex items-center gap-2 text-slate-900 font-bold">
+                                <i className="fas fa-file-signature text-blue-600"></i> NotaryOS
+                            </div>
+                        </div>
+
+                        <div className="w-full max-w-[400px] auth-fade-in mt-12 lg:mt-0">
+                            <div className="mb-8 text-center lg:text-left">
+                                <h2 className="text-3xl font-extrabold text-slate-900 mb-2">
+                                    {isLogin ? 'Welcome back' : 'Create an account'}
+                                </h2>
+                                <p className="text-slate-500">
+                                    {isLogin ? 'Enter your details to access your dashboard.' : 'Start your 14-day free trial. No credit card required.'}
+                                </p>
+                            </div>
+
+                            {/* Error State UI */}
+                            {error && (
+                                <div className="mb-6 bg-red-500/10 border border-red-500/30 text-red-600 p-4 rounded-xl flex items-start gap-3 text-sm auth-fade-in">
+                                    <i className="fas fa-exclamation-triangle mt-0.5"></i>
+                                    <span>{error}</span>
+                                </div>
+                            )}
+
+                            <form onSubmit={handleAuth} className="space-y-5">
+                                {!isLogin && (
+                                    <div>
+                                        <label className="block text-sm font-medium text-slate-700 mb-1.5">Full Name</label>
+                                        <input
+                                            type="text"
+                                            required
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder-slate-400"
+                                            value={formData.name}
+                                            onChange={e => setFormData({...formData, name: e.target.value})}
+                                            placeholder="Jane Doe"
+                                            disabled={isLoading}
+                                        />
+                                    </div>
+                                )}
+
+                                <div>
+                                    <label className="block text-sm font-medium text-slate-700 mb-1.5">Email Address</label>
+                                    <input
+                                        type="email"
+                                        required
+                                        className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder-slate-400"
+                                        value={formData.email}
+                                        onChange={e => setFormData({...formData, email: e.target.value})}
+                                        placeholder="name@example.com"
+                                        disabled={isLoading}
+                                    />
+                                </div>
+
+                                <div>
+                                    <div className="flex justify-between items-center mb-1.5">
+                                        <label className="block text-sm font-medium text-slate-700">Password</label>
+                                        {isLogin && (
+                                            <a href="#" onClick={(e) => { e.preventDefault(); showToast("Password reset link sent!", "success"); }} className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline">
+                                                Forgot password?
+                                            </a>
+                                        )}
+                                    </div>
+                                    <div className="relative">
+                                        <input
+                                            type={showPassword ? "text" : "password"}
+                                            required
+                                            className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder-slate-400 pr-12"
+                                            value={formData.password}
+                                            onChange={e => setFormData({...formData, password: e.target.value})}
+                                            placeholder="••••••••"
+                                            disabled={isLoading}
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowPassword(!showPassword)}
+                                            className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                                            tabIndex="-1"
+                                        >
+                                            <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {!isLogin && (
+                                    <div className="flex items-start gap-3 mt-4">
+                                        <div className="flex items-center h-5">
+                                            <input
+                                                id="terms"
+                                                type="checkbox"
+                                                checked={agreedToTerms}
+                                                onChange={(e) => setAgreedToTerms(e.target.checked)}
+                                                className="w-4 h-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 cursor-pointer"
+                                                disabled={isLoading}
+                                            />
+                                        </div>
+                                        <label htmlFor="terms" className="text-sm text-slate-600">
+                                            I agree to the <button type="button" onClick={() => setShowTermsModal(true)} className="font-medium text-blue-600 hover:underline">Terms of Service</button> and <button type="button" onClick={() => setShowTermsModal(true)} className="font-medium text-blue-600 hover:underline">Privacy Policy</button>.
+                                        </label>
+                                    </div>
+                                )}
+
+                                <button
+                                    type="submit"
+                                    disabled={isLoading}
+                                    className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 flex justify-center items-center h-[52px] mt-2"
+                                >
+                                    {isLoading ? (
+                                        <i className="fas fa-spinner fa-spin text-xl"></i>
+                                    ) : (
+                                        isLogin ? 'Sign In' : 'Create Account'
+                                    )}
+                                </button>
+                            </form>
+
+                            <div className="relative flex items-center py-6">
+                                <div className="flex-grow border-t border-slate-200"></div>
+                                <span className="shrink-0 px-4 text-xs font-semibold text-slate-400 uppercase tracking-wider">OR</span>
+                                <div className="flex-grow border-t border-slate-200"></div>
+                            </div>
+
+                            <div className="space-y-3">
+                                <button
+                                    type="button"
+                                    onClick={handleGoogleAuth}
+                                    disabled={isLoading}
+                                    className="w-full bg-white border border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-all flex justify-center items-center gap-3 h-[52px] disabled:opacity-70"
+                                >
+                                    <svg className="w-5 h-5" viewBox="0 0 24 24">
+                                        <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                                        <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                                        <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                                        <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                                        <path fill="none" d="M1 1h22v22H1z" />
+                                    </svg>
+                                    Continue with Google
+                                </button>
+                                <button
+                                    type="button"
+                                    disabled={isLoading}
+                                    className="w-full bg-white border border-slate-300 text-slate-700 font-semibold rounded-xl hover:bg-slate-50 transition-all flex justify-center items-center gap-3 h-[52px] disabled:opacity-70"
+                                    onClick={(e) => { e.preventDefault(); showToast("Apple/Microsoft auth coming soon!", "success"); }}
+                                >
+                                    <i className="fab fa-apple text-xl mb-1"></i>
+                                    Continue with Apple
+                                </button>
+                            </div>
+
+                            <div className="mt-8 text-center text-sm text-slate-600">
+                                {isLogin ? "Don't have an account?" : "Already have an account?"}
+                                <button
+                                    onClick={() => { setIsLogin(!isLogin); setError(''); setFormData({name: '', email: '', password: ''}); setAgreedToTerms(false); }}
+                                    className="font-semibold text-blue-600 hover:text-blue-700 hover:underline ml-1.5"
+                                    disabled={isLoading}
+                                >
+                                    {isLogin ? 'Sign up' : 'Log in'}
+                                </button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             );
@@ -1980,7 +2435,6 @@
                 });
             }, [initialData]);
 
-            // --- UPDATED SMART FILL TO USE API KEY IF AVAILABLE ---
             const handleSmartFill = async () => {
                 const apiKey = localStorage.getItem('gemini_api_key');
 
@@ -1999,7 +2453,6 @@
                         });
                         const data = await response.json();
                         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                        // Extract JSON from text (simple regex for demo resilience)
                         const jsonMatch = text.match(/\{[\s\S]*\}/);
                         if (jsonMatch) {
                             const parsed = JSON.parse(jsonMatch[0]);
@@ -2019,7 +2472,6 @@
                         showToast("AI Error. Check API Key.", "error");
                     }
                 } else if (magicInput.toLowerCase().includes('john')) {
-                    // Fallback Demo Mode
                     setFormData({...formData, clientName: 'John Doe', date: '2026-12-01', time: '14:00', fee: '150'});
                     showToast("Form Filled (Demo Mode)");
                 } else {
@@ -2890,15 +3342,25 @@
                 setCurrentView('paywall');
             };
 
-            const handleOnboardingComplete = (selectedRole) => {
+            const handleOnboardingComplete = (selectedData) => {
+                const selectedRole = selectedData.roleDesc === 'Signing Agency' ? 'agency' : 'solo';
+                
                 const nextUser = {
                     ...(user || {}),
+                    name: selectedData.name || user?.name || 'User',
+                    state: selectedData.state || 'CA',
                     role: selectedRole,
                     plan: selectedRole === 'agency' ? ((user?.plan === 'team') ? 'team' : 'free') : (user?.plan || 'free')
                 };
+                
                 setUser(nextUser);
                 localStorage.setItem('notary_user_profile', JSON.stringify(nextUser));
                 localStorage.setItem('notary_onboarded', 'true');
+                
+                if (selectedData.apiKey) {
+                    localStorage.setItem('gemini_api_key', selectedData.apiKey);
+                }
+                
                 setShowOnboarding(false);
                 
                 // Show tour immediately after role selection
@@ -2968,7 +3430,7 @@
                     case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onMarkPaid={handleMarkPaid} onEdit={handleEditAppt} onAdd={handleAddApptWithDate} />;
                     case 'addAppointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => { setEditingAppointment(null); setCurrentView('schedule'); }} initialData={editingAppointment} />;
                     case 'clients': return <Clients />;
-                    case 'portal': return hasFeatureAccess(user, 'pro') ? <SignerPortal appointments={appointments} /> : <PaywallState featureKey='portal' onUpgrade={handleUpgrade} />;
+                    case 'portal': return hasFeatureAccess(user, 'pro') ? <ClientPortal user={user} appointments={appointments} /> : <PaywallState featureKey='portal' onUpgrade={handleUpgrade} />;
                     case 'journal': return <Journal user={user} onUpgrade={()=>{}} />;
                     case 'finances': return <Finances />;
                     case 'credentials': return <Credentials onUpdate={handleRefresh} />;
@@ -2997,7 +3459,7 @@
                     {showAIModal && <AIHelperModal onClose={() => setShowAIModal(false)} />}
                     {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={handleUpgrade} />}
                     {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} onSave={handleUpdateProfile} />}
-                    {showOnboarding && <OnboardingTour onComplete={handleOnboardingComplete} />}
+                    {showOnboarding && <OnboardingTour stateDB={STATE_DATABASE} onComplete={handleOnboardingComplete} />}
                     {showWelcomeTour && <WelcomeTour onComplete={handleTourComplete} />}
                     
                     {showWhatsNew && (
