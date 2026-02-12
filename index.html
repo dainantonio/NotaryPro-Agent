@@ -655,7 +655,112 @@
             </div>
         );
 
+
+        const LEGAL_DOCS = {
+            privacy: {
+                title: 'Privacy Policy',
+                icon: 'fa-user-shield',
+                updated: 'February 2026',
+                sections: [
+                    'We collect account, usage, and business record data only to operate NotaryOS features you enable.',
+                    'Core records may be stored locally in your browser for MVP workflows unless cloud sync is enabled and authenticated.',
+                    'AI prompts are sent to the configured model provider only when AI features are used.',
+                    'You may export backups at any time and request account-data deletion through support.'
+                ]
+            },
+            dataProcessing: {
+                title: 'Data Processing',
+                icon: 'fa-database',
+                updated: 'February 2026',
+                sections: [
+                    'NotaryOS acts as a processor for business records you create in the platform.',
+                    'Data is scoped to authenticated user accounts when cloud mode is active.',
+                    'Retention follows your active account lifecycle and deletion/export actions.',
+                    'Subprocessors are limited to infrastructure and AI providers required for requested features.'
+                ]
+            },
+            security: {
+                title: 'Security Standards',
+                icon: 'fa-shield-alt',
+                updated: 'February 2026',
+                sections: [
+                    'We use authenticated access controls and account-scoped records for cloud collections.',
+                    'Transport-level encryption is enforced for external API and provider requests.',
+                    'Least-privilege design is applied across product features and data access patterns.',
+                    'Users remain responsible for endpoint security on devices storing local records.'
+                ]
+            },
+            compliance: {
+                title: 'Compliance Center',
+                icon: 'fa-balance-scale',
+                updated: 'February 2026',
+                sections: [
+                    'NotaryOS supports 50-state notarial workflows with guided data capture and compliance prompts.',
+                    'Content is educational and operational; it does not replace legal advice or state handbooks.',
+                    'Teams should maintain jurisdiction-specific SOPs and annual legal review procedures.',
+                    'Compliance artifacts can be exported for recordkeeping and internal audit processes.'
+                ]
+            },
+            subscription: {
+                title: 'Subscription Terms',
+                icon: 'fa-credit-card',
+                updated: 'February 2026',
+                sections: [
+                    'Plans renew on the billing interval selected at purchase until cancelled.',
+                    'Upgrades apply immediately; downgrades take effect at the next billing period.',
+                    'Feature access is plan-gated and may be limited after cancellation or failed payment.',
+                    'Pricing and packaging updates will be announced before taking effect.'
+                ]
+            },
+            acceptableUse: {
+                title: 'Acceptable Use',
+                icon: 'fa-gavel',
+                updated: 'February 2026',
+                sections: [
+                    'Do not use NotaryOS for unlawful activity, fraud, identity abuse, or unauthorized data access.',
+                    'You must not upload malicious code, attempt service disruption, or bypass plan restrictions.',
+                    'Only store and process information you are authorized to handle.',
+                    'Violations may result in account suspension or termination.'
+                ]
+            },
+            cookie: {
+                title: 'Cookie Policy',
+                icon: 'fa-cookie-bite',
+                updated: 'February 2026',
+                sections: [
+                    'Essential browser storage is used to keep sessions and product preferences functioning.',
+                    'Analytics and marketing cookies are minimized in MVP mode and may expand with consent tooling.',
+                    'You can clear local browser data at any time, which may remove saved offline records.',
+                    'By continuing to use NotaryOS, you consent to required operational storage mechanisms.'
+                ]
+            }
+        };
+
+        const LegalDocModal = ({ doc, onClose }) => {
+            const content = LEGAL_DOCS[doc];
+            if (!content) return null;
+
+            return (
+                <div className="fixed inset-0 bg-black/70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm">
+                    <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 animate-fade-in font-sans max-h-[85vh] overflow-y-auto">
+                        <div className="flex justify-between items-center mb-4 border-b pb-4">
+                            <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2"><i className={`fas ${content.icon} text-blue-600`}></i> {content.title}</h2>
+                            <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times"></i></button>
+                        </div>
+                        <p className="text-xs text-gray-500 mb-4">Last Updated: {content.updated}</p>
+                        <div className="text-sm text-gray-600 space-y-3">
+                            {content.sections.map((item, idx) => (
+                                <p key={idx}><strong>{idx + 1}.</strong> {item}</p>
+                            ))}
+                        </div>
+                        <button onClick={onClose} className="w-full mt-6 bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors">Close</button>
+                    </div>
+                </div>
+            );
+        };
+
         const PricingModal = ({ onClose, onUpgrade }) => (
+
             <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm z-[100]">
                 <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 text-center font-sans">
                     <h2 className="text-2xl font-bold mb-2">Upgrade to Pro</h2>
