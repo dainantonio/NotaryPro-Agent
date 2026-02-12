@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -836,7 +835,7 @@
 
         const InfoModal = ({ title, content, onClose }) => (
             <div className="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm font-sans">
-                <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[85vh] flex flex-col animate-fade-in">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[85vh] flex flex-col auth-fade-in">
                     <div className="flex justify-between items-center mb-4 border-b pb-4">
                         <h2 className="text-xl font-bold text-gray-800">{title}</h2>
                         <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times"></i></button>
@@ -850,7 +849,7 @@
         );
 
         const EmptyState = ({ icon, title, description, actionLabel, onAction, colorClass = "text-blue-600", bgClass = "bg-blue-50" }) => (
-            <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in bg-white rounded-2xl border border-gray-100 shadow-sm font-sans">
+            <div className="flex flex-col items-center justify-center py-20 px-6 text-center auth-fade-in bg-white rounded-2xl border border-gray-100 shadow-sm font-sans">
                 <div className={`w-20 h-20 ${bgClass} ${colorClass} rounded-full flex items-center justify-center mb-6 text-3xl shadow-inner`}><i className={`fas ${icon}`}></i></div>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
                 <p className="text-gray-500 max-w-xs mb-8 leading-relaxed text-sm">{description}</p>
@@ -858,25 +857,202 @@
             </div>
         );
 
-        const OnboardingTour = ({ onComplete }) => {
-            const [selectedRole, setSelectedRole] = useState('solo');
+        const OnboardingTour = ({ onComplete, stateDB }) => {
+            const [step, setStep] = useState(1);
+            const [data, setData] = useState({
+                roleDesc: 'Mobile Notary',
+                name: '',
+                state: 'CA',
+                apiKey: ''
+            });
+
+            const handleNext = () => setStep(s => Math.min(s + 1, 4));
+            const handleBack = () => setStep(s => Math.max(s - 1, 1));
+            
+            const handleFinish = (skipApiKey = false) => {
+                const finalData = { ...data };
+                if (skipApiKey) finalData.apiKey = '';
+                onComplete(finalData);
+            };
+
+            const stepsContent = [
+                { id: 1, title: 'Welcome' },
+                { id: 2, title: 'Identity' },
+                { id: 3, title: 'Features' },
+                { id: 4, title: 'AI Setup' }
+            ];
+
             return (
-                <div className="fixed inset-0 bg-black bg-opacity-80 z-50 flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl p-8 text-center max-w-md w-full font-sans">
-                        <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🚀</div>
-                        <h2 className="text-2xl font-bold mb-2">Welcome to NotaryOS</h2>
-                        <p className="text-gray-500 mb-6">Choose your setup so we can tailor features and guidance.</p>
-                        <div className="grid grid-cols-1 gap-3 mb-6 text-left">
-                            <button onClick={() => setSelectedRole('solo')} className={`p-3 rounded-xl border ${selectedRole === 'solo' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'}`}>
-                                <p className="font-semibold text-gray-800">Solo Notary</p>
-                                <p className="text-xs text-gray-500">Best for independent mobile notaries.</p>
-                            </button>
-                            <button onClick={() => setSelectedRole('agency')} className={`p-3 rounded-xl border ${selectedRole === 'agency' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200'}`}>
-                                <p className="font-semibold text-gray-800">Agency / Team</p>
-                                <p className="text-xs text-gray-500">Manage multiple notaries and assignments.</p>
-                            </button>
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-[100] flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col min-h-[500px] auth-fade-in font-sans border border-slate-200/50">
+                        {/* Header / Progress */}
+                        <div className="px-8 pt-8 pb-4 flex flex-col items-center">
+                            <div className="flex gap-2 mb-6">
+                                {stepsContent.map((s) => (
+                                    <div key={s.id} className={`h-1.5 rounded-full transition-all duration-300 ${step >= s.id ? 'w-8 bg-blue-600' : 'w-4 bg-slate-200'}`}></div>
+                                ))}
+                            </div>
                         </div>
-                        <button onClick={() => onComplete(selectedRole)} className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-lg">Continue</button>
+
+                        {/* Content Area */}
+                        <div className="flex-1 px-4 sm:px-8 overflow-y-auto">
+                            {step === 1 && (
+                                <div className="auth-fade-in space-y-6">
+                                    <div className="text-center">
+                                        <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-inner text-3xl">
+                                            <i className="fas fa-rocket"></i>
+                                        </div>
+                                        <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mb-2">Welcome to NotaryOS.</h2>
+                                        <p className="text-slate-500 text-base sm:text-lg">Let's set up your command center. How do you primarily work?</p>
+                                    </div>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-8">
+                                        {['Mobile Notary', 'Loan Signing Agent', 'Signing Agency'].map(role => (
+                                            <button 
+                                                key={role}
+                                                onClick={() => setData({...data, roleDesc: role})}
+                                                className={`p-5 rounded-2xl border-2 text-left transition-all group ${data.roleDesc === role ? 'border-blue-600 bg-blue-50/50 shadow-md shadow-blue-500/10' : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50'}`}
+                                            >
+                                                <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-4 transition-colors ${data.roleDesc === role ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-500 group-hover:bg-blue-100 group-hover:text-blue-600'}`}>
+                                                    <i className={`fas ${role === 'Mobile Notary' ? 'fa-car' : role === 'Loan Signing Agent' ? 'fa-home' : 'fa-building'}`}></i>
+                                                </div>
+                                                <h4 className="font-bold text-slate-900 mb-1">{role}</h4>
+                                                <p className="text-xs text-slate-500">
+                                                    {role === 'Mobile Notary' && 'I travel to clients for general notary work.'}
+                                                    {role === 'Loan Signing Agent' && 'I specialize in real estate closings.'}
+                                                    {role === 'Signing Agency' && 'I manage a team of notaries.'}
+                                                </p>
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 2 && (
+                                <div className="auth-fade-in space-y-6 max-w-md mx-auto">
+                                    <div className="text-center mb-8">
+                                        <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Business Identity</h2>
+                                        <p className="text-slate-500">Personalize your dashboard and set up state compliance.</p>
+                                    </div>
+                                    <div className="space-y-5">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1.5">Full Name</label>
+                                            <input 
+                                                type="text" 
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all outline-none text-slate-900"
+                                                placeholder="Your legal commissioned name"
+                                                value={data.name}
+                                                onChange={e => setData({...data, name: e.target.value})}
+                                                autoFocus
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1.5">Commissioned State</label>
+                                            <select 
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all outline-none text-slate-900 bg-white"
+                                                value={data.state}
+                                                onChange={e => setData({...data, state: e.target.value})}
+                                            >
+                                                {Object.keys(stateDB).filter(k => k !== 'certificates').map(k => (
+                                                    <option key={k} value={k}>{stateDB[k].state}</option>
+                                                ))}
+                                            </select>
+                                            <p className="text-xs text-slate-500 mt-2"><i className="fas fa-info-circle text-blue-500 mr-1"></i> Critical for AI Coach accuracy and fee limits.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 3 && (
+                                <div className="auth-fade-in space-y-6">
+                                    <div className="text-center mb-8">
+                                        <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Your New Superpowers</h2>
+                                        <p className="text-slate-500">What you can do with NotaryOS:</p>
+                                    </div>
+                                    <div className="space-y-4 max-w-lg mx-auto">
+                                        <div className="flex items-start gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-lg transition-all group">
+                                            <div className="w-12 h-12 rounded-xl bg-purple-100 text-purple-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">🪄</div>
+                                            <div>
+                                                <h4 className="font-bold text-slate-900 text-lg mb-1">Smart Fill</h4>
+                                                <p className="text-sm text-slate-600">Turn messy emails and texts into booked appointments instantly using AI extraction.</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-start gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-lg transition-all group">
+                                            <div className="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">⚖️</div>
+                                            <div>
+                                                <h4 className="font-bold text-slate-900 text-lg mb-1">AI Compliance Coach</h4>
+                                                <p className="text-sm text-slate-600">Get instant, reliable answers to state-specific questions without flipping through handbooks.</p>
+                                            </div>
+                                        </div>
+                                        <div className="flex items-start gap-4 p-5 rounded-2xl bg-slate-50 border border-slate-100 hover:bg-white hover:shadow-lg transition-all group">
+                                            <div className="w-12 h-12 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center text-xl shrink-0 group-hover:scale-110 transition-transform">📊</div>
+                                            <div>
+                                                <h4 className="font-bold text-slate-900 text-lg mb-1">Automated Dashboard</h4>
+                                                <p className="text-sm text-slate-600">Track revenue, manage client portals, and monitor credential expirations effortlessly.</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {step === 4 && (
+                                <div className="auth-fade-in space-y-6 max-w-md mx-auto text-center">
+                                    <div className="w-20 h-20 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner text-4xl">
+                                        <i className="fas fa-robot"></i>
+                                    </div>
+                                    <h2 className="text-2xl font-extrabold text-slate-900 mb-2">Activate Your AI Assistant</h2>
+                                    <p className="text-slate-500 mb-8 text-sm sm:text-base">
+                                        Unlock Smart Fill and the Compliance Coach by entering your secure Gemini API key. Your key stays locally on your device.
+                                    </p>
+                                    <div className="text-left space-y-4">
+                                        <div>
+                                            <label className="block text-sm font-bold text-slate-700 mb-1.5">Gemini API Key</label>
+                                            <input 
+                                                type="password" 
+                                                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all outline-none text-slate-900 font-mono tracking-widest placeholder-slate-400 placeholder-tracking-normal"
+                                                placeholder="AIzaSy..."
+                                                value={data.apiKey}
+                                                onChange={e => setData({...data, apiKey: e.target.value})}
+                                            />
+                                            <p className="text-xs text-slate-500 mt-2 flex justify-between">
+                                                <span><i className="fas fa-lock text-slate-400 mr-1"></i> Stored securely on device</span>
+                                                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer" className="text-indigo-600 hover:underline">Get a free key</a>
+                                            </p>
+                                        </div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Footer / Actions */}
+                        <div className="px-4 sm:px-8 py-6 border-t border-slate-100 flex items-center justify-between bg-slate-50/50 mt-4 rounded-b-3xl">
+                            {step > 1 ? (
+                                <button onClick={handleBack} className="px-4 sm:px-6 py-3 rounded-xl font-bold text-slate-600 hover:bg-slate-200 transition-colors">
+                                    Back
+                                </button>
+                            ) : <div></div>}
+                            
+                            {step < 4 ? (
+                                <button 
+                                    onClick={handleNext} 
+                                    disabled={step === 2 && !data.name.trim()}
+                                    className="px-6 sm:px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/30 transition-all transform active:scale-95 disabled:opacity-50 disabled:active:scale-100 ml-auto"
+                                >
+                                    Continue
+                                </button>
+                            ) : (
+                                <div className="flex items-center gap-3 sm:gap-4 ml-auto">
+                                    <button onClick={() => handleFinish(true)} className="text-sm font-bold text-slate-500 hover:text-slate-700">
+                                        Skip for now
+                                    </button>
+                                    <button 
+                                        onClick={() => handleFinish()} 
+                                        className="px-6 sm:px-8 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/30 transition-all transform active:scale-95"
+                                    >
+                                        Finish Setup
+                                    </button>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             );
@@ -1080,7 +1256,7 @@
                                 </div>
 
                                 {activeTab === 'before' ? (
-                                    <div className="space-y-4 animate-fade-in">
+                                    <div className="space-y-4 auth-fade-in">
                                         <div className="flex items-start gap-4 p-4 rounded-xl bg-red-900/10 border border-red-900/30">
                                             <div className="w-10 h-10 rounded-full bg-red-900/30 flex items-center justify-center text-red-400 shrink-0"><i className="fas fa-file-invoice-dollar"></i></div>
                                             <div><h4 className="font-bold text-red-200">Lost Invoices</h4><p className="text-sm text-slate-400">Tracking payments in Excel or paper logs leads to missed revenue.</p></div>
@@ -1095,7 +1271,7 @@
                                         </div>
                                     </div>
                                 ) : (
-                                    <div className="space-y-4 animate-fade-in">
+                                    <div className="space-y-4 auth-fade-in">
                                         <div className="flex items-start gap-4 p-4 rounded-xl bg-teal-900/10 border border-teal-900/30">
                                             <div className="w-10 h-10 rounded-full bg-teal-900/30 flex items-center justify-center text-teal-400 shrink-0"><i className="fas fa-magic"></i></div>
                                             <div><h4 className="font-bold text-teal-200">One-Click Invoicing</h4><p className="text-sm text-slate-400">Generate professional PDF invoices instantly from your appointment data.</p></div>
@@ -1568,7 +1744,7 @@
                             </div>
                         </div>
 
-                        <div className="w-full max-w-[400px] animate-fade-in mt-12 lg:mt-0">
+                        <div className="w-full max-w-[400px] auth-fade-in mt-12 lg:mt-0">
                             <div className="mb-8 text-center lg:text-left">
                                 <h2 className="text-3xl font-extrabold text-slate-900 mb-2">
                                     {isLogin ? 'Welcome back' : 'Create an account'}
@@ -1580,7 +1756,7 @@
 
                             {/* Error State UI */}
                             {error && (
-                                <div className="mb-6 bg-red-500/10 border border-red-500/30 text-red-600 p-4 rounded-xl flex items-start gap-3 text-sm animate-fade-in">
+                                <div className="mb-6 bg-red-500/10 border border-red-500/30 text-red-600 p-4 rounded-xl flex items-start gap-3 text-sm auth-fade-in">
                                     <i className="fas fa-exclamation-triangle mt-0.5"></i>
                                     <span>{error}</span>
                                 </div>
@@ -2005,7 +2181,6 @@
                 });
             }, [initialData]);
 
-            // --- UPDATED SMART FILL TO USE API KEY IF AVAILABLE ---
             const handleSmartFill = async () => {
                 const apiKey = localStorage.getItem('gemini_api_key');
 
@@ -2024,7 +2199,6 @@
                         });
                         const data = await response.json();
                         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                        // Extract JSON from text (simple regex for demo resilience)
                         const jsonMatch = text.match(/\{[\s\S]*\}/);
                         if (jsonMatch) {
                             const parsed = JSON.parse(jsonMatch[0]);
@@ -2044,7 +2218,6 @@
                         showToast("AI Error. Check API Key.", "error");
                     }
                 } else if (magicInput.toLowerCase().includes('john')) {
-                    // Fallback Demo Mode
                     setFormData({...formData, clientName: 'John Doe', date: '2026-12-01', time: '14:00', fee: '150'});
                     showToast("Form Filled (Demo Mode)");
                 } else {
@@ -3099,15 +3272,25 @@
                 setCurrentView('paywall');
             };
 
-            const handleOnboardingComplete = (selectedRole) => {
+            const handleOnboardingComplete = (selectedData) => {
+                const selectedRole = selectedData.roleDesc === 'Signing Agency' ? 'agency' : 'solo';
+                
                 const nextUser = {
                     ...(user || {}),
+                    name: selectedData.name || user?.name || 'User',
+                    state: selectedData.state || 'CA',
                     role: selectedRole,
                     plan: selectedRole === 'agency' ? ((user?.plan === 'team') ? 'team' : 'free') : (user?.plan || 'free')
                 };
+                
                 setUser(nextUser);
                 localStorage.setItem('notary_user_profile', JSON.stringify(nextUser));
                 localStorage.setItem('notary_onboarded', 'true');
+                
+                if (selectedData.apiKey) {
+                    localStorage.setItem('gemini_api_key', selectedData.apiKey);
+                }
+                
                 setShowOnboarding(false);
                 
                 // Show tour immediately after role selection
@@ -3206,7 +3389,7 @@
                     {showAIModal && <AIHelperModal onClose={() => setShowAIModal(false)} />}
                     {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={handleUpgrade} />}
                     {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} onSave={handleUpdateProfile} />}
-                    {showOnboarding && <OnboardingTour onComplete={handleOnboardingComplete} />}
+                    {showOnboarding && <OnboardingTour stateDB={STATE_DATABASE} onComplete={handleOnboardingComplete} />}
                     {showWelcomeTour && <WelcomeTour onComplete={handleTourComplete} />}
                     
                     {showWhatsNew && (
