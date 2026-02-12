@@ -541,6 +541,98 @@
         const COURSE_MODULES = [ { id: 1, title: "Authority", topic: "Commissioning authority." } ];
         const PERSONA = `ROLE: NOTARY MENTOR. TONE: Helpful.`;
 
+        // --- FOOTER CONTENT DATA ---
+        const FOOTER_CONTENT = {
+            privacy: {
+                title: "Privacy Policy",
+                content: `
+                    <p><strong>Effective Date:</strong> February 2026</p>
+                    <h3 class="font-bold mt-4 mb-2">1. Information We Collect</h3>
+                    <p>We collect information you provide directly to us, such as when you create or modify your account, request on-demand services, contact customer support, or otherwise communicate with us. This information may include: name, email, phone number, postal address, profile picture, payment method, and other information you choose to provide.</p>
+                    <h3 class="font-bold mt-4 mb-2">2. How We Use Information</h3>
+                    <p>We may use the information we collect about you to provide, maintain, and improve our services, including to facilitate payments, send receipts, provide products and services you request (and send related information), develop new features, provide customer support to Users and Notaries, develop safety features, authenticate users, and send product updates and administrative messages.</p>
+                    <h3 class="font-bold mt-4 mb-2">3. Local Storage vs Cloud Sync</h3>
+                    <p>By default, NotaryOS operates in a "local-first" mode. Client data, journal entries, and appointments are stored locally in your browser/device. If you opt into Pro or Agency tiers and enable Cloud Sync, data is securely transmitted and encrypted at rest on our servers.</p>
+                `
+            },
+            terms: {
+                title: "Terms of Service",
+                content: `
+                    <p><strong>Effective Date:</strong> February 2026</p>
+                    <h3 class="font-bold mt-4 mb-2">1. Acceptance of Terms</h3>
+                    <p>By accessing and using NotaryOS, you accept and agree to be bound by the terms and provision of this agreement. In addition, when using these particular services, you shall be subject to any posted guidelines or rules applicable to such services.</p>
+                    <h3 class="font-bold mt-4 mb-2">2. Not Legal Advice</h3>
+                    <p>NotaryOS is a management and educational tool. The AI Trainer and compliance alerts provide information based on general state data. This tool does NOT constitute legal advice. You are a commissioned public official and must always verify procedures with your official state handbook and commissioning authority.</p>
+                    <h3 class="font-bold mt-4 mb-2">3. User Responsibility</h3>
+                    <p>You are solely responsible for all notarial acts performed. NotaryOS is not liable for any errors, omissions, rejected documents, lost fees, or legal actions resulting from your use of this software or your performance as a notary public.</p>
+                `
+            },
+            security: {
+                title: "Data Security",
+                content: `
+                    <h3 class="font-bold mt-4 mb-2">Bank-Grade Security</h3>
+                    <p>Security is built into NotaryOS at multiple layers. All data transmitted between your device and our cloud servers (if Cloud Sync is enabled) is encrypted using TLS 1.3. Data at rest is encrypted using AES-256 encryption.</p>
+                    <h3 class="font-bold mt-4 mb-2">Local-First Privacy</h3>
+                    <p>For users on our Starter plan, or those who opt out of Cloud Sync, your journal entries and client PII remain strictly on your local device's storage. We cannot access, read, or recover this data.</p>
+                    <h3 class="font-bold mt-4 mb-2">Audit Capture</h3>
+                    <p>Images of IDs or thumbprints captured for your journal are lightly encrypted before being stored. These are retained purely for your compliance audit requirements and are not used for any external processing or machine learning.</p>
+                `
+            },
+            compliance: {
+                title: "Compliance Commitment",
+                content: `
+                    <h3 class="font-bold mt-4 mb-2">50-State Architecture</h3>
+                    <p>NotaryOS is designed to support the diverse and ever-changing landscape of US notary laws. Our state database provides contextual hints for maximum fees, credible witness rules, and ID expiration allowances.</p>
+                    <h3 class="font-bold mt-4 mb-2">Journal Requirements</h3>
+                    <p>Our digital journal workflow is built to capture the standard requirements of the most stringent states (like California and Texas), including signer signatures, ID details, fee tracking, and thumbprint/ID capture where legally mandated or permitted.</p>
+                    <h3 class="font-bold mt-4 mb-2">Your Duty as a Notary</h3>
+                    <p>While we strive for accuracy, laws change. The ultimate responsibility for compliance rests with the commissioned notary. NotaryOS serves as an organizational aid, not a substitute for knowing your state's laws.</p>
+                `
+            },
+            help: {
+                title: "Help Center & Support",
+                content: `
+                    <h3 class="font-bold mt-4 mb-2">Welcome to NotaryOS Support</h3>
+                    <p>If you need assistance with your account, billing, or technical issues, our team is here to help.</p>
+                    <ul class="list-disc pl-5 mt-4 space-y-2">
+                        <li><strong>Email Support:</strong> support@notaryos.com (24-48 hr response time)</li>
+                        <li><strong>Pro/Agency Priority:</strong> Access live chat directly inside the app dashboard.</li>
+                        <li><strong>Feature Requests:</strong> Visit our Community board to upvote new features!</li>
+                    </ul>
+                `
+            },
+            handbooks: {
+                title: "State Handbooks",
+                content: `
+                    <p>Quick access to official state commissioning authorities is available directly inside the NotaryOS application via the <strong>Admin & Curriculum</strong> modules. Please log in or sign up to access our directory of 50-state handbook links and regulatory portals.</p>
+                `
+            },
+            community: {
+                title: "NotaryOS Community",
+                content: `
+                    <h3 class="font-bold mt-4 mb-2">Join the Conversation</h3>
+                    <p>Our community forum is currently in beta and available to Pro and Agency users. Inside, you can:</p>
+                    <ul class="list-disc pl-5 mt-2 space-y-1">
+                        <li>Discuss state-specific edge cases with other experienced notaries.</li>
+                        <li>Share marketing strategies for loan signing agents.</li>
+                        <li>Provide direct feedback to the NotaryOS development team.</li>
+                    </ul>
+                    <p class="mt-4">Log in to your account and navigate to the Community tab to get started.</p>
+                `
+            },
+            contact: {
+                title: "Contact Us",
+                content: `
+                    <div class="space-y-4">
+                        <p><strong>General Inquiries:</strong> hello@notaryos.com</p>
+                        <p><strong>Technical Support:</strong> support@notaryos.com</p>
+                        <p><strong>Enterprise & Agency Sales:</strong> sales@notaryos.com</p>
+                        <p><strong>Mailing Address:</strong><br/>NotaryOS Inc.<br/>100 Innovation Drive<br/>Suite 300<br/>San Francisco, CA 94111</p>
+                    </div>
+                `
+            }
+        };
+
         // --- COMPONENTS ---
 
         // 1. Modals & Helpers
@@ -743,6 +835,21 @@
             );
         };
 
+        const InfoModal = ({ title, content, onClose }) => (
+            <div className="fixed inset-0 bg-black bg-opacity-70 z-[100] flex items-center justify-center p-4 backdrop-blur-sm font-sans">
+                <div className="bg-white rounded-2xl shadow-2xl max-w-2xl w-full p-6 max-h-[85vh] flex flex-col animate-fade-in">
+                    <div className="flex justify-between items-center mb-4 border-b pb-4">
+                        <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+                        <button onClick={onClose} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times"></i></button>
+                    </div>
+                    <div className="text-sm text-gray-600 space-y-4 overflow-y-auto pr-2" dangerouslySetInnerHTML={{ __html: content }}></div>
+                    <div className="mt-6 pt-4 border-t border-gray-100 text-right">
+                        <button onClick={onClose} className="bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2 px-6 rounded-lg transition-colors">Close</button>
+                    </div>
+                </div>
+            </div>
+        );
+
         // NEW: Reusable Empty State Component
         const EmptyState = ({ icon, title, description, actionLabel, onAction, colorClass = "text-blue-600", bgClass = "bg-blue-50" }) => (
             <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in bg-white rounded-2xl border border-gray-100 shadow-sm font-sans">
@@ -833,6 +940,7 @@
             const [demoQuestion, setDemoQuestion] = useState("");
             const [demoResponse, setDemoResponse] = useState(null);
             const [openFaqIndex, setOpenFaqIndex] = useState(0);
+            const [infoContent, setInfoContent] = useState(null);
 
             const faqItems = [
                 {
@@ -874,6 +982,7 @@
 
             return (
                 <div className="min-h-screen landing-bg text-white font-inter flex flex-col relative overflow-x-hidden">
+                    {infoContent && <InfoModal title={infoContent.title} content={infoContent.content} onClose={() => setInfoContent(null)} />}
                     <div className="w-full p-6 flex justify-between items-center z-20 container mx-auto">
                         <div className="flex items-center gap-2">
                             <i className="fas fa-file-signature text-xl text-teal-400"></i>
@@ -1337,19 +1446,19 @@
                             <div>
                                 <h4 className="text-white font-bold mb-4">Support</h4>
                                 <ul className="space-y-3 text-sm text-slate-400">
-                                    <li><button type="button" className="hover:text-teal-400 transition-colors">Help Center</button></li>
-                                    <li><button type="button" className="hover:text-teal-400 transition-colors">State Handbooks</button></li>
-                                    <li><button type="button" className="hover:text-teal-400 transition-colors">Community</button></li>
-                                    <li><button type="button" className="hover:text-teal-400 transition-colors">Contact Us</button></li>
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.help)} className="hover:text-teal-400 transition-colors">Help Center</button></li>
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.handbooks)} className="hover:text-teal-400 transition-colors">State Handbooks</button></li>
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.community)} className="hover:text-teal-400 transition-colors">Community</button></li>
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.contact)} className="hover:text-teal-400 transition-colors">Contact Us</button></li>
                                 </ul>
                             </div>
                             <div>
                                 <h4 className="text-white font-bold mb-4">Legal</h4>
                                 <ul className="space-y-3 text-sm text-slate-400">
-                                    <li><button type="button" className="hover:text-teal-400 transition-colors">Privacy Policy</button></li>
-                                    <li><button type="button" className="hover:text-teal-400 transition-colors">Terms of Service</button></li>
-                                    <li><button type="button" className="hover:text-teal-400 transition-colors">Data Security</button></li>
-                                    <li><button type="button" className="hover:text-teal-400 transition-colors">Compliance</button></li>
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.privacy)} className="hover:text-teal-400 transition-colors">Privacy Policy</button></li>
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.terms)} className="hover:text-teal-400 transition-colors">Terms of Service</button></li>
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.security)} className="hover:text-teal-400 transition-colors">Data Security</button></li>
+                                    <li><button type="button" onClick={() => setInfoContent(FOOTER_CONTENT.compliance)} className="hover:text-teal-400 transition-colors">Compliance</button></li>
                                 </ul>
                             </div>
                         </div>
