@@ -4,31 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>NotaryOS</title>
-    
-    <!-- PWA Configuration -->
-    <meta name="theme-color" content="#f8fafc">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="NotaryOS">
-    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%234f46e5%22 rx=%2220%22/><text x=%2250%22 y=%2250%22 font-size=%2250%22 text-anchor=%22middle%22 dy=%22.35em%22>📜</text></svg>">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📜</text></svg>">
-    
-    <!-- Dynamic Manifest for PWA Install -->
-    <link rel="manifest" href='data:application/manifest+json,{
-        "name": "NotaryOS",
-        "short_name": "NotaryOS",
-        "start_url": ".",
-        "display": "standalone",
-        "background_color": "#f8fafc",
-        "theme_color": "#f8fafc",
-        "orientation": "portrait",
-        "icons": [{
-            "src": "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 fill=%22%234f46e5%22 rx=%2220%22/><text x=%2250%22 y=%2250%22 font-size=%2250%22 text-anchor=%22middle%22 dy=%22.35em%22>📜</text></svg>",
-            "sizes": "192x192",
-            "type": "image/svg+xml",
-            "purpose": "any maskable"
-        }]
-    }'>
 
     <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -80,168 +56,23 @@
         } catch (e) {
             console.error("Firebase Init Error:", e);
         }
-
-        // PWA Install Prompt Logic
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            // Dispatch custom event to notify UI
-            window.dispatchEvent(new Event('pwa-ready'));
-        });
     </script>
 
     <style>
         :root {
-            /* === PREMIUM NOTARY OS DESIGN TOKENS === */
-            
-            /* Background & Surface Colors */
-            --app-bg: #F8F9FA;
-            --surface-bg: #FFFFFF;
-            --surface-2: #F1F3F5;
-            --surface-muted: #eef2ff; /* Keep for compatibility */
-            
-            /* Text Colors */
-            --text-primary: #212529;
-            --text-secondary: #495057;
-            --text-muted: #64748b; /* Keep for compatibility */
-            --muted: #ADB5BD;
-            
-            /* Border & Input */
-            --border-color: #E9ECEF;
-            --input-border: #E9ECEF;
-            
-            /* Brand & Semantic Colors */
-            --brand: #4C6EF5;
-            --brand-hover: #4263eb;
-            --brand-soft: #e0e7ff;
-            --accent-color: #4C6EF5; /* Keep for compatibility */
-            --accent-hover: #4263eb; /* Keep for compatibility */
-            --accent-soft: #e0e7ff; /* Keep for compatibility */
-            
-            --success: #37B24D;
-            --success-soft: #d3f9d8;
-            --warning: #F59F00;
-            --warning-soft: #fff3bf;
-            --danger: #F03E3E;
-            --danger-soft: #ffe0e0;
-            
-            /* Spacing Scale (8px base) */
-            --space-1: 0.25rem;  /* 4px */
-            --space-2: 0.5rem;   /* 8px */
-            --space-3: 0.75rem;  /* 12px */
-            --space-4: 1rem;     /* 16px */
-            --space-5: 1.25rem;  /* 20px */
-            --space-6: 1.5rem;   /* 24px */
-            --space-8: 2rem;     /* 32px */
-            --space-10: 2.5rem;  /* 40px */
-            --space-12: 3rem;    /* 48px */
-            --space-16: 4rem;    /* 64px */
-            
-            /* Border Radius */
-            --radius-sm: 4px;
-            --radius-md: 8px;
-            --radius-lg: 12px;
-            --radius-xl: 16px;
-            --radius-2xl: 20px;
-            
-            /* Shadows */
-            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            
-            /* Typography */
-            --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            --font-serif: 'Merriweather', Georgia, serif;
-            --font-heading: 'Poppins', sans-serif;
-            
-            /* Font Sizes */
-            --text-xs: 0.75rem;    /* 12px */
-            --text-sm: 0.875rem;   /* 14px */
-            --text-base: 1rem;     /* 16px */
-            --text-lg: 1.125rem;   /* 18px */
-            --text-xl: 1.25rem;    /* 20px */
-            --text-2xl: 1.5rem;    /* 24px */
-            --text-3xl: 1.875rem;  /* 30px */
-            --text-4xl: 2.25rem;   /* 36px */
-            
-            /* Font Weights */
-            --font-normal: 400;
-            --font-medium: 500;
-            --font-semibold: 600;
-            --font-bold: 700;
-            --font-extrabold: 800;
-            
-            /* Line Heights */
-            --leading-tight: 1.25;
-            --leading-snug: 1.375;
-            --leading-normal: 1.5;
-            --leading-relaxed: 1.625;
-            --leading-loose: 2;
-            
-            /* Transitions */
-            --transition-fast: 150ms ease;
-            --transition-base: 200ms ease;
-            --transition-slow: 250ms ease;
+            --app-bg: #f8fafc;
+            --surface-bg: #ffffff;
+            --surface-muted: #eef2ff;
+            --text-primary: #0f172a;
+            --text-muted: #64748b;
+            --border-color: #e2e8f0;
+            --accent-color: #4f46e5;
+            --accent-hover: #4338ca;
+            --accent-soft: #e0e7ff;
         }
 
-        /* === BASE TYPOGRAPHY === */
-        body {
-            font-family: var(--font-sans);
-            font-size: var(--text-base);
-            line-height: var(--leading-normal);
-            font-weight: var(--font-normal);
-            background-color: var(--app-bg);
-            color: var(--text-primary);
-            transition: background-color var(--transition-base), color var(--transition-base);
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        
-        h1, h2, h3, h4, h5, h6, button, .font-sans {
-            font-family: var(--font-heading);
-        }
-        
-        h1 {
-            font-size: var(--text-4xl);
-            font-weight: var(--font-bold);
-            line-height: var(--leading-tight);
-            color: var(--text-primary);
-        }
-        
-        h2 {
-            font-size: var(--text-3xl);
-            font-weight: var(--font-bold);
-            line-height: var(--leading-tight);
-            color: var(--text-primary);
-        }
-        
-        h3 {
-            font-size: var(--text-2xl);
-            font-weight: var(--font-semibold);
-            line-height: var(--leading-snug);
-            color: var(--text-primary);
-        }
-        
-        h4 {
-            font-size: var(--text-xl);
-            font-weight: var(--font-semibold);
-            line-height: var(--leading-snug);
-            color: var(--text-primary);
-        }
-        
-        p {
-            font-size: var(--text-base);
-            line-height: var(--leading-relaxed);
-            color: var(--text-primary);
-        }
-        
-        small, .text-small {
-            font-size: var(--text-sm);
-            line-height: var(--leading-normal);
-            color: var(--text-secondary);
-        }
+        body { font-family: 'Merriweather', serif; background-color: var(--app-bg); color: var(--text-primary); transition: background-color .25s ease, color .25s ease; }
+        h1, h2, h3, h4, h5, h6, button, .font-sans { font-family: 'Poppins', sans-serif; }
 
         .theme-app-bg { background-color: var(--app-bg) !important; }
         .theme-surface { background-color: var(--surface-bg) !important; }
@@ -332,7 +163,6 @@
             scroll-behavior: smooth;
             cursor: grab;
             user-select: none;
-            scroll-snap-type: x mandatory;
         }
 
         .phone-flow-carousel:active {
@@ -345,7 +175,6 @@
 
         .phone-flow-card {
             transition: transform 0.3s ease, opacity 0.3s ease, filter 0.3s ease;
-            scroll-snap-align: center;
         }
 
         .phone-flow-card {
@@ -366,7 +195,6 @@
                 cursor: default;
                 user-select: auto;
                 touch-action: auto;
-                scroll-snap-type: none;
             }
 
             .phone-flow-track {
@@ -380,223 +208,19 @@
                 transform: none;
                 opacity: 1;
                 filter: none;
-                scroll-snap-align: none;
             }
         }
 
         /* Notary Gold Accent */
         .text-notary-gold { color: #fbbf24; }
         .bg-notary-gold { background-color: #fbbf24; }
-
-        /* Mobile Centering Fixes */
-        @media (max-width: 767px) {
-            /* Centered Mobile Content */
-            .mobile-centered-content {
-                text-align: center;
-                display: flex;
-                flex-direction: column;
-                align-items: center;
-                justify-content: center;
-                width: 100%;
-                max-width: 100vw;
-                overflow-x: hidden;
-            }
-
-            /* Centered Phone Carousel */
-            .phone-carousel-container {
-                display: flex;
-                justify-content: center;
-                width: 100%;
-                padding-left: 0;
-                padding-right: 0;
-            }
-
-            .phone-flow-carousel {
-                width: 100%;
-                padding-left: calc(50% - 140px);
-                padding-right: calc(50% - 140px);
-            }
-
-            .phone-flow-track {
-                padding-left: calc(50% - 140px);
-                padding-right: calc(50% - 140px);
-            }
-
-            .phone-flow-card {
-                min-width: 280px;
-                margin-right: 1rem;
-                scroll-snap-align: center;
-                flex-shrink: 0;
-            }
-
-            /* Prevent text overflow */
-            .mobile-text-wrap {
-                word-wrap: break-word;
-                overflow-wrap: break-word;
-                hyphens: auto;
-            }
-        }
     </style>
 </head>
 <body>
     <div id="root"></div>
 
-
-    <script>
-        (function () {
-            const renderBootError = (message) => {
-                const mount = document.getElementById('root');
-                if (!mount || mount.childElementCount > 0 || window.__NOTARY_APP_MOUNTED__) return;
-                mount.innerHTML = `<div style="min-height:100vh;display:grid;place-items:center;padding:24px;font-family:Inter,Arial,sans-serif;background:#f8fafc;color:#0f172a;"><div style="max-width:560px;background:#fff;border:1px solid #dbe4ef;border-radius:16px;padding:20px;box-shadow:0 10px 25px rgba(15,23,42,.08);"><h2 style="margin:0 0 8px;font-size:20px;">NotaryOS couldn't start</h2><p style="margin:0 0 10px;color:#475569;">The app took too long to initialize. Please refresh and try again.</p><p style="margin:0;color:#64748b;font-size:12px;word-break:break-word;">${message || 'Startup timeout'}</p></div></div>`;
-            };
-
-            window.setTimeout(function () {
-                if (!window.__NOTARY_APP_MOUNTED__) renderBootError('Application mount timeout');
-            }, 12000);
-        })();
-    </script>
-
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
-
-        // ========================================
-        // SHARED COMPONENT LIBRARY
-        // Premium UI components using design tokens
-        // ========================================
-
-        // Button Component - Standardized button with variants
-        const Button = ({ children, onClick, variant = 'primary', size = 'md', disabled = false, className = '', ...props }) => {
-            const baseClasses = 'inline-flex items-center justify-center font-semibold transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
-            
-            const variants = {
-                primary: 'bg-brand text-white hover:bg-brand-hover focus:ring-brand shadow-sm',
-                secondary: 'bg-surface-2 text-text-primary hover:bg-border-color focus:ring-border-color',
-                ghost: 'bg-transparent text-text-primary hover:bg-surface-2 focus:ring-border-color',
-                danger: 'bg-danger text-white hover:opacity-90 focus:ring-danger shadow-sm',
-            };
-            
-            const sizes = {
-                sm: 'px-3 py-1.5 text-sm rounded-md',
-                md: 'px-4 py-2 text-base rounded-lg',
-                lg: 'px-6 py-3 text-lg rounded-xl',
-            };
-            
-            return (
-                <button
-                    onClick={onClick}
-                    disabled={disabled}
-                    className={`${baseClasses} ${variants[variant] || variants.primary} ${sizes[size] || sizes.md} ${className}`}
-                    style={{
-                        borderRadius: size === 'sm' ? 'var(--radius-md)' : size === 'lg' ? 'var(--radius-xl)' : 'var(--radius-lg)',
-                        transition: 'all var(--transition-base)'
-                    }}
-                    {...props}
-                >
-                    {children}
-                </button>
-            );
-        };
-
-        // Input Component - Standardized form input
-        const Input = ({ label, error, helper, className = '', ...props }) => {
-            return (
-                <div className="space-y-1">
-                    {label && (
-                        <label className="block text-sm font-medium text-text-secondary">
-                            {label}
-                            {props.required && <span className="text-danger ml-1">*</span>}
-                        </label>
-                    )}
-                    <input
-                        className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-brand focus:border-transparent transition-all ${error ? 'border-danger' : 'border-border-color'} ${className}`}
-                        style={{
-                            borderRadius: 'var(--radius-md)',
-                            fontSize: 'var(--text-base)',
-                            transition: 'all var(--transition-base)'
-                        }}
-                        {...props}
-                    />
-                    {error && <p className="text-xs text-danger">{error}</p>}
-                    {helper && !error && <p className="text-xs text-text-secondary">{helper}</p>}
-                </div>
-            );
-        };
-
-        // Card Component - Standardized content container
-        const Card = ({ children, hover = false, className = '', ...props }) => {
-            return (
-                <div
-                    className={`bg-surface-bg border border-border-color p-6 ${hover ? 'hover:shadow-lg hover:-translate-y-0.5' : ''} ${className}`}
-                    style={{
-                        borderRadius: 'var(--radius-lg)',
-                        boxShadow: 'var(--shadow-md)',
-                        transition: 'all var(--transition-base)'
-                    }}
-                    {...props}
-                >
-                    {children}
-                </div>
-            );
-        };
-
-        // Badge Component - Status indicators and labels
-        const Badge = ({ children, variant = 'default', className = '' }) => {
-            const variants = {
-                default: 'bg-surface-2 text-text-primary',
-                brand: 'bg-brand-soft text-brand',
-                success: 'bg-success-soft text-success',
-                warning: 'bg-warning-soft text-warning',
-                danger: 'bg-danger-soft text-danger',
-            };
-            
-            return (
-                <span
-                    className={`inline-flex items-center px-2 py-1 text-xs font-semibold ${variants[variant] || variants.default} ${className}`}
-                    style={{
-                        borderRadius: 'var(--radius-sm)',
-                        fontSize: 'var(--text-xs)'
-                    }}
-                >
-                    {children}
-                </span>
-            );
-        };
-
-        // EmptyState Component - Enhanced version for empty data states
-        const EmptyState = ({ icon, title, description, actionLabel, onAction, colorClass = 'text-brand', bgClass = 'bg-brand-soft' }) => {
-            return (
-                <div className="text-center p-8 bg-white border-2 border-dashed rounded-xl" style={{ borderColor: 'var(--border-color)', borderRadius: 'var(--radius-xl)' }}>
-                    <div className={`mx-auto flex items-center justify-center h-14 w-14 rounded-full ${bgClass} mb-4`}>
-                        <i className={`fas ${icon} ${colorClass} text-2xl`}></i>
-                    </div>
-                    <h3 className="text-lg font-semibold text-text-primary mb-2">{title}</h3>
-                    <p className="text-sm text-text-secondary mb-6 max-w-sm mx-auto">{description}</p>
-                    {onAction && actionLabel && (
-                        <Button onClick={onAction} variant="primary">
-                            {actionLabel}
-                        </Button>
-                    )}
-                </div>
-            );
-        };
-
-        // Skeleton Loader Component - Loading state placeholder
-        const Skeleton = ({ className = '', width, height }) => {
-            return (
-                <div
-                    className={`animate-pulse bg-surface-2 ${className}`}
-                    style={{
-                        width: width || '100%',
-                        height: height || '1rem',
-                        borderRadius: 'var(--radius-md)'
-                    }}
-                />
-            );
-        };
-
-        // ========================================
-        // END SHARED COMPONENT LIBRARY
-        // ========================================
 
         class AppErrorBoundary extends React.Component {
             constructor(props) {
@@ -677,20 +301,53 @@
         };
 
         // --- HELPER FUNCTIONS ---
+        // Added simple feature access check to prevent undefined errors
         const hasFeatureAccess = (user, feature) => {
             if (!user) return false;
             if (user.role === 'agency') return true;
             if (user.plan === 'pro' || user.plan === 'team') return true;
+            
+            // Basic logic for free tier
             if (feature === 'agency' && user.role !== 'agency') return false;
             if (feature === 'trainer' && user.plan !== 'pro' && user.plan !== 'team') return false;
+            
             return true;
         };
 
-        const encryptPayload = (str) => { try { return btoa(str); } catch (e) { return str; } };
-        const decryptPayload = (str) => { try { return atob(str); } catch (e) { return str; } };
-        const safeStorageGet = (key, fallback = null) => { try { const value = localStorage.getItem(key); return value === null ? fallback : value; } catch (e) { return fallback; } };
-        const safeStorageSet = (key, value) => { try { localStorage.setItem(key, value); return true; } catch (e) { return false; } };
-        const safeParse = (value, fallback) => { if (value === null || value === undefined) return fallback; try { return JSON.parse(value); } catch (err) { return fallback; } };
+        // Added mock encryption/decryption to prevent ReferenceErrors in Journal
+        const encryptPayload = (str) => {
+            try { return btoa(str); } catch (e) { return str; }
+        };
+        const decryptPayload = (str) => {
+            try { return atob(str); } catch (e) { return str; }
+        };
+
+        const safeStorageGet = (key, fallback = null) => {
+            try {
+                const value = localStorage.getItem(key);
+                return value === null ? fallback : value;
+            } catch (e) {
+                return fallback;
+            }
+        };
+
+        const safeStorageSet = (key, value) => {
+            try {
+                localStorage.setItem(key, value);
+                return true;
+            } catch (e) {
+                return false;
+            }
+        };
+
+        const safeParse = (value, fallback) => {
+            if (value === null || value === undefined) return fallback;
+            try {
+                return JSON.parse(value);
+            } catch (err) {
+                return fallback;
+            }
+        };
 
         // --- DATA MANAGER ---
         const DataManager = {
@@ -759,7 +416,14 @@
                 doc.autoTable({ startY: 80, head: [['Description', 'Date', 'Amount']], body: [[appt.type || 'Notary Service', appt.date, `$${appt.fee}`]], theme: 'grid', headStyles: { fillColor: primaryColor } });
                 const finalY = doc.lastAutoTable.finalY + 10;
                 doc.setFontSize(12); doc.text(`Total Due: $${appt.fee}`, 160, finalY, { align: 'right' });
-                if(user.logoUrl) { try { doc.addImage(user.logoUrl, 'PNG', 20, 5, 30, 30); } catch(e) { console.log("Image error", e); } }
+
+                // --- BUSINESS LOGO/SEAL IF UPLOADED ---
+                if(user.logoUrl) {
+                    try {
+                        doc.addImage(user.logoUrl, 'PNG', 20, 5, 30, 30);
+                    } catch(e) { console.log("Image error", e); }
+                }
+
                 doc.save(`invoice_${appt.clientName}.pdf`);
                 showToast("Invoice Downloaded");
             },
@@ -849,6 +513,7 @@
 
         // --- COMPONENTS ---
 
+        // 1. Modals & Helpers
         const TermsModal = ({ onClose }) => (
             <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm z-[100]">
                 <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 animate-fade-in font-sans">
@@ -887,6 +552,7 @@
         const SettingsModal = ({ user, onClose, onSave }) => {
             const [data, setData] = useState(user || {});
 
+            // Handle logo upload simulation
             const handleLogoUpload = (e) => {
                 const file = e.target.files[0];
                 if (file) {
@@ -898,120 +564,106 @@
                 }
             };
 
-            const handleSave = (e) => { e.preventDefault(); onSave(data); onClose(); showToast("Profile Updated"); };
-
-            const handleExport = () => {
+            // --- DATA BACKUP & RESTORE LOGIC ---
+            const handleExportData = () => {
+                const exportData = {};
                 const keys = [
-                    'notary_user_profile', 'notary_appointments', 'notary_clients',
-                    'notary_credentials', 'notary_journal', 'notary_expenses',
-                    'notary_mileage', 'notary_team', 'notary_assignments',
-                    'notary_esignatures', 'notary_onboarded', 'notary_tour_completed',
-                    'notary_active_trip'
+                    'notary_user_profile', 'notary_clients', 'notary_appointments',
+                    'notary_journal', 'notary_expenses', 'notary_mileage',
+                    'notary_credentials', 'notary_team', 'notary_assignments',
+                    'notary_esignatures', 'gemini_api_key', 'notary_onboarded',
+                    'notary_tour_completed'
                 ];
-                const backup = {};
-                keys.forEach(k => {
-                    const item = localStorage.getItem(k);
-                    if (item) backup[k] = JSON.parse(item);
+                keys.forEach(key => {
+                    const value = localStorage.getItem(key);
+                    if (value) exportData[key] = value;
                 });
-                const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
-                a.download = `notaryos_backup_${new Date().toISOString().slice(0,10)}.json`;
+                a.download = `notaryos_backup_${new Date().toISOString().split('T')[0]}.json`;
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                showToast("Data Exported Successfully");
+                showToast("Backup downloaded successfully");
             };
 
-            const handleImport = (e) => {
-                const file = e.target.files[0];
+            const handleImportData = (event) => {
+                const file = event.target.files[0];
                 if (!file) return;
+
                 const reader = new FileReader();
-                reader.onload = (event) => {
+                reader.onload = (e) => {
                     try {
-                        const backup = JSON.parse(event.target.result);
-                        if (!backup || typeof backup !== 'object') throw new Error("Invalid format");
-                        
-                        Object.keys(backup).forEach(key => {
-                            if (key.startsWith('notary_')) {
-                                localStorage.setItem(key, JSON.stringify(backup[key]));
+                        const importedData = JSON.parse(e.target.result);
+                        if (typeof importedData !== 'object') throw new Error("Invalid backup file");
+
+                        Object.keys(importedData).forEach(key => {
+                            if (key.startsWith('notary_') || key === 'gemini_api_key') {
+                                localStorage.setItem(key, importedData[key]);
                             }
                         });
-                        showToast("Data Restored. Reloading...");
+                        showToast("Data restored! Reloading...");
                         setTimeout(() => window.location.reload(), 1500);
                     } catch (err) {
                         console.error(err);
-                        showToast("Invalid Backup File", "error");
+                        showToast("Failed to restore data. Invalid file.", "error");
                     }
                 };
                 reader.readAsText(file);
             };
 
+            const handleSave = (e) => { e.preventDefault(); onSave(data); onClose(); showToast("Profile Updated"); };
+
             return (
                 <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm z-[100]">
                     <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 font-sans max-h-[90vh] overflow-y-auto">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="font-bold text-lg">Settings</h3>
-                            <button type="button" onClick={onClose} className="text-gray-400 hover:text-gray-600"><i className="fas fa-times"></i></button>
-                        </div>
-                        
-                        <div className="space-y-8">
-                            {/* Profile Section */}
-                            <section>
-                                <h4 className="text-xs font-bold text-gray-900 uppercase mb-3 pb-2 border-b">Business Profile</h4>
-                                <form onSubmit={handleSave} className="space-y-4">
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Your Name</label>
-                                        <input className="w-full p-2 border rounded" placeholder="Your Name" value={data.name || ''} onChange={e => setData({...data, name: e.target.value})} />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Business Name</label>
-                                        <input className="w-full p-2 border rounded" placeholder="Business Name" value={data.businessName || ''} onChange={e => setData({...data, businessName: e.target.value})} />
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Business Logo / Seal</label>
-                                        <div className="flex items-center gap-4">
-                                            {data.logoUrl && <img src={data.logoUrl} alt="Logo Preview" className="w-12 h-12 object-contain border rounded" />}
-                                            <input type="file" accept="image/*" onChange={handleLogoUpload} className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
-                                        </div>
-                                        <p className="text-xs text-gray-400 mt-1">Used on invoices and reports.</p>
-                                    </div>
-                                    <div>
-                                        <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Gemini API Key (Optional)</label>
-                                        <input className="w-full p-2 border rounded font-mono text-sm" type="password" placeholder="AI Key for Smart Fill" value={data.apiKey || ''} onChange={e => { setData({...data, apiKey: e.target.value}); localStorage.setItem('gemini_api_key', e.target.value); }} />
-                                        <p className="text-xs text-gray-400 mt-1">Required for AI features to work fully.</p>
-                                    </div>
-                                    <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">Save Profile</button>
-                                </form>
-                            </section>
-
-                            {/* Data Management Section */}
-                            <section>
-                                <h4 className="text-xs font-bold text-gray-900 uppercase mb-3 pb-2 border-b">Data Management</h4>
-                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <p className="font-bold text-gray-800 text-sm">Backup Data</p>
-                                            <p className="text-xs text-gray-500">Download a JSON copy of all your local data.</p>
-                                        </div>
-                                        <button onClick={handleExport} className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2">
-                                            <i className="fas fa-download"></i> Export
-                                        </button>
-                                    </div>
-                                    <div className="border-t border-slate-200 pt-4 flex items-center justify-between">
-                                        <div>
-                                            <p className="font-bold text-gray-800 text-sm">Restore Data</p>
-                                            <p className="text-xs text-gray-500">Overwrite current data with a backup file.</p>
-                                        </div>
-                                        <label className="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 cursor-pointer">
-                                            <i className="fas fa-upload"></i> Import
-                                            <input type="file" accept=".json" onChange={handleImport} className="hidden" />
-                                        </label>
-                                    </div>
+                        <h3 className="font-bold text-lg mb-4">Business Profile</h3>
+                        <form onSubmit={handleSave} className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Your Name</label>
+                                <input className="w-full p-2 border rounded" placeholder="Your Name" value={data.name || ''} onChange={e => setData({...data, name: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Business Name</label>
+                                <input className="w-full p-2 border rounded" placeholder="Business Name" value={data.businessName || ''} onChange={e => setData({...data, businessName: e.target.value})} />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Business Logo / Seal</label>
+                                <div className="flex items-center gap-4">
+                                    {data.logoUrl && <img src={data.logoUrl} alt="Logo Preview" className="w-12 h-12 object-contain border rounded" />}
+                                    <input type="file" accept="image/*" onChange={handleLogoUpload} className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
                                 </div>
-                            </section>
-                        </div>
+                                <p className="text-xs text-gray-400 mt-1">Used on invoices and reports.</p>
+                            </div>
+                             <div>
+                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Gemini API Key (Optional)</label>
+                                <input className="w-full p-2 border rounded font-mono text-sm" type="password" placeholder="AI Key for Smart Fill" value={data.apiKey || ''} onChange={e => { setData({...data, apiKey: e.target.value}); localStorage.setItem('gemini_api_key', e.target.value); }} />
+                                <p className="text-xs text-gray-400 mt-1">Required for AI features to work fully.</p>
+                            </div>
+
+                            {/* DATA MANAGEMENT SECTION */}
+                            <div className="pt-4 border-t border-gray-100 mt-4">
+                                <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">Data Management</h4>
+                                <div className="grid grid-cols-2 gap-3">
+                                    <button type="button" onClick={handleExportData} className="flex items-center justify-center gap-2 p-3 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100 hover:bg-emerald-100 transition-colors font-semibold text-sm">
+                                        <i className="fas fa-download"></i> Backup Data
+                                    </button>
+                                    <label className="flex items-center justify-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors font-semibold text-sm cursor-pointer">
+                                        <i className="fas fa-upload"></i> Restore Data
+                                        <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
+                                    </label>
+                                </div>
+                                <p className="text-xs text-gray-400 mt-2">
+                                    Download a backup of your clients, journal, and settings. Restore to recover data or move to a new device.
+                                </p>
+                            </div>
+
+                            <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">Save Profile</button>
+                            <button type="button" onClick={onClose} className="w-full text-gray-500 py-2">Cancel</button>
+                        </form>
                     </div>
                 </div>
             );
@@ -1061,6 +713,7 @@
             );
         };
 
+        // NEW: Reusable Empty State Component
         const EmptyState = ({ icon, title, description, actionLabel, onAction, colorClass = "text-blue-600", bgClass = "bg-blue-50" }) => (
             <div className="flex flex-col items-center justify-center py-20 px-6 text-center animate-fade-in bg-white rounded-2xl border border-gray-100 shadow-sm font-sans">
                 <div className={`w-20 h-20 ${bgClass} ${colorClass} rounded-full flex items-center justify-center mb-6 text-3xl shadow-inner`}><i className={`fas ${icon}`}></i></div>
@@ -1353,18 +1006,17 @@
                     {/* Mobile-First Demo Section - Alternating Background: Dark Slate 900 */}
                     <div className="py-24 bg-slate-900 w-full border-t border-slate-800 font-sans">
                         <div className="max-w-7xl mx-auto px-6 grid lg:grid-cols-[1.2fr_1fr] gap-16 items-center">
-                            {/* Carousel Section */}
-                            <div className="order-2 lg:order-1 phone-carousel-container">
+                            <div className="order-2 lg:order-1">
                                 <div 
                                     ref={carouselRef}
-                                    className="phone-flow-carousel overflow-x-auto scrollbar-hide pb-3 mx-auto snap-x snap-mandatory px-4"
+                                    className="phone-flow-carousel overflow-x-auto scrollbar-hide pb-3 -mx-2 px-8 md:px-0 snap-x snap-mandatory"
                                     onMouseDown={onMouseDown}
                                     onMouseMove={onMouseMove}
                                     onMouseUp={onMouseUp}
                                     onMouseLeave={onMouseLeave}
                                 >
-                                    <div className="phone-flow-track flex gap-5 justify-center md:justify-start">
-                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden">
+                                    <div className="phone-flow-track flex gap-5">
+                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4 relative">
                                                 <div className="flex justify-between items-center mb-6">
@@ -1392,7 +1044,7 @@
                                             </div>
                                         </div>
 
-                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden">
+                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4">
                                                 <div className="flex justify-between items-center mb-6">
@@ -1422,7 +1074,7 @@
                                             </div>
                                         </div>
 
-                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden">
+                                        <div className="phone-mockup phone-flow-card min-w-[280px] w-[280px] h-[560px] md:min-w-0 md:w-full md:h-[430px] bg-white border-8 border-gray-800 rounded-[3rem] shadow-2xl relative overflow-hidden snap-center">
                                             <div className="phone-notch"></div>
                                             <div className="h-full bg-gray-50 pt-10 px-4">
                                                 <div className="flex justify-between items-center mb-6">
@@ -1456,25 +1108,23 @@
                                 </div>
                                 <p className="text-xs text-slate-400 mt-3 text-center md:text-left">Swipe on mobile to focus each screen, or view all 3 at once on larger displays.</p>
                             </div>
-                            
-                            {/* Run Your Business Section - FIXED: Centered on Mobile */}
-                            <div className="order-1 lg:order-2 mobile-centered-content">
-                                <h3 className="text-3xl font-bold text-white mb-6 text-center lg:text-left mobile-text-wrap">Run your business from your pocket.</h3>
-                                <p className="text-slate-400 text-lg mb-8 leading-relaxed text-center lg:text-left mobile-text-wrap">
+                            <div className="order-1 lg:order-2">
+                                <h3 className="text-3xl font-bold text-white mb-6">Run your business from your pocket.</h3>
+                                <p className="text-slate-400 text-lg mb-8 leading-relaxed">
                                     From booking to signature capture to final payout, NotaryOS mirrors how real mobile appointments happen. Start with your daily schedule, complete ID/journal checks at the table, then send and track payment before you drive to the next stop.
                                 </p>
                                 <ul className="space-y-4">
                                     <li className="flex items-center gap-3 text-slate-300">
                                         <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs"><i className="fas fa-mobile-alt"></i></div>
-                                        <span className="text-left">1) Confirm today's route and appointment details</span>
+                                        1) Confirm today's route and appointment details
                                     </li>
                                     <li className="flex items-center gap-3 text-slate-300">
                                         <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs"><i className="fas fa-map-marker-alt"></i></div>
-                                        <span className="text-left">2) Capture signer details and journal proof on site</span>
+                                        2) Capture signer details and journal proof on site
                                     </li>
                                     <li className="flex items-center gap-3 text-slate-300">
                                         <div className="w-6 h-6 rounded-full bg-teal-500/20 text-teal-400 flex items-center justify-center text-xs"><i className="fas fa-bell"></i></div>
-                                        <span className="text-left">3) Send invoice and track paid/pending status instantly</span>
+                                        3) Send invoice and track paid/pending status instantly
                                     </li>
                                 </ul>
                             </div>
@@ -1580,40 +1230,6 @@
 
         const Sidebar = ({ currentView, setView, isOpen, onClose, onLogout, userName, userPlan, userRole, onSettings, onUpgrade }) => {
             const [isCollapsed, setIsCollapsed] = useState(false);
-            const [canInstall, setCanInstall] = useState(false);
-            const touchStart = useRef(0);
-            
-            useEffect(() => {
-                const checkInstall = () => {
-                    if (window.deferredPrompt) setCanInstall(true);
-                };
-                window.addEventListener('pwa-ready', checkInstall);
-                if (window.deferredPrompt) setCanInstall(true);
-                return () => window.removeEventListener('pwa-ready', checkInstall);
-            }, []);
-
-            const handleInstall = async () => {
-                if (!window.deferredPrompt) return;
-                window.deferredPrompt.prompt();
-                const { outcome } = await window.deferredPrompt.userChoice;
-                if (outcome === 'accepted') {
-                    setCanInstall(false);
-                }
-                window.deferredPrompt = null;
-            };
-
-            const handleTouchStart = (e) => {
-                touchStart.current = e.targetTouches[0].clientX;
-            };
-
-            const handleTouchMove = (e) => {
-                const touchEnd = e.targetTouches[0].clientX;
-                // If swipe left more than 50px
-                if (touchStart.current - touchEnd > 50) {
-                    onClose();
-                }
-            };
-
             const menuItems = [
                 { id: 'dashboard', icon: 'fa-chart-pie', label: 'Dashboard', color: 'text-blue-400' },
                 { id: 'schedule', icon: 'fa-calendar-alt', label: 'Schedule', color: 'text-green-400' },
@@ -1629,22 +1245,18 @@
 
             return (
                 <>
-                    <div className={`fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={onClose}></div>
-                    <div 
-                        className={`fixed inset-y-0 left-0 bg-slate-900 text-white z-50 transform transition-transform duration-300 ease-in-out lg:static lg:flex lg:flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${isCollapsed ? 'w-20' : 'w-64'} lg:translate-x-0 shadow-2xl lg:shadow-none`}
-                        onTouchStart={handleTouchStart}
-                        onTouchMove={handleTouchMove}
-                    >
+                    <div className={`fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden ${isOpen ? 'block' : 'hidden'}`} onClick={onClose}></div>
+                    <div className={`fixed inset-y-0 left-0 bg-slate-900 text-white z-50 transform transition-all duration-300 ease-in-out lg:static lg:flex lg:flex-col ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${isCollapsed ? 'w-20' : 'w-64'} lg:translate-x-0`}>
                         <div className="p-4 flex justify-between items-center border-b border-slate-700 h-16">
                             {!isCollapsed && <span className="font-bold text-xl">NotaryOS</span>}
                             <button onClick={() => setIsCollapsed(!isCollapsed)} className="hidden lg:block text-gray-400 hover:text-white"><i className={`fas ${isCollapsed ? 'fa-chevron-right' : 'fa-chevron-left'}`}></i></button>
-                            <button onClick={onClose} className="lg:hidden text-gray-400 p-2"><i className="fas fa-times text-xl"></i></button>
+                            <button onClick={onClose} className="lg:hidden text-gray-400"><i className="fas fa-times"></i></button>
                         </div>
                         <nav className="flex-1 p-2 space-y-2 overflow-y-auto">
                             {menuItems.map(item => {
                                 const locked = item.access && !hasFeatureAccess({ plan: userPlan, role: userRole }, item.access);
                                 return (
-                                    <button key={item.id} onClick={() => { if (locked) onUpgrade(); else { setView(item.id); onClose(); } }} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-all active:scale-95 active:bg-slate-800 ${currentView === item.id ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' : 'text-gray-400 hover:bg-slate-800 hover:text-white'} ${isCollapsed ? 'justify-center' : ''}`} title={locked ? `${item.label} (Upgrade required)` : item.label}>
+                                    <button key={item.id} onClick={() => { if (locked) onUpgrade(); else { setView(item.id); onClose(); } }} className={`w-full flex items-center gap-3 px-3 py-3 rounded-xl transition-colors hover:bg-slate-800 ${currentView === item.id ? 'bg-blue-600 text-white' : 'text-gray-400'} ${isCollapsed ? 'justify-center' : ''}`} title={locked ? `${item.label} (Upgrade required)` : item.label}>
                                             <i className={`fas ${item.icon} text-lg ${currentView !== item.id ? item.color : ''}`}></i>
                                             {!isCollapsed && <span className="text-sm font-medium">{item.label}</span>}
                                             {!isCollapsed && locked && <i className="fas fa-lock text-[10px] ml-auto text-amber-300"></i>}
@@ -1652,14 +1264,8 @@
                                 );
                             })}
                         </nav>
-                        <div className="p-4 border-t border-slate-700 space-y-2">
-                             {canInstall && (
-                                <button onClick={handleInstall} className={`w-full flex items-center gap-3 px-3 py-2 bg-gradient-to-r from-pink-600 to-purple-600 text-white rounded-lg shadow-lg hover:shadow-pink-500/20 transition-all active:scale-95 group ${isCollapsed ? 'justify-center' : ''}`}>
-                                    <i className="fas fa-download"></i>
-                                    {!isCollapsed && <span className="text-xs font-bold">Install App</span>}
-                                </button>
-                             )}
-                             <button onClick={onSettings} className={`w-full flex items-center gap-3 px-3 py-2 hover:bg-slate-800 rounded transition-colors active:scale-95 group ${isCollapsed ? 'justify-center' : ''}`}>
+                        <div className="p-4 border-t border-slate-700">
+                             <button onClick={onSettings} className={`w-full flex items-center gap-3 px-3 py-2 mb-2 hover:bg-slate-800 rounded transition-colors group ${isCollapsed ? 'justify-center' : ''}`}>
                                 <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-blue-300 flex-shrink-0">{userName ? userName.substring(0,2).toUpperCase() : 'US'}</div>
                                 {!isCollapsed && (
                                     <div className="flex-1 overflow-hidden text-left">
@@ -1669,27 +1275,27 @@
                                 )}
                                 {!isCollapsed && <i className="fas fa-cog text-slate-500 group-hover:text-white ml-auto"></i>}
                             </button>
-                             <button onClick={onLogout} className={`w-full flex items-center gap-2 text-red-400 hover:text-white active:scale-95 ${isCollapsed ? 'justify-center' : ''}`}><i className="fas fa-sign-out-alt"></i> {!isCollapsed && "Logout"}</button>
+                             <button onClick={onLogout} className={`w-full flex items-center gap-2 text-red-400 hover:text-white ${isCollapsed ? 'justify-center' : ''}`}><i className="fas fa-sign-out-alt"></i> {!isCollapsed && "Logout"}</button>
                         </div>
                     </div>
                 </>
             );
         };
 
-        const MobileNav = ({ setView }) => (
-            <div className="md:hidden fixed bottom-0 w-full bg-white/90 border-t border-slate-200/70 p-2 flex justify-around z-30 safe-area-pb shadow-lg backdrop-blur-md">
-                <button onClick={() => setView('dashboard')} className="p-2 active:scale-90 transition-transform"><i className="fas fa-home text-slate-400 text-xl"></i></button>
-                <button onClick={() => setView('schedule')} className="p-2 active:scale-90 transition-transform"><i className="fas fa-calendar-alt text-slate-400 text-xl"></i></button>
+        const MobileNav = ({ setView, onOpenMenu }) => (
+            <div className="md:hidden fixed bottom-0 w-full bg-white/70 border-t border-slate-200/70 p-2 flex justify-around z-30 safe-area-pb shadow-sm backdrop-blur">
+                <button onClick={() => setView('dashboard')}><i className="fas fa-home text-slate-400 text-lg"></i></button>
+                <button onClick={() => setView('schedule')}><i className="fas fa-calendar-alt text-slate-400 text-lg"></i></button>
                 
                 {/* IMPROVED FAB/ADD BUTTON FOR MOBILE */}
-                <button onClick={() => setView('addAppointment')} className="-mt-8 bg-blue-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-xl border-4 border-white active:scale-90 transition-transform active:bg-blue-700"><i className="fas fa-plus text-2xl"></i></button>
+                <button onClick={() => setView('addAppointment')} className="-mt-8 bg-blue-600 text-white rounded-full p-4 shadow-xl border-4 border-white active:scale-95 transition-transform"><i className="fas fa-plus text-2xl"></i></button>
                 
-                <button onClick={() => setView('journal')} className="p-2 active:scale-90 transition-transform"><i className="fas fa-book text-slate-400 text-xl"></i></button>
-                <button onClick={() => setView('trainer')} className="p-2 active:scale-90 transition-transform"><i className="fas fa-robot text-slate-400 text-xl"></i></button>
+                <button onClick={() => setView('trainer')}><i className="fas fa-robot text-slate-400 text-lg"></i></button>
+                <button onClick={onOpenMenu}><i className="fas fa-bars text-slate-400 text-lg"></i></button>
             </div>
         );
 
-        const Header = ({ title, onNotify, onSyncNow, onOpenMenu }) => {
+        const Header = ({ title, onNotify, onSyncNow }) => {
             const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true);
             useEffect(() => {
                 const onOnline = () => setIsOnline(true);
@@ -1702,11 +1308,8 @@
                 };
             }, []);
             return (
-                <div className="theme-surface theme-border border-b p-4 flex justify-between items-center z-20 sticky top-0 bg-white/90 backdrop-blur-sm">
-                    <div className="flex items-center gap-3">
-                        <button onClick={onOpenMenu} className="lg:hidden text-slate-600 p-1 active:bg-slate-100 rounded-lg transition-colors"><i className="fas fa-bars text-xl"></i></button>
-                        <h2 className="font-bold theme-text text-lg">{title}</h2>
-                    </div>
+                <div className="theme-surface theme-border border-b p-4 flex justify-between items-center z-20">
+                    <h2 className="font-bold theme-text text-lg">{title}</h2>
                     <div className="flex gap-2 items-center">
                         <span className="hidden md:inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full theme-pill border"><i className="fas fa-shield-alt"></i> Trusted Workflow</span>
                         <button onClick={onSyncNow} className={`inline-flex items-center gap-1 text-[10px] font-bold uppercase px-2 py-1 rounded-full border ${isOnline ? 'theme-pill' : 'bg-amber-50 text-amber-700 border-amber-100'}`}>
@@ -1721,7 +1324,7 @@
 
         // --- CORE MODULES ---
 
-        // ... [Clients, IncomeChart, Dashboard, AppointmentForm, Schedule, PaymentModal, ClientPortal remain unchanged] ...
+        // CLIENTS MODULE
         const Clients = () => {
             const [clients, setClients] = useState([]);
             const [showForm, setShowForm] = useState(false);
@@ -1766,6 +1369,7 @@
             );
         };
 
+        // Feature #1: Income Chart
         const IncomeChart = ({ appointments }) => {
             const canvasRef = useRef(null);
 
@@ -2331,62 +1935,22 @@
             const [idCapture, setIdCapture] = useState(null);
             const [idPreview, setIdPreview] = useState('');
             const [selectedEntry, setSelectedEntry] = useState(null);
-            
-            // New State for Voice Input
-            const [formState, setFormState] = useState({ date: '', signer: '', docType: '', fee: '', notes: '' });
-
             useEffect(() => { DataManager.get('notary_journal').then(setEntries); }, []);
-            
-            const handleInputChange = (field, value) => {
-                setFormState(prev => ({ ...prev, [field]: value }));
-            };
-
-            const startDictation = (field) => {
-                if (!('webkitSpeechRecognition' in window) && !('SpeechRecognition' in window)) {
-                    showToast("Speech recognition not supported in this browser.", "error");
-                    return;
-                }
-                
-                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-                const recognition = new SpeechRecognition();
-                recognition.lang = 'en-US';
-                recognition.interimResults = false;
-                recognition.maxAlternatives = 1;
-
-                showToast("Listening...", "success");
-                recognition.start();
-
-                recognition.onresult = (event) => {
-                    const transcript = event.results[0][0].transcript;
-                    setFormState(prev => ({
-                        ...prev,
-                        [field]: prev[field] ? `${prev[field]} ${transcript}` : transcript
-                    }));
-                    showToast("Text added!");
-                };
-
-                recognition.onerror = (event) => {
-                    console.error("Speech recognition error", event.error);
-                    showToast("Did not catch that. Try again.", "error");
-                };
-            };
-
             const handleSave = async (e) => {
                 e.preventDefault();
+                const fd = new FormData(e.target);
                 const encryptedId = idCapture ? encryptPayload(idCapture) : null;
                 await DataManager.save('notary_journal', {
                     id: Date.now().toString(),
-                    date: formState.date,
-                    signer: formState.signer,
-                    docType: formState.docType,
-                    fee: formState.fee,
-                    notes: formState.notes,
+                    date: fd.get('date'),
+                    signer: fd.get('signer'),
+                    docType: fd.get('docType'),
+                    fee: fd.get('fee'),
                     idCapture: encryptedId
                 });
                 setShowForm(false);
                 setIdCapture(null);
                 setIdPreview('');
-                setFormState({ date: '', signer: '', docType: '', fee: '', notes: '' }); // Reset form
                 setEntries(await DataManager.get('notary_journal'));
                 showToast("Entry Logged");
             };
@@ -2404,7 +1968,7 @@
                 };
                 reader.readAsDataURL(file);
             };
-            const handleExport = () => { if (user.plan !== 'pro') { onUpgrade(); return; } if (window.jspdf) PDFGenerator.createReport("Notary Journal", ["Date", "Signer", "Doc", "Fee", "Notes"], entries.map(e => [e.date, e.signer, e.docType, `$${e.fee}`, e.notes || '']), "journal.pdf"); };
+            const handleExport = () => { if (user.plan !== 'pro') { onUpgrade(); return; } if (window.jspdf) PDFGenerator.createReport("Notary Journal", ["Date", "Signer", "Doc", "Fee"], entries.map(e => [e.date, e.signer, e.docType, `$${e.fee}`]), "journal.pdf"); };
             return (
                 <div className="p-6 pb-24">
                     <div className="flex justify-between items-center mb-6">
@@ -2412,26 +1976,15 @@
                             <h3 className="text-lg font-bold text-gray-800">Journal</h3>
                             <button onClick={handleExport} className="text-gray-400 hover:text-blue-600"><i className="fas fa-file-export"></i></button>
                         </div>
-                        <button onClick={() => { setShowForm(true); setFormState({ date: new Date().toISOString().split('T')[0], signer: '', docType: '', fee: '', notes: '' }); }} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Log</button>
+                        <button onClick={() => setShowForm(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Log</button>
                     </div>
                     {showForm && (
                         <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
                             <form onSubmit={handleSave} className="space-y-4">
-                                <input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" value={formState.date} onChange={e => handleInputChange('date', e.target.value)} />
-                                
-                                <div className="relative">
-                                    <input required name="signer" type="text" placeholder="Signer Name" className="w-full p-3 bg-gray-50 border rounded-xl pr-10" value={formState.signer} onChange={e => handleInputChange('signer', e.target.value)} />
-                                    <button type="button" onClick={() => startDictation('signer')} className="absolute right-3 top-3 text-gray-400 hover:text-purple-600"><i className="fas fa-microphone"></i></button>
-                                </div>
-
-                                <input name="docType" type="text" placeholder="Document Type" className="w-full p-3 bg-gray-50 border rounded-xl" value={formState.docType} onChange={e => handleInputChange('docType', e.target.value)} />
-                                <input name="fee" type="number" placeholder="Fee" className="w-full p-3 bg-gray-50 border rounded-xl" value={formState.fee} onChange={e => handleInputChange('fee', e.target.value)} />
-                                
-                                <div className="relative">
-                                    <textarea name="notes" placeholder="Notes (e.g. credible witness used...)" className="w-full p-3 bg-gray-50 border rounded-xl pr-10" rows="2" value={formState.notes} onChange={e => handleInputChange('notes', e.target.value)}></textarea>
-                                    <button type="button" onClick={() => startDictation('notes')} className="absolute right-3 top-3 text-gray-400 hover:text-purple-600"><i className="fas fa-microphone"></i></button>
-                                </div>
-
+                                <input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input required name="signer" type="text" placeholder="Signer" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input name="docType" type="text" placeholder="Document Type" className="w-full p-3 bg-gray-50 border rounded-xl" />
+                                <input name="fee" type="number" placeholder="Fee" className="w-full p-3 bg-gray-50 border rounded-xl" />
                                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
                                     <label className="text-xs font-bold text-slate-500 uppercase block">Audit-Proof Capture (ID/Thumbprint)</label>
                                     <input type="file" accept="image/*" capture="environment" onChange={(e) => handleIdUpload(e.target.files?.[0])} className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200" />
@@ -2447,7 +2000,7 @@
                     )}
                     <div className="space-y-3">
                         {entries.length === 0 ? (
-                            <EmptyState icon="fa-book" title="Journal Empty" description="Log your notarial acts." actionLabel="Log" onAction={()=>{ setShowForm(true); setFormState({ date: new Date().toISOString().split('T')[0], signer: '', docType: '', fee: '', notes: '' }); }} colorClass="text-purple-600" bgClass="bg-purple-50" />
+                            <EmptyState icon="fa-book" title="Journal Empty" description="Log your notarial acts." actionLabel="Log" onAction={()=>setShowForm(true)} colorClass="text-purple-600" bgClass="bg-purple-50" />
                         ) : entries.map(e => {
                             const decrypted = e.idCapture ? decryptPayload(e.idCapture) : null;
                             return (
@@ -2456,7 +2009,6 @@
                                         <div>
                                             <h4 className="font-semibold text-gray-800">{e.signer}</h4>
                                             <p className="text-xs text-gray-500">{e.docType || 'Notarial Entry'}</p>
-                                            {e.notes && <p className="text-xs text-gray-400 mt-1 italic">"{e.notes}"</p>}
                                         </div>
                                         {e.idCapture && (
                                             <button onClick={() => setSelectedEntry({ ...e, decrypted })} className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">View Capture</button>
@@ -3126,7 +2678,7 @@
                         onSettings={() => setShowSettings(true)}
                     />
                     <main className="flex-1 flex flex-col h-screen md:ml-64 relative theme-app-bg">
-                        <Header title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} onNotify={handleNotify} onSyncNow={handleSyncNow} onOpenMenu={() => setShowMobileMenu(true)} />
+                        <Header title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} onNotify={handleNotify} onSyncNow={handleSyncNow} />
                         <div className="flex-1 overflow-y-auto relative">{renderView()}</div>
                         <MobileNav currentView={currentView} setView={setCurrentView} onOpenMenu={() => setShowMobileMenu(true)} />
                     </main>
@@ -3141,7 +2693,6 @@
                     <App />
                 </AppErrorBoundary>
             );
-            window.__NOTARY_APP_MOUNTED__ = true;
         } catch (e) {
             const mount = document.getElementById('root');
             if (mount) {
