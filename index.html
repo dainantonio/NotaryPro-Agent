@@ -47,8 +47,6 @@
             appId: "1:660325303334:web:bb0f062fd4da8c7fca12e7"
         };
         const STRIPE_PAYMENT_LINK = "";
-        const STRIPE_BILLING_PORTAL_LINK = "";
-        const TRIAL_DAYS = 14;
 
         try {
             if (!firebase.apps.length) {
@@ -778,7 +776,7 @@
             </div>
         );
 
-        const SettingsModal = ({ user, onClose, onSave, onOpenBillingPortal, onUpgrade }) => {
+        const SettingsModal = ({ user, onClose, onSave }) => {
             const [data, setData] = useState(user || {});
 
             const handleLogoUpload = (e) => {
@@ -3677,30 +3675,12 @@
             const [paywallFeature, setPaywallFeature] = useState('pro');
             const theme = 'default';
 
-            const ensureTrialFields = (profile) => {
-                if (!profile) return profile;
-                if (['pro', 'team'].includes(profile.plan)) return { ...profile, trialEndsAt: profile.trialEndsAt || null };
-                if (profile.trialEndsAt) return profile;
-                return { ...profile, trialEndsAt: Date.now() + TRIAL_DAYS * 24 * 60 * 60 * 1000 };
-            };
-
-            const isTrialExpired = (profile) => {
-                if (!profile || ['pro', 'team'].includes(profile.plan)) return false;
-                if (!profile.trialEndsAt) return false;
-                return Date.now() > profile.trialEndsAt;
-            };
-
             useEffect(() => {
                 DataManager.get('notary_appointments').then(setAppointments);
                 DataManager.get('notary_credentials').then(setCredentials);
                 
                 // Onboarding Logic Flow
                 if (user) {
-                    const normalized = ensureTrialFields(user);
-                    if (normalized !== user) {
-                        setUser(normalized);
-                        localStorage.setItem('notary_user_profile', JSON.stringify(normalized));
-                    }
                     const isOnboarded = localStorage.getItem('notary_onboarded');
                     const isTourComplete = localStorage.getItem('notary_tour_completed');
                     
@@ -3739,30 +3719,15 @@
             };
 
             const handleUpgrade = (targetPlan = 'pro') => {
-                if (!STRIPE_PAYMENT_LINK) {
-                    showToast('Stripe payment link is not configured yet.', 'error');
-                    return;
-                }
-
-                const checkoutUrl = new URL(STRIPE_PAYMENT_LINK, window.location.origin);
-                checkoutUrl.searchParams.set('plan', targetPlan);
-                if (user?.email) checkoutUrl.searchParams.set('prefilled_email', user.email);
-                if (user?.id) checkoutUrl.searchParams.set('client_reference_id', user.id);
-                checkoutUrl.searchParams.set('source', 'notaryos_app');
-                window.location.href = checkoutUrl.toString();
-            };
-
-            const handleOpenBillingPortal = () => {
-                if (!STRIPE_BILLING_PORTAL_LINK) {
-                    showToast('Billing portal link is not configured yet.', 'error');
-                    return;
-                }
-                window.open(STRIPE_BILLING_PORTAL_LINK, '_blank', 'noopener');
-            };
-
-            const handleLockedFeature = (featureId) => {
-                setPaywallFeature(featureId === 'agency' ? 'agency' : featureId);
-                setCurrentView('paywall');
+                const upgraded = {
+                    ...user,
+                    plan: targetPlan,
+                    role: targetPlan === 'team' ? 'agency' : (user?.role || 'solo')
+                };
+                setUser(upgraded);
+                localStorage.setItem('notary_user_profile', JSON.stringify(upgraded));
+                setShowPricing(false);
+                showToast("Upgrade Successful!");
             };
 
 
@@ -3873,7 +3838,6 @@
 
             if (!user && currentView !== 'landing' && currentView !== 'auth') { return <LandingPage onNavigate={() => setCurrentView('auth')} />; }
             if (currentView === 'landing' || currentView === 'auth') return renderView();
-            if (isTrialExpired(user)) return <TrialExpiredState onUpgrade={handleUpgrade} onOpenBillingPortal={handleOpenBillingPortal} />;
 
             return (
                 <div className="flex h-screen overflow-hidden font-sans theme-app-bg">
