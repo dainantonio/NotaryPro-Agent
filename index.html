@@ -2722,109 +2722,120 @@
         const Journal = ({ user, onUpgrade, quickEntry, onQuickEntryUsed }) => {
             const [entries, setEntries] = useState([]);
             const [showForm, setShowForm] = useState(false);
-            const [idCapture, setIdCapture] = useState(null);
-            const [idPreview, setIdPreview] = useState('');
-            const [selectedEntry, setSelectedEntry] = useState(null);
+            const [search, setSearch] = useState('');
+
             useEffect(() => { DataManager.get('notary_journal').then(setEntries); }, []);
+
             const handleSave = async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
-                const encryptedId = idCapture ? encryptPayload(idCapture) : null;
                 await DataManager.save('notary_journal', {
                     id: Date.now().toString(),
                     date: fd.get('date'),
+                    time: fd.get('time'),
                     signer: fd.get('signer'),
+                    idType: fd.get('idType') || "Driver's License",
                     docType: fd.get('docType'),
-                    fee: fd.get('fee'),
-                    idCapture: encryptedId
+                    fee: fd.get('fee')
                 });
                 setShowForm(false);
-                setIdCapture(null);
-                setIdPreview('');
                 setEntries(await DataManager.get('notary_journal'));
-                showToast("Entry Logged");
+                showToast('Entry Logged');
             };
-            const handleIdUpload = (file) => {
-                if (!file) {
-                    setIdCapture(null);
-                    setIdPreview('');
-                    return;
+
+            const handleExport = () => {
+                if (user.plan !== 'pro') { onUpgrade(); return; }
+                if (window.jspdf) {
+                    PDFGenerator.createReport(
+                        'eJournal Ledger',
+                        ['Date', 'Time', 'Signer', 'ID Type', 'Document', 'Fee'],
+                        entries.map(e => [e.date, e.time || '—', e.signer, e.idType || "Driver's License", e.docType, `$${e.fee}`]),
+                        'ejournal.pdf'
+                    );
                 }
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const result = reader.result;
-                    setIdCapture(typeof result === 'string' ? result : null);
-                    setIdPreview(typeof result === 'string' ? result : '');
-                };
-                reader.readAsDataURL(file);
             };
-            const handleExport = () => { if (user.plan !== 'pro') { onUpgrade(); return; } if (window.jspdf) PDFGenerator.createReport("Notary Journal", ["Date", "Signer", "Doc", "Fee"], entries.map(e => [e.date, e.signer, e.docType, `$${e.fee}`]), "journal.pdf"); };
+
+            const filtered = entries.filter(e => (e.signer || '').toLowerCase().includes(search.toLowerCase()));
+
             return (
-                <div className="p-6 pb-24">
-                    <div className="flex justify-between items-center mb-6">
-                        <div className="flex gap-2">
-                            <h3 className="text-lg font-bold text-gray-800">Journal</h3>
-                            <button onClick={handleExport} className="text-gray-400 hover:text-blue-600"><i className="fas fa-file-export"></i></button>
+                <div className="p-6 pb-24 space-y-5 font-sans">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <h3 className="text-2xl font-bold theme-text">eJournal</h3>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <div className="relative">
+                                <i className="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 theme-text-muted text-xs"></i>
+                                <input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search signer" className="pl-8 pr-3 py-2 rounded-lg border theme-border theme-app-bg theme-text text-sm" />
+                            </div>
+                            <button onClick={handleExport} className="px-3 py-2 rounded-lg border theme-border theme-surface theme-text text-sm transition-all duration-200 hover:-translate-y-0.5 shadow-sm hover:shadow-md"><i className="fas fa-file-export mr-2"></i>Export PDF</button>
+                            <button onClick={() => setShowForm(true)} className="theme-accent-btn px-4 py-2 rounded-lg font-semibold text-sm transition-all duration-200 hover:-translate-y-0.5 shadow-sm hover:shadow-md"><i className="fas fa-plus mr-2"></i>New Entry</button>
                         </div>
-                        <button onClick={() => setShowForm(true)} className="bg-purple-600 text-white px-4 py-2 rounded-lg text-sm font-semibold"><i className="fas fa-plus mr-2"></i>Log</button>
                     </div>
-                    {showForm && (
-                        <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6">
-                            <form onSubmit={handleSave} className="space-y-4">
-                                <input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" />
-                                <input required name="signer" type="text" placeholder="Signer" className="w-full p-3 bg-gray-50 border rounded-xl" />
-                                <input name="docType" type="text" placeholder="Document Type" className="w-full p-3 bg-gray-50 border rounded-xl" />
-                                <input name="fee" type="number" placeholder="Fee" className="w-full p-3 bg-gray-50 border rounded-xl" />
-                                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-2">
-                                    <label className="text-xs font-bold text-slate-500 uppercase block">Audit-Proof Capture (ID/Thumbprint)</label>
-                                    <input type="file" accept="image/*" capture="environment" onChange={(e) => handleIdUpload(e.target.files?.[0])} className="text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200" />
-                                    {idPreview && <img src={idPreview} alt="ID capture preview" className="w-full max-h-48 object-contain rounded-lg border border-slate-200" />}
-                                    <p className="text-xs text-slate-400">Captured image is stored locally with light encryption for audit review.</p>
+
+                    {filtered.length === 0 ? (
+                        <EmptyState icon="fa-book" title="No journal entries" description="No notarial acts logged yet. Start your secure ledger here." actionLabel="New Entry" onAction={() => setShowForm(true)} colorClass="theme-text" bgClass="theme-surface-muted" />
+                    ) : (
+                        <>
+                            <div className="hidden md:block theme-surface theme-border border rounded-2xl overflow-hidden">
+                                <div className="grid grid-cols-12 px-4 py-3 text-[11px] uppercase font-bold theme-text-muted border-b theme-border tracking-wide">
+                                    <div className="col-span-2">Date / Time</div>
+                                    <div className="col-span-3">Signer</div>
+                                    <div className="col-span-3">Document</div>
+                                    <div className="col-span-2">ID Verification</div>
+                                    <div className="col-span-2 text-right">Fee</div>
                                 </div>
-                                <div className="flex gap-2">
-                                    <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 rounded-lg">Cancel</button>
-                                    <button type="submit" className="flex-1 bg-purple-600 text-white rounded-lg">Save</button>
+                                {filtered.map(entry => (
+                                    <div key={entry.id} className="grid grid-cols-12 px-4 py-3 border-b theme-border hover:theme-surface-muted transition-all duration-200">
+                                        <div className="col-span-2 font-mono text-sm theme-text">{entry.date}<div className="text-xs theme-text-muted">{entry.time || '—'}</div></div>
+                                        <div className="col-span-3 font-semibold theme-text truncate">{entry.signer}</div>
+                                        <div className="col-span-3 theme-text-muted truncate">{entry.docType || 'Notary Service'}</div>
+                                        <div className="col-span-2 theme-text-muted truncate">{entry.idType || "Driver's License"}</div>
+                                        <div className="col-span-2 text-right font-semibold theme-text">${parseFloat(entry.fee || 0).toFixed(2)}</div>
+                                    </div>
+                                ))}
+                            </div>
+
+                            <div className="md:hidden space-y-3">
+                                {filtered.map(entry => (
+                                    <div key={entry.id} className="theme-surface theme-border border rounded-xl p-4">
+                                        <div className="flex justify-between gap-3">
+                                            <p className="font-semibold theme-text truncate">{entry.signer}</p>
+                                            <p className="font-semibold theme-text">${parseFloat(entry.fee || 0).toFixed(2)}</p>
+                                        </div>
+                                        <p className="font-mono text-xs theme-text-muted mt-1">{entry.date} • {entry.time || '—'}</p>
+                                        <p className="text-sm theme-text-muted mt-1 truncate">{entry.docType || 'Notary Service'}</p>
+                                        <p className="text-xs theme-text-muted mt-1">ID: {entry.idType || "Driver's License"}</p>
+                                    </div>
+                                ))}
+                            </div>
+                        </>
+                    )}
+
+                    {showForm && (
+                        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                            <form onSubmit={handleSave} className="w-full max-w-2xl theme-surface rounded-2xl shadow-2xl border theme-border p-6 space-y-4">
+                                <div className="flex justify-between items-center">
+                                    <h4 className="text-xl font-bold theme-text">New eJournal Entry</h4>
+                                    <button type="button" onClick={() => setShowForm(false)} className="theme-text-muted"><i className="fas fa-times"></i></button>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <input required name="date" type="date" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                    <input name="time" type="time" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <input required name="signer" placeholder="Signer Name" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                    <select name="idType" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text">
+                                        <option>Driver's License</option><option>Passport</option><option>State ID</option><option>Military ID</option>
+                                    </select>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <input name="docType" placeholder="Document Type" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                    <input name="fee" type="number" step="0.01" placeholder="Fee" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                </div>
+                                <div className="flex justify-end gap-2">
+                                    <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg border theme-border theme-text">Cancel</button>
+                                    <button className="theme-accent-btn px-4 py-2 rounded-lg font-semibold">Save Entry</button>
                                 </div>
                             </form>
-                        </div>
-                    )}
-                    <div className="space-y-3">
-                        {entries.length === 0 ? (
-                            <EmptyState icon="fa-book" title="Journal Empty" description="Log your notarial acts." actionLabel="Log" onAction={()=>setShowForm(true)} colorClass="text-purple-600" bgClass="bg-purple-50" />
-                        ) : entries.map(e => {
-                            const decrypted = e.idCapture ? decryptPayload(e.idCapture) : null;
-                            return (
-                                <div key={e.id} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-                                    <div className="flex items-start justify-between gap-4">
-                                        <div>
-                                            <h4 className="font-semibold text-gray-800">{e.signer}</h4>
-                                            <p className="text-xs text-gray-500">{e.docType || 'Notarial Entry'}</p>
-                                        </div>
-                                        {e.idCapture && (
-                                            <button onClick={() => setSelectedEntry({ ...e, decrypted })} className="text-xs font-semibold text-purple-600 bg-purple-50 px-2 py-1 rounded-full">View Capture</button>
-                                        )}
-                                    </div>
-                                    {e.fee && <p className="text-xs text-gray-400 mt-2">Fee: ${e.fee}</p>}
-                                </div>
-                            );
-                        })}
-                    </div>
-                    {selectedEntry && (
-                        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-                            <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full p-6">
-                                <div className="flex justify-between items-start mb-4">
-                                    <div>
-                                        <h4 className="text-lg font-semibold text-gray-800">Audit Capture</h4>
-                                        <p className="text-sm text-gray-500">{selectedEntry.signer} • {selectedEntry.date}</p>
-                                    </div>
-                                    <button onClick={() => setSelectedEntry(null)} className="text-gray-400"><i className="fas fa-times"></i></button>
-                                </div>
-                                {selectedEntry.decrypted ? (
-                                    <img src={selectedEntry.decrypted} alt="Audit capture" className="w-full max-h-80 object-contain rounded-xl border border-slate-200" />
-                                ) : (
-                                    <p className="text-sm text-gray-500">Unable to decrypt capture.</p>
-                                )}
-                            </div>
                         </div>
                     )}
                 </div>
@@ -2835,129 +2846,140 @@
             const [activeTab, setActiveTab] = useState('expenses');
             const [expenses, setExpenses] = useState([]);
             const [mileage, setMileage] = useState([]);
-            const [showForm, setShowForm] = useState(false);
-            const [currentTrip, setCurrentTrip] = useState(null);
-            const [locationStatus, setLocationStatus] = useState('');
-             useEffect(() => { const load = async () => { setExpenses(await DataManager.get('notary_expenses')); setMileage(await DataManager.get('notary_mileage')); }; load(); }, []);
-            useEffect(() => { setCurrentTrip(safeParse(localStorage.getItem('notary_active_trip'), null)); }, []);
-            const handleSave = async (e) => { e.preventDefault(); const formData = new FormData(e.target); if (activeTab === 'expenses') { await DataManager.save('notary_expenses', { id: Date.now().toString(), date: formData.get('date'), category: formData.get('category'), desc: formData.get('desc'), amount: formData.get('amount') }); setExpenses(await DataManager.get('notary_expenses')); } else { await DataManager.save('notary_mileage', { id: Date.now().toString(), date: formData.get('date'), start: formData.get('start'), end: formData.get('end'), miles: formData.get('miles') }); setMileage(await DataManager.get('notary_mileage')); } setShowForm(false); showToast("Record Saved"); };
-            const handleExport = () => { if (activeTab === 'expenses') PDFGenerator.createReport("Expense Report", ["Date", "Category", "Description", "Amount"], expenses.map(e => [e.date, e.category, e.desc, `-$${e.amount}`]), "expenses.pdf"); else PDFGenerator.createReport("Mileage Log", ["Date", "Start", "End", "Miles"], mileage.map(m => [m.date, m.start, m.end, `${m.miles} mi`]), "mileage.pdf"); };
-            const haversineMiles = (start, end) => {
-                const toRad = (value) => (value * Math.PI) / 180;
-                const R = 3958.8;
-                const dLat = toRad(end.lat - start.lat);
-                const dLng = toRad(end.lng - start.lng);
-                const lat1 = toRad(start.lat);
-                const lat2 = toRad(end.lat);
-                const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(dLng / 2) ** 2;
-                return 2 * R * Math.asin(Math.sqrt(a));
-            };
-            const getPosition = () => new Promise((resolve, reject) => {
-                if (!navigator.geolocation) {
-                    reject(new Error('Geolocation unavailable'));
-                    return;
-                }
-                navigator.geolocation.getCurrentPosition(
-                    (pos) => resolve({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
-                    (err) => reject(err),
-                    { enableHighAccuracy: true, timeout: 10000 }
-                );
-            });
+            const [showExpenseModal, setShowExpenseModal] = useState(false);
+            const [showMileageModal, setShowMileageModal] = useState(false);
 
-            const handleStartTrip = async () => {
-                setLocationStatus('Requesting GPS...');
-                try {
-                    const coords = await getPosition();
-                    const startTrip = { id: Date.now().toString(), start: coords, startTime: new Date().toISOString() };
-                    localStorage.setItem('notary_active_trip', JSON.stringify(startTrip));
-                    setCurrentTrip(startTrip);
-                    setLocationStatus('Trip started. Tracking mileage.');
-                    showToast("Trip Started");
-                } catch (err) {
-                    setLocationStatus('Unable to access GPS. Please enable location permissions.');
-                    showToast("GPS Error", "error");
-                }
-            };
-
-            const handleEndTrip = async () => {
-                if (!currentTrip) return;
-                setLocationStatus('Calculating mileage...');
-                try {
-                    const coords = await getPosition();
-                    const distance = haversineMiles(currentTrip.start, coords);
-                    const entry = {
-                        id: currentTrip.id,
-                        date: new Date().toISOString().split('T')[0],
-                        start: `${currentTrip.start.lat.toFixed(4)}, ${currentTrip.start.lng.toFixed(4)}`,
-                        end: `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`,
-                        miles: distance.toFixed(2),
-                        startTime: currentTrip.startTime,
-                        endTime: new Date().toISOString()
-                    };
-                    await DataManager.save('notary_mileage', entry);
+            useEffect(() => {
+                const load = async () => {
+                    setExpenses(await DataManager.get('notary_expenses'));
                     setMileage(await DataManager.get('notary_mileage'));
-                    localStorage.removeItem('notary_active_trip');
-                    setCurrentTrip(null);
-                    setLocationStatus(`Trip saved • ${distance.toFixed(2)} mi`);
-                    showToast("Trip Saved");
-                } catch (err) {
-                    setLocationStatus('Unable to access GPS. Try again.');
-                    showToast("GPS Error", "error");
-                }
+                };
+                load();
+            }, []);
+
+            const saveExpense = async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                await DataManager.save('notary_expenses', {
+                    id: Date.now().toString(),
+                    date: fd.get('date'),
+                    category: fd.get('category'),
+                    desc: fd.get('desc'),
+                    amount: fd.get('amount')
+                });
+                setExpenses(await DataManager.get('notary_expenses'));
+                setShowExpenseModal(false);
+                showToast('Expense Saved');
             };
+
+            const saveMileage = async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                await DataManager.save('notary_mileage', {
+                    id: Date.now().toString(),
+                    date: fd.get('date'),
+                    start: fd.get('start'),
+                    end: fd.get('end'),
+                    miles: fd.get('miles')
+                });
+                setMileage(await DataManager.get('notary_mileage'));
+                setShowMileageModal(false);
+                showToast('Mileage Trip Saved');
+            };
+
+            const totalExpenses = expenses.reduce((sum, e) => sum + parseFloat(e.amount || 0), 0);
+            const totalMileage = mileage.reduce((sum, m) => sum + parseFloat(m.miles || 0), 0);
+
+            const categoryIcon = (category = '') => {
+                const c = category.toLowerCase();
+                if (c.includes('travel')) return 'fa-car';
+                if (c.includes('supply')) return 'fa-paperclip';
+                if (c.includes('software')) return 'fa-laptop-code';
+                if (c.includes('meal')) return 'fa-utensils';
+                return 'fa-receipt';
+            };
+
             return (
-                <div className="p-6 pb-24">
-                    <div className="bg-white p-1 rounded-xl flex mb-6 border border-gray-200 shadow-sm"><button onClick={() => setActiveTab('expenses')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'expenses' ? 'bg-emerald-50 text-emerald-700' : 'text-gray-500'}`}>Expenses</button><button onClick={() => setActiveTab('mileage')} className={`flex-1 py-2 text-sm font-bold rounded-lg ${activeTab === 'mileage' ? 'bg-blue-50 text-blue-700' : 'text-gray-500'}`}>Mileage</button></div>
-                    <div className="flex justify-between items-center mb-6"><div><p className="text-xs text-gray-500 uppercase font-bold">Total</p><p className="text-2xl font-bold text-gray-800">{activeTab === 'expenses' ? `$${expenses.reduce((s, i) => s + parseFloat(i.amount||0), 0).toFixed(2)}` : `${mileage.reduce((s, i) => s + parseFloat(i.miles||0), 0)} mi`}</p></div><div className="flex gap-2"><button onClick={handleExport} className="bg-white text-gray-500 border w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-file-export"></i></button><button onClick={() => setShowForm(true)} className="bg-gray-900 text-white w-10 h-10 rounded-full flex items-center justify-center"><i className="fas fa-plus"></i></button></div></div>
-                    {activeTab === 'mileage' && (
-                        <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-100 mb-6">
-                            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                <div>
-                                    <p className="text-xs font-bold text-blue-600 uppercase">Smart Mileage Tracker</p>
-                                    <h4 className="text-lg font-semibold text-gray-800">Start & end trips with GPS</h4>
-                                    <p className="text-sm text-gray-500">Tap Start Trip to capture your location, then End Trip when you arrive. We'll log the mileage automatically.</p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button onClick={handleStartTrip} disabled={!!currentTrip} className={`px-4 py-2 rounded-lg text-sm font-semibold ${currentTrip ? 'bg-gray-100 text-gray-400 cursor-not-allowed' : 'bg-blue-600 text-white'}`}>Start Trip</button>
-                                    <button onClick={handleEndTrip} disabled={!currentTrip} className={`px-4 py-2 rounded-lg text-sm font-semibold ${currentTrip ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}>End Trip</button>
-                                </div>
+                <div className="p-6 pb-24 space-y-5 font-sans">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <h3 className="text-2xl font-bold theme-text">Finances</h3>
+                        <button onClick={() => activeTab === 'expenses' ? setShowExpenseModal(true) : setShowMileageModal(true)} className="theme-accent-btn px-4 py-2 rounded-lg font-semibold">{activeTab === 'expenses' ? 'Add Expense' : 'Add Mileage Trip'}</button>
+                    </div>
+
+                    <div className="inline-flex theme-app-bg border theme-border p-1 rounded-lg">
+                        <button onClick={() => setActiveTab('expenses')} className={`px-4 py-2 rounded-md text-sm font-semibold transition-all duration-200 ${activeTab === 'expenses' ? 'theme-surface theme-text shadow-sm' : 'theme-text-muted'}`}>Expenses</button>
+                        <button onClick={() => setActiveTab('mileage')} className={`px-4 py-2 rounded-md text-sm font-semibold transition-all duration-200 ${activeTab === 'mileage' ? 'theme-surface theme-text shadow-sm' : 'theme-text-muted'}`}>Mileage</button>
+                    </div>
+
+                    <div className="theme-surface theme-border border rounded-2xl p-5" style={{ backgroundImage: 'linear-gradient(120deg, rgba(79,70,229,0.08), transparent)' }}>
+                        <p className="text-xs font-semibold uppercase theme-text-muted">{activeTab === 'expenses' ? 'Total YTD Expenses' : 'Total YTD Mileage'}</p>
+                        <p className="text-3xl font-bold theme-text mt-2">{activeTab === 'expenses' ? `$${totalExpenses.toFixed(2)}` : `${totalMileage.toFixed(0)} mi`}</p>
+                    </div>
+
+                    {activeTab === 'expenses' ? (
+                        expenses.length === 0 ? (
+                            <EmptyState icon="fa-receipt" title="No expenses logged yet" description="Track your write-offs here." actionLabel="Add Expense" onAction={() => setShowExpenseModal(true)} colorClass="theme-text" bgClass="theme-surface-muted" />
+                        ) : (
+                            <div className="theme-surface theme-border border rounded-2xl divide-y theme-border">
+                                {expenses.map(item => (
+                                    <div key={item.id} className="p-4 flex items-center justify-between gap-3 hover:theme-surface-muted transition-all duration-200">
+                                        <div className="min-w-0">
+                                            <p className="text-xs theme-text-muted">{item.date}</p>
+                                            <p className="font-semibold theme-text truncate"><i className={`fas ${categoryIcon(item.category)} mr-2`}></i>{item.category || 'General'}</p>
+                                            <p className="text-sm theme-text-muted truncate">{item.desc || 'No description'}</p>
+                                        </div>
+                                        <p className="font-bold" style={{ color: '#dc2626' }}>-${parseFloat(item.amount || 0).toFixed(2)}</p>
+                                    </div>
+                                ))}
                             </div>
-                            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-                                <span className={`px-3 py-1 rounded-full ${currentTrip ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-500'}`}>
-                                    {currentTrip ? 'Trip in progress' : 'No active trip'}
-                                </span>
-                                {currentTrip && <span className="text-gray-500">Started {new Date(currentTrip.startTime).toLocaleTimeString()}</span>}
-                                {locationStatus && <span className="text-gray-500">{locationStatus}</span>}
+                        )
+                    ) : (
+                        mileage.length === 0 ? (
+                            <EmptyState icon="fa-route" title="No mileage trips logged yet" description="Track deductible business mileage here." actionLabel="Add Mileage Trip" onAction={() => setShowMileageModal(true)} colorClass="theme-text" bgClass="theme-surface-muted" />
+                        ) : (
+                            <div className="theme-surface theme-border border rounded-2xl divide-y theme-border">
+                                {mileage.map(item => (
+                                    <div key={item.id} className="p-4 flex items-center justify-between gap-3 hover:theme-surface-muted transition-all duration-200">
+                                        <div className="min-w-0">
+                                            <p className="text-xs theme-text-muted">{item.date}</p>
+                                            <p className="font-semibold theme-text truncate">{item.start || 'Start'} <i className="fas fa-arrow-right mx-2"></i> {item.end || 'End'}</p>
+                                        </div>
+                                        <p className="font-bold" style={{ color: 'var(--accent-color)' }}>{parseFloat(item.miles || 0).toFixed(2)} mi</p>
+                                    </div>
+                                ))}
                             </div>
+                        )
+                    )}
+
+                    {showExpenseModal && (
+                        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                            <form onSubmit={saveExpense} className="w-full max-w-xl theme-surface rounded-2xl border theme-border shadow-2xl p-6 space-y-4">
+                                <div className="flex justify-between items-center"><h4 className="text-xl font-bold theme-text">Add Expense</h4><button type="button" onClick={() => setShowExpenseModal(false)} className="theme-text-muted"><i className="fas fa-times"></i></button></div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <input name="date" type="date" required className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                    <input name="category" placeholder="Category (Travel, Supplies...)" required className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                    <input name="desc" placeholder="Description" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text md:col-span-2" />
+                                    <input name="amount" type="number" step="0.01" placeholder="Amount" required className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                </div>
+                                <div className="flex justify-end gap-2"><button type="button" onClick={() => setShowExpenseModal(false)} className="px-4 py-2 rounded-lg border theme-border">Cancel</button><button className="theme-accent-btn px-4 py-2 rounded-lg font-semibold">Save Expense</button></div>
+                            </form>
                         </div>
                     )}
-                    {showForm && <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100 mb-6"><form onSubmit={handleSave} className="space-y-4"><input required name="date" type="date" className="w-full p-3 bg-gray-50 border rounded-xl" />{activeTab === 'expenses' ? <><input name="category" placeholder="Category" className="w-full p-3 border rounded-xl" /><input name="desc" placeholder="Description" className="w-full p-3 border rounded-xl" /><input name="amount" placeholder="Amount" className="w-full p-3 border rounded-xl" /></> : <><input name="start" placeholder="Start" className="w-full p-3 border rounded-xl" /><input name="end" placeholder="End" className="w-full p-3 border rounded-xl" /><input name="miles" placeholder="Miles" className="w-full p-3 border rounded-xl" /></>}<button className="w-full bg-gray-900 text-white py-3 rounded-lg">Save</button></form></div>}
 
-                    <div className="space-y-3">
-                        {activeTab === 'expenses' && expenses.length === 0 ? (
-                            <EmptyState
-                                icon="fa-receipt"
-                                title="No Expenses Logged"
-                                description="Track your business spending for tax time. Add your first expense."
-                                actionLabel="Log Expense"
-                                onAction={() => setShowForm(true)}
-                                colorClass="text-emerald-600"
-                                bgClass="bg-emerald-50"
-                            />
-                        ) : activeTab === 'mileage' && mileage.length === 0 ? (
-                            <EmptyState
-                                icon="fa-road"
-                                title="No Mileage Logged"
-                                description="Don't miss out on tax deductions. Track the miles you drive for work."
-                                actionLabel="Log Mileage"
-                                onAction={() => setShowForm(true)}
-                                colorClass="text-blue-600"
-                                bgClass="bg-blue-50"
-                            />
-                        ) : (
-                            activeTab === 'expenses' ? expenses.map(e => <div key={e.id} className="bg-white p-3 rounded shadow"><span>{e.desc}</span></div>) : mileage.map(m => <div key={m.id} className="bg-white p-3 rounded shadow"><span>{m.start} to {m.end}</span></div>)
-                        )}
-                    </div>
+                    {showMileageModal && (
+                        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                            <form onSubmit={saveMileage} className="w-full max-w-xl theme-surface rounded-2xl border theme-border shadow-2xl p-6 space-y-4">
+                                <div className="flex justify-between items-center"><h4 className="text-xl font-bold theme-text">Add Mileage Trip</h4><button type="button" onClick={() => setShowMileageModal(false)} className="theme-text-muted"><i className="fas fa-times"></i></button></div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <input name="date" type="date" required className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                    <input name="miles" type="number" step="0.01" required placeholder="Miles" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                    <input name="start" placeholder="Start Location" required className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text md:col-span-2" />
+                                    <input name="end" placeholder="End Location" required className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text md:col-span-2" />
+                                </div>
+                                <div className="flex justify-end gap-2"><button type="button" onClick={() => setShowMileageModal(false)} className="px-4 py-2 rounded-lg border theme-border">Cancel</button><button className="theme-accent-btn px-4 py-2 rounded-lg font-semibold">Save Trip</button></div>
+                            </form>
+                        </div>
+                    )}
                 </div>
             );
         };
@@ -3151,27 +3173,94 @@
             const [creds, setCreds] = useState([]);
             const [showForm, setShowForm] = useState(false);
             const [editingCred, setEditingCred] = useState(null);
+
             useEffect(() => { DataManager.get('notary_credentials').then(setCreds); }, []);
-            const handleSave = async (e) => { e.preventDefault(); const fd = new FormData(e.target); await DataManager.save('notary_credentials', { id: editingCred?.id || Date.now().toString(), name: fd.get('name'), expiry: fd.get('expiry') }); setShowForm(false); setEditingCred(null); setCreds(await DataManager.get('notary_credentials')); showToast(editingCred ? "Credential Updated" : "Credential Saved"); };
-            const handleDelete = async (id) => { await DataManager.delete('notary_credentials', id); setCreds(await DataManager.get('notary_credentials')); showToast("Credential Deleted", 'error'); };
+
+            const handleSave = async (e) => {
+                e.preventDefault();
+                const fd = new FormData(e.target);
+                await DataManager.save('notary_credentials', {
+                    id: editingCred?.id || Date.now().toString(),
+                    name: fd.get('name'),
+                    expiry: fd.get('expiry')
+                });
+                setShowForm(false);
+                setEditingCred(null);
+                setCreds(await DataManager.get('notary_credentials'));
+                if (onUpdate) onUpdate();
+                showToast(editingCred ? 'Credential Updated' : 'Credential Saved');
+            };
+
+            const handleDelete = async (id) => {
+                await DataManager.delete('notary_credentials', id);
+                setCreds(await DataManager.get('notary_credentials'));
+                if (onUpdate) onUpdate();
+                showToast('Credential Deleted', 'error');
+            };
+
+            const now = new Date();
+            const statusMeta = (expiry) => {
+                const exp = new Date(expiry);
+                if (isNaN(exp.getTime())) return { label: 'Unknown', days: 999, bar: '#94a3b8', cardBorder: 'var(--border-color)' };
+                const days = Math.ceil((exp - now) / (1000 * 60 * 60 * 24));
+                if (days < 0) return { label: 'Expired', days, bar: '#ef4444', cardBorder: '#ef4444' };
+                if (days < 60) return { label: 'Expiring Soon', days, bar: '#f59e0b', cardBorder: 'var(--border-color)' };
+                return { label: 'Active', days, bar: '#22c55e', cardBorder: 'var(--border-color)' };
+            };
 
             return (
-                <div className="p-6 pb-24">
-                    <div className="flex justify-between mb-4"><h3 className="font-bold">Credentials</h3><button onClick={()=>{ setEditingCred(null); setShowForm(true); }} className="bg-indigo-600 text-white px-3 py-1 rounded">Add</button></div>
-                    {showForm && <form onSubmit={handleSave} className="bg-white p-4 rounded shadow mb-4 space-y-2"><input name="name" defaultValue={editingCred?.name || ''} placeholder="Name" className="w-full border p-2 rounded" /><input name="expiry" defaultValue={editingCred?.expiry || ''} type="date" className="w-full border p-2 rounded" /><div className="flex gap-2"><button type="button" onClick={() => { setShowForm(false); setEditingCred(null); }} className="flex-1 bg-gray-100 rounded py-2">Cancel</button><button className="flex-1 bg-indigo-600 text-white px-4 py-2 rounded">{editingCred ? 'Update' : 'Save'}</button></div></form>}
-                    <div className="space-y-3">
-                        {creds.length === 0 ? (
-                            <EmptyState
-                                icon="fa-id-card"
-                                title="No Credentials"
-                                description="Keep track of your commission, bond, and insurance. We'll alert you before they expire."
-                                actionLabel="Add Credential"
-                                onAction={() => setShowForm(true)}
-                                colorClass="text-orange-600"
-                                bgClass="bg-orange-50"
-                            />
-                        ) : creds.map(c => <div key={c.id} className="bg-white p-3 rounded shadow flex justify-between"><div><b>{c.name}</b><br/><span className="text-sm text-gray-500">{c.expiry}</span></div><div className="flex gap-2"><button onClick={() => { setEditingCred(c); setShowForm(true); }} className="text-blue-600 hover:text-blue-800 transition-colors"><i className="fas fa-edit"></i></button><button onClick={()=>handleDelete(c.id)} className="text-red-400 hover:text-red-600 transition-colors"><i className="fas fa-trash"></i></button></div></div>)}
+                <div className="p-6 pb-24 space-y-5 font-sans">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 className="text-2xl font-bold theme-text">Compliance & Credentials</h3>
+                            <p className="theme-text-muted text-sm">Monitor every expiration before it becomes a risk.</p>
+                        </div>
+                        <button onClick={() => { setEditingCred(null); setShowForm(true); }} className="theme-accent-btn px-4 py-2 rounded-lg font-semibold">Add Credential</button>
                     </div>
+
+                    {creds.length === 0 ? (
+                        <EmptyState icon="fa-shield-alt" title="No credentials added" description="Track commission, bond, insurance, and certifications here." actionLabel="Add Credential" onAction={() => setShowForm(true)} colorClass="theme-text" bgClass="theme-surface-muted" />
+                    ) : (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                            {creds.map(c => {
+                                const meta = statusMeta(c.expiry);
+                                return (
+                                    <div key={c.id} className="theme-surface border rounded-xl p-5 transition-all duration-200 hover:-translate-y-0.5 shadow-sm hover:shadow-md" style={{ borderColor: meta.cardBorder }}>
+                                        <div className="flex items-start justify-between">
+                                            <div className="w-10 h-10 rounded-xl theme-surface-muted flex items-center justify-center"><i className="fas fa-certificate theme-text-muted"></i></div>
+                                            <div className="flex gap-2">
+                                                <button onClick={() => { setEditingCred(c); setShowForm(true); }} className="w-8 h-8 rounded-lg border theme-border theme-text-muted"><i className="fas fa-ellipsis-h"></i></button>
+                                                <button onClick={() => handleDelete(c.id)} className="w-8 h-8 rounded-lg border theme-border theme-text-muted"><i className="fas fa-trash"></i></button>
+                                            </div>
+                                        </div>
+                                        <div className="mt-4">
+                                            <p className="text-lg font-bold theme-text">{c.name}</p>
+                                            <p className="text-sm theme-text-muted mt-1">Expires: {c.expiry || '—'}</p>
+                                        </div>
+                                        <div className="mt-4">
+                                            <div className="h-1.5 rounded-full" style={{ backgroundColor: 'rgba(148,163,184,0.25)' }}>
+                                                <div className={`h-full rounded-full ${meta.label === 'Expiring Soon' ? 'animate-pulse' : ''}`} style={{ width: meta.label === 'Expired' ? '100%' : meta.label === 'Expiring Soon' ? '65%' : '35%', backgroundColor: meta.bar }}></div>
+                                            </div>
+                                            <span className={`mt-2 inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${meta.label === 'Expiring Soon' ? 'animate-pulse' : ''}`} style={{ backgroundColor: 'rgba(15,23,42,0.08)', color: meta.bar }}>
+                                                {meta.label}{meta.days < 0 ? '' : ` • ${meta.days} days`}
+                                            </span>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+
+                    {showForm && (
+                        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                            <form onSubmit={handleSave} className="w-full max-w-xl theme-surface rounded-2xl border theme-border shadow-2xl p-6 space-y-4">
+                                <div className="flex justify-between items-center"><h4 className="text-xl font-bold theme-text">{editingCred ? 'Edit Credential' : 'Add Credential'}</h4><button type="button" onClick={() => { setShowForm(false); setEditingCred(null); }} className="theme-text-muted"><i className="fas fa-times"></i></button></div>
+                                <input name="name" defaultValue={editingCred?.name || ''} placeholder="Credential Name (e.g., E&O Insurance)" required className="w-full px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                <input name="expiry" defaultValue={editingCred?.expiry || ''} type="date" required className="w-full px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                <div className="flex justify-end gap-2"><button type="button" onClick={() => { setShowForm(false); setEditingCred(null); }} className="px-4 py-2 rounded-lg border theme-border">Cancel</button><button className="theme-accent-btn px-4 py-2 rounded-lg font-semibold">Save Credential</button></div>
+                            </form>
+                        </div>
+                    )}
                 </div>
             );
         };
