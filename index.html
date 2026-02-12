@@ -676,29 +676,24 @@
 
             const handleLogoUpload = (e) => {
                 const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onloadend = () => {
-                        setData({ ...data, logoUrl: reader.result });
-                    };
-                    reader.readAsDataURL(file);
-                }
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onloadend = () => setData({ ...data, logoUrl: reader.result });
+                reader.readAsDataURL(file);
             };
 
             const handleExportData = () => {
                 const exportData = {};
                 const keys = [
-                    'notary_user_profile', 'notary_clients', 'notary_appointments',
-                    'notary_journal', 'notary_expenses', 'notary_mileage',
-                    'notary_credentials', 'notary_team', 'notary_assignments',
-                    'notary_esignatures', 'gemini_api_key', 'notary_onboarded',
-                    'notary_tour_completed'
+                    'notary_user_profile', 'notary_clients', 'notary_appointments', 'notary_journal',
+                    'notary_expenses', 'notary_mileage', 'notary_credentials', 'notary_team',
+                    'notary_assignments', 'notary_esignatures', 'gemini_api_key',
+                    'notary_onboarded', 'notary_tour_completed'
                 ];
                 keys.forEach(key => {
                     const value = localStorage.getItem(key);
                     if (value) exportData[key] = value;
                 });
-
                 const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
                 const url = URL.createObjectURL(blob);
                 const a = document.createElement('a');
@@ -707,82 +702,92 @@
                 document.body.appendChild(a);
                 a.click();
                 document.body.removeChild(a);
-                showToast("Backup downloaded successfully");
+                showToast('Backup downloaded successfully');
             };
 
             const handleImportData = (event) => {
                 const file = event.target.files[0];
                 if (!file) return;
-
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     try {
                         const importedData = JSON.parse(e.target.result);
-                        if (typeof importedData !== 'object') throw new Error("Invalid backup file");
-
                         Object.keys(importedData).forEach(key => {
-                            if (key.startsWith('notary_') || key === 'gemini_api_key') {
-                                localStorage.setItem(key, importedData[key]);
-                            }
+                            if (key.startsWith('notary_') || key === 'gemini_api_key') localStorage.setItem(key, importedData[key]);
                         });
-                        showToast("Data restored! Reloading...");
+                        showToast('Data restored! Reloading...');
                         setTimeout(() => window.location.reload(), 1500);
                     } catch (err) {
-                        console.error(err);
-                        showToast("Failed to restore data. Invalid file.", "error");
+                        showToast('Failed to restore data. Invalid file.', 'error');
                     }
                 };
                 reader.readAsText(file);
             };
 
-            const handleSave = (e) => { e.preventDefault(); onSave(data); onClose(); showToast("Profile Updated"); };
+            const handleSave = (e) => {
+                e.preventDefault();
+                onSave(data);
+                onClose();
+                showToast('Profile Updated');
+            };
 
             return (
-                <div className="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center p-4 backdrop-blur-sm z-[100]">
-                    <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 font-sans max-h-[90vh] overflow-y-auto">
-                        <h3 className="font-bold text-lg mb-4">Business Profile</h3>
-                        <form onSubmit={handleSave} className="space-y-4">
+                <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                    <div className="theme-surface rounded-2xl shadow-2xl border theme-border max-w-3xl w-full max-h-[92vh] overflow-y-auto font-sans">
+                        <div className="p-6 border-b theme-border flex items-center justify-between">
                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Your Name</label>
-                                <input className="w-full p-2 border rounded" placeholder="Your Name" value={data.name || ''} onChange={e => setData({...data, name: e.target.value})} />
+                                <h3 className="text-2xl font-bold theme-text">Settings & Workspace</h3>
+                                <p className="theme-text-muted text-sm">Manage profile, branding, AI setup, and backup controls.</p>
                             </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Business Name</label>
-                                <input className="w-full p-2 border rounded" placeholder="Business Name" value={data.businessName || ''} onChange={e => setData({...data, businessName: e.target.value})} />
-                            </div>
-                            <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Business Logo / Seal</label>
-                                <div className="flex items-center gap-4">
-                                    {data.logoUrl && <img src={data.logoUrl} alt="Logo Preview" className="w-12 h-12 object-contain border rounded" />}
-                                    <input type="file" accept="image/*" onChange={handleLogoUpload} className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"/>
+                            <button onClick={onClose} className="theme-text-muted"><i className="fas fa-times"></i></button>
+                        </div>
+
+                        <form onSubmit={handleSave} className="p-6 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold theme-text-muted uppercase mb-1">Your Name</label>
+                                    <input className="w-full px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" value={data.name || ''} onChange={e => setData({ ...data, name: e.target.value })} />
                                 </div>
-                                <p className="text-xs text-gray-400 mt-1">Used on invoices and reports.</p>
-                            </div>
-                             <div>
-                                <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Gemini API Key (Optional)</label>
-                                <input className="w-full p-2 border rounded font-mono text-sm" type="password" placeholder="AI Key for Smart Fill" value={data.apiKey || ''} onChange={e => { setData({...data, apiKey: e.target.value}); localStorage.setItem('gemini_api_key', e.target.value); }} />
-                                <p className="text-xs text-gray-400 mt-1">Required for AI features to work fully.</p>
+                                <div>
+                                    <label className="block text-xs font-bold theme-text-muted uppercase mb-1">Business Name</label>
+                                    <input className="w-full px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" value={data.businessName || ''} onChange={e => setData({ ...data, businessName: e.target.value })} />
+                                </div>
                             </div>
 
-                            {/* DATA MANAGEMENT SECTION */}
-                            <div className="pt-4 border-t border-gray-100 mt-4">
-                                <h4 className="text-xs font-bold text-gray-500 uppercase mb-3">Data Management</h4>
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button type="button" onClick={handleExportData} className="flex items-center justify-center gap-2 p-3 bg-emerald-50 text-emerald-700 rounded-lg border border-emerald-100 hover:bg-emerald-100 transition-colors font-semibold text-sm">
-                                        <i className="fas fa-download"></i> Backup Data
-                                    </button>
-                                    <label className="flex items-center justify-center gap-2 p-3 bg-blue-50 text-blue-700 rounded-lg border border-blue-100 hover:bg-blue-100 transition-colors font-semibold text-sm cursor-pointer">
-                                        <i className="fas fa-upload"></i> Restore Data
-                                        <input type="file" accept=".json" onChange={handleImportData} className="hidden" />
-                                    </label>
+                            <div className="theme-surface-muted border theme-border rounded-xl p-4">
+                                <label className="block text-xs font-bold theme-text-muted uppercase mb-2">Branding (Logo / Seal)</label>
+                                <div className="flex flex-wrap items-center gap-4">
+                                    {data.logoUrl && <img src={data.logoUrl} alt="Logo Preview" className="w-12 h-12 object-contain border theme-border rounded" />}
+                                    <input type="file" accept="image/*" onChange={handleLogoUpload} className="text-sm theme-text-muted" />
                                 </div>
-                                <p className="text-xs text-gray-400 mt-2">
-                                    Download a backup of your clients, journal, and settings. Restore to recover data or move to a new device.
-                                </p>
                             </div>
 
-                            <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-lg font-bold">Save Profile</button>
-                            <button type="button" onClick={onClose} className="w-full text-gray-500 py-2">Cancel</button>
+                            <div>
+                                <label className="block text-xs font-bold theme-text-muted uppercase mb-1">AI Coach API Key (Gemini)</label>
+                                <input
+                                    type="password"
+                                    className="w-full px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text"
+                                    value={data.geminiKey || localStorage.getItem('gemini_api_key') || ''}
+                                    onChange={e => {
+                                        setData({ ...data, geminiKey: e.target.value });
+                                        localStorage.setItem('gemini_api_key', e.target.value);
+                                    }}
+                                    placeholder="Paste API key"
+                                />
+                            </div>
+
+                            <div className="theme-surface-muted border theme-border rounded-xl p-4 space-y-3">
+                                <p className="text-xs font-bold theme-text-muted uppercase">Data Management</p>
+                                <div className="flex flex-wrap gap-2">
+                                    <button type="button" onClick={handleExportData} className="px-3 py-2 rounded-lg border theme-border theme-text text-sm"><i className="fas fa-download mr-2"></i>Export Backup</button>
+                                    <label className="px-3 py-2 rounded-lg border theme-border theme-text text-sm cursor-pointer"><i className="fas fa-upload mr-2"></i>Import Backup<input type="file" accept="application/json" className="hidden" onChange={handleImportData} /></label>
+                                </div>
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-2">
+                                <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border theme-border theme-text">Cancel</button>
+                                <button className="theme-accent-btn px-4 py-2 rounded-lg font-semibold">Save Settings</button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -2998,177 +3003,116 @@
             }, []);
 
             const safeAppointments = Array.isArray(appointments) ? appointments : [];
-            const activeAppointments = safeAppointments
-                .filter(appt => appt.status !== 'Cancelled')
-                .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-            const aggregateRevenue = safeAppointments
-                .filter(appt => ['Paid', 'Completed'].includes(appt.status))
-                .reduce((sum, appt) => sum + parseFloat(appt.fee || 0), 0);
+            const openJobs = safeAppointments.filter(appt => ['Scheduled', 'Completed'].includes(appt.status));
+            const paidRevenue = safeAppointments.filter(appt => appt.status === 'Paid').reduce((sum, appt) => sum + parseFloat(appt.fee || 0), 0);
 
             const handleAddNotary = async (e) => {
                 e.preventDefault();
-                const formData = new FormData(e.target);
-                const entry = {
+                const fd = new FormData(e.target);
+                await DataManager.save('notary_team', {
                     id: Date.now().toString(),
-                    name: formData.get('name'),
-                    email: formData.get('email'),
-                    region: formData.get('region') || 'Unassigned',
-                    status: formData.get('status') || 'Available'
-                };
-                await DataManager.save('notary_team', entry);
+                    name: fd.get('name'),
+                    email: fd.get('email'),
+                    region: fd.get('region') || 'Unassigned',
+                    status: fd.get('status') || 'Available'
+                });
                 setTeam(await DataManager.get('notary_team'));
                 setShowForm(false);
-                showToast("Team Member Added");
+                showToast('Team Member Added');
             };
 
             const handleAssign = async (appointmentId, notaryId) => {
                 if (!notaryId) return;
-                const assignment = {
-                    id: appointmentId,
+                await DataManager.save('notary_assignments', {
+                    id: `${appointmentId}-${notaryId}`,
                     appointmentId,
                     notaryId,
                     assignedAt: new Date().toISOString()
-                };
-                await DataManager.save('notary_assignments', assignment);
+                });
                 setAssignments(await DataManager.get('notary_assignments'));
-                showToast("Assignment Updated");
+                showToast('Dispatch Updated');
             };
 
-            const getAssignedNotary = (appointmentId) => {
-                const assignment = assignments.find(item => item.appointmentId === appointmentId);
-                return assignment ? team.find(member => member.id === assignment.notaryId) : null;
+            const assignedName = (apptId) => {
+                const a = assignments.find(item => item.appointmentId === apptId);
+                if (!a) return 'Unassigned';
+                return team.find(t => t.id === a.notaryId)?.name || 'Unassigned';
             };
 
             return (
-                <div className="p-6 pb-24">
-                    <div className="max-w-6xl mx-auto space-y-6">
-                        <div className="bg-white p-6 rounded-2xl shadow border border-gray-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                            <div>
-                                <p className="text-xs font-bold text-sky-600 uppercase">Team Mode</p>
-                                <h3 className="text-2xl font-bold text-gray-900">Agency Management</h3>
-                                <p className="text-sm text-gray-500">Assign jobs to notaries, manage capacity, and track revenue across your organization.</p>
-                            </div>
-                            <div className="flex flex-wrap gap-4">
-                                <div className="bg-slate-900 text-white rounded-xl px-5 py-4 min-w-[180px]">
-                                    <p className="text-xs uppercase text-slate-300">Active Notaries</p>
-                                    <p className="text-2xl font-bold">{team.length}</p>
+                <div className="p-6 pb-24 space-y-5 font-sans">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 className="text-2xl font-bold theme-text">Team Dispatch</h3>
+                            <p className="theme-text-muted text-sm">Coordinate multi-notary workflows and assignments from one control panel.</p>
+                        </div>
+                        <button onClick={() => setShowForm(true)} className="theme-accent-btn px-4 py-2 rounded-lg font-semibold"><i className="fas fa-user-plus mr-2"></i>Add Notary</button>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div className="theme-surface theme-border border rounded-xl p-4"><p className="text-xs uppercase theme-text-muted">Team Size</p><p className="text-2xl font-bold theme-text mt-2">{team.length}</p></div>
+                        <div className="theme-surface theme-border border rounded-xl p-4"><p className="text-xs uppercase theme-text-muted">Open Jobs</p><p className="text-2xl font-bold theme-text mt-2">{openJobs.length}</p></div>
+                        <div className="theme-surface theme-border border rounded-xl p-4"><p className="text-xs uppercase theme-text-muted">Paid Revenue</p><p className="text-2xl font-bold theme-text mt-2">${paidRevenue.toLocaleString()}</p></div>
+                    </div>
+
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div className="xl:col-span-1 theme-surface theme-border border rounded-2xl p-4">
+                            <h4 className="font-semibold theme-text mb-3">Notary Team</h4>
+                            {team.length === 0 ? <p className="theme-text-muted text-sm">No team members yet.</p> : (
+                                <div className="space-y-2">
+                                    {team.map(member => (
+                                        <div key={member.id} className="theme-surface-muted border theme-border rounded-xl p-3">
+                                            <p className="font-semibold theme-text truncate">{member.name}</p>
+                                            <p className="text-xs theme-text-muted truncate">{member.email}</p>
+                                            <p className="text-xs mt-1 theme-text-muted">{member.region} • {member.status}</p>
+                                        </div>
+                                    ))}
                                 </div>
-                                <div className="bg-white border border-slate-200 rounded-xl px-5 py-4 min-w-[180px]">
-                                    <p className="text-xs uppercase text-slate-500">Monthly Revenue</p>
-                                    <p className="text-2xl font-bold text-slate-900">${aggregateRevenue.toFixed(2)}</p>
-                                </div>
-                            </div>
+                            )}
                         </div>
 
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                            <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h4 className="text-lg font-semibold text-gray-800">Notary Team</h4>
-                                    <button onClick={() => setShowForm(true)} className="text-sm font-semibold text-blue-600">Add</button>
-                                </div>
-                                {showForm && (
-                                    <form onSubmit={handleAddNotary} className="space-y-3 mb-4">
-                                        <input name="name" required placeholder="Full Name" className="w-full p-2 border rounded-lg" />
-                                        <input name="email" type="email" required placeholder="Email" className="w-full p-2 border rounded-lg" />
-                                        <input name="region" placeholder="Region / City" className="w-full p-2 border rounded-lg" />
-                                        <select name="status" className="w-full p-2 border rounded-lg">
-                                            <option>Available</option>
-                                            <option>On Assignment</option>
-                                            <option>Off Duty</option>
-                                        </select>
-                                        <div className="flex gap-2">
-                                            <button type="button" onClick={() => setShowForm(false)} className="flex-1 bg-gray-100 rounded-lg py-2">Cancel</button>
-                                            <button type="submit" className="flex-1 bg-blue-600 text-white rounded-lg py-2">Save</button>
-                                        </div>
-                                    </form>
-                                )}
+                        <div className="xl:col-span-2 theme-surface theme-border border rounded-2xl p-4">
+                            <h4 className="font-semibold theme-text mb-3">Dispatch Queue</h4>
+                            {openJobs.length === 0 ? <p className="theme-text-muted text-sm">No active jobs to assign.</p> : (
                                 <div className="space-y-3">
-                                    {team.length === 0 ? (
-                                        <EmptyState 
-                                            icon="fa-users"
-                                            title="No team members yet"
-                                            description="Add your first notary to start assigning jobs."
-                                            actionLabel="Add Notary"
-                                            onAction={() => setShowForm(true)}
-                                            colorClass="text-sky-600"
-                                            bgClass="bg-sky-50"
-                                        />
-                                    ) : (
-                                        team.map(member => (
-                                            <div key={member.id} className="border border-gray-100 rounded-xl p-3">
-                                                <div className="flex items-start justify-between">
-                                                    <div>
-                                                        <p className="font-semibold text-gray-800">{member.name}</p>
-                                                        <p className="text-xs text-gray-500">{member.email}</p>
-                                                    </div>
-                                                    <span className="text-[10px] uppercase font-bold text-slate-500 bg-slate-100 px-2 py-1 rounded-full">{member.status}</span>
-                                                </div>
-                                                <p className="text-xs text-gray-400 mt-2">{member.region}</p>
+                                    {openJobs.map(appt => (
+                                        <div key={appt.id} className="border theme-border rounded-xl p-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                            <div className="min-w-0">
+                                                <p className="font-semibold theme-text truncate">{appt.clientName || 'Client'}</p>
+                                                <p className="text-xs theme-text-muted truncate">{appt.type || 'Notary Service'} • {appt.date} {appt.time || ''}</p>
                                             </div>
-                                        ))
-                                    )}
-                                </div>
-                            </div>
-
-                            <div className="lg:col-span-2 space-y-6">
-                                <div className="bg-white p-6 rounded-2xl shadow border border-gray-100">
-                                    <h4 className="text-lg font-semibold text-gray-800 mb-3">Master Calendar</h4>
-                                    {activeAppointments.length === 0 ? (
-                                        <EmptyState 
-                                            icon="fa-calendar-alt"
-                                            title="No appointments scheduled"
-                                            description="Once appointments are booked, they'll show here for assignment."
-                                            actionLabel="Refresh"
-                                            onAction={() => showToast("Calendar Updated", "success")}
-                                            colorClass="text-blue-600"
-                                            bgClass="bg-blue-50"
-                                        />
-                                    ) : (
-                                        <div className="space-y-3">
-                                            {activeAppointments.map(appt => {
-                                                const assignedNotary = getAssignedNotary(appt.id);
-                                                return (
-                                                    <div key={appt.id} className="border border-gray-100 rounded-xl p-4 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                                                        <div>
-                                                            <p className="text-xs font-semibold text-gray-400 uppercase">{appt.type || 'Notary Service'}</p>
-                                                            <p className="text-lg font-semibold text-gray-800">{appt.clientName}</p>
-                                                            <p className="text-sm text-gray-500">{appt.date} • {appt.time || 'TBD'}</p>
-                                                        </div>
-                                                        <div className="flex items-center gap-3">
-                                                            <div className="text-right">
-                                                                <p className="text-xs text-gray-400">Assigned</p>
-                                                                <p className="text-sm font-semibold text-gray-700">{assignedNotary ? assignedNotary.name : 'Unassigned'}</p>
-                                                            </div>
-                                                            <select
-                                                                value={assignedNotary?.id || ''}
-                                                                onChange={(e) => handleAssign(appt.id, e.target.value)}
-                                                                className="border border-gray-200 rounded-lg p-2 text-sm"
-                                                            >
-                                                                <option value="">Assign Notary</option>
-                                                                {team.map(member => (
-                                                                    <option key={member.id} value={member.id}>{member.name}</option>
-                                                                ))}
-                                                            </select>
-                                                        </div>
-                                                    </div>
-                                                );
-                                            })}
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs theme-text-muted">Assigned: {assignedName(appt.id)}</span>
+                                                <select onChange={(e) => handleAssign(appt.id, e.target.value)} className="px-2 py-1.5 rounded-lg border theme-border theme-app-bg theme-text text-sm">
+                                                    <option value="">Assign</option>
+                                                    {team.map(member => <option key={member.id} value={member.id}>{member.name}</option>)}
+                                                </select>
+                                            </div>
                                         </div>
-                                    )}
+                                    ))}
                                 </div>
-
-                                <div className="bg-slate-900 text-white p-6 rounded-2xl shadow">
-                                    <h4 className="text-lg font-semibold mb-2">Agency Insights</h4>
-                                    <p className="text-sm text-slate-200">Track assignments and revenue in one place. Expand your team and keep every signing accounted for.</p>
-                                </div>
-                            </div>
+                            )}
                         </div>
                     </div>
+
+                    {showForm && (
+                        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
+                            <form onSubmit={handleAddNotary} className="w-full max-w-xl theme-surface border theme-border rounded-2xl shadow-2xl p-6 space-y-4">
+                                <div className="flex justify-between items-center"><h4 className="text-xl font-bold theme-text">Add Team Member</h4><button type="button" onClick={() => setShowForm(false)} className="theme-text-muted"><i className="fas fa-times"></i></button></div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <input name="name" required placeholder="Full Name" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                    <input name="email" required placeholder="Email" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                    <input name="region" placeholder="Region" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                    <select name="status" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text"><option>Available</option><option>Busy</option></select>
+                                </div>
+                                <div className="flex justify-end gap-2"><button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg border theme-border">Cancel</button><button className="theme-accent-btn px-4 py-2 rounded-lg font-semibold">Add Member</button></div>
+                            </form>
+                        </div>
+                    )}
                 </div>
             );
         };
-        
+
         const Credentials = ({ onUpdate }) => {
             const [creds, setCreds] = useState([]);
             const [showForm, setShowForm] = useState(false);
@@ -3273,9 +3217,7 @@
             const [loading, setLoading] = useState(false);
             const scrollRef = useRef(null);
 
-            useEffect(() => {
-                scrollRef.current?.scrollIntoView({ behavior: "smooth" });
-            }, [messages]);
+            useEffect(() => { scrollRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
             const sendMessage = async () => {
                 if (!input.trim()) return;
@@ -3283,42 +3225,59 @@
                 setMessages(newMsgs);
                 setInput('');
                 setLoading(true);
-
-                // Simulation logic - In a real app this would connect to Gemini
                 setTimeout(() => {
                     setMessages([...newMsgs, { role: 'assistant', content: "This is a simulated AI response. Please configure your API Key in Settings to enable the full AI Coach experience." }]);
                     setLoading(false);
-                }, 800);
+                }, 700);
             };
 
             return (
-                <div className="flex flex-col h-full bg-white relative pb-20 md:pb-0">
-                    <div className="border-b px-4 py-3 flex justify-between items-center bg-gray-50">
-                        <select value={selectedStateKey} onChange={e => setSelectedStateKey(e.target.value)} className="bg-white border rounded p-1">
-                            {Object.keys(stateDB).map(k => <option key={k} value={k}>{stateDB[k].state}</option>)}
-                        </select>
+                <div className="p-6 pb-24 font-sans h-full flex flex-col gap-4">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div>
+                            <h3 className="text-2xl font-bold theme-text">AI Trainer</h3>
+                            <p className="theme-text-muted text-sm">Compliance study and coaching workspace.</p>
+                        </div>
                         <div className="flex gap-2">
-                            <button onClick={() => setMode('study')} className={`px-2 py-1 text-xs rounded ${mode==='study' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Study</button>
-                            <button onClick={() => setMode('course')} className={`px-2 py-1 text-xs rounded ${mode==='course' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Course</button>
-                            <button onClick={() => setMode('sim')} className={`px-2 py-1 text-xs rounded ${mode==='sim' ? 'bg-blue-600 text-white' : 'bg-gray-200'}`}>Sim</button>
+                            <select value={selectedStateKey} onChange={e => setSelectedStateKey(e.target.value)} className="px-3 py-2 rounded-lg border theme-border theme-app-bg theme-text text-sm">
+                                {Object.keys(stateDB).map(k => <option key={k} value={k}>{stateDB[k].state}</option>)}
+                            </select>
+                            <div className="inline-flex border theme-border rounded-lg p-1">
+                                <button onClick={() => setMode('study')} className={`px-3 py-1.5 rounded-md text-sm ${mode === 'study' ? 'theme-surface theme-text' : 'theme-text-muted'}`}>Study</button>
+                                <button onClick={() => setMode('chat')} className={`px-3 py-1.5 rounded-md text-sm ${mode === 'chat' ? 'theme-surface theme-text' : 'theme-text-muted'}`}>Chat</button>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4">
-                        {messages.map((m, i) => (
-                            <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                <div className={`max-w-[85%] p-3 rounded-lg text-sm ${m.role === 'user' ? 'bg-blue-600 text-white' : 'bg-gray-100'}`}>
-                                    {m.content}
-                                </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 flex-1 min-h-0">
+                        <div className="lg:col-span-1 theme-surface theme-border border rounded-2xl p-4 overflow-auto">
+                            <h4 className="font-semibold theme-text mb-2">State Snapshot</h4>
+                            <p className="text-sm theme-text-muted mb-3">Quick reference for {stateDB[selectedStateKey]?.state}.</p>
+                            <ul className="space-y-2 text-sm theme-text-muted">
+                                <li><i className="fas fa-receipt mr-2"></i>Acknowledgment Fee: ${stateDB[selectedStateKey]?.fees?.acknowledgment || '—'}</li>
+                                <li><i className="fas fa-file-signature mr-2"></i>Jurat Fee: ${stateDB[selectedStateKey]?.fees?.jurat || '—'}</li>
+                                <li><i className="fas fa-id-card mr-2"></i>ID Rules: {stateDB[selectedStateKey]?.id_rules?.slice(0, 55) || '—'}...</li>
+                            </ul>
+                        </div>
+
+                        <div className="lg:col-span-2 theme-surface theme-border border rounded-2xl flex flex-col min-h-0">
+                            <div className="p-4 border-b theme-border">
+                                <h4 className="font-semibold theme-text">AI Coach Conversation</h4>
                             </div>
-                        ))}
-                        {loading && <div className="text-xs text-gray-400 ml-4">Thinking...</div>}
-                        <div ref={scrollRef} />
-                    </div>
-                    
-                    <div className="p-4 border-t bg-white flex gap-2 pb-24 md:pb-4 safe-area-pb">
-                        <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} placeholder="Ask AI..." className="flex-1 p-2 border rounded" />
-                        <button onClick={sendMessage} className="bg-blue-600 text-white px-4 rounded">Send</button>
+                            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                                {messages.map((m, i) => (
+                                    <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                        <div className={`max-w-[85%] p-3 rounded-xl text-sm ${m.role === 'user' ? 'theme-accent-btn text-white' : 'theme-surface-muted theme-text'}`}>{m.content}</div>
+                                    </div>
+                                ))}
+                                {loading && <p className="text-xs theme-text-muted">Thinking...</p>}
+                                <div ref={scrollRef}></div>
+                            </div>
+                            <div className="p-4 border-t theme-border flex gap-2">
+                                <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && sendMessage()} placeholder="Ask AI Coach..." className="flex-1 px-3 py-2 rounded-lg border theme-border theme-app-bg theme-text" />
+                                <button onClick={sendMessage} className="theme-accent-btn px-4 rounded-lg">Send</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             );
@@ -3327,27 +3286,47 @@
         const AdminPanel = ({ stateDB }) => {
             const [activeTab, setActiveTab] = useState('states');
             const [selectedState, setSelectedState] = useState('CA');
+            const [ackFee, setAckFee] = useState(stateDB['CA']?.fees?.acknowledgment || '');
+
+            useEffect(() => {
+                setAckFee(stateDB[selectedState]?.fees?.acknowledgment || '');
+            }, [selectedState, stateDB]);
+
+            const saveStateChanges = () => showToast('State configuration saved (demo).');
 
             return (
-                <div className="p-6 pb-24">
-                    <div className="bg-red-50 border border-red-200 rounded p-4 mb-4"><h3 className="font-bold text-red-800">Admin Panel</h3></div>
-                    <div className="flex gap-2 mb-4">
-                        <button onClick={()=>setActiveTab('states')} className={`px-3 py-1 rounded ${activeTab==='states'?'bg-indigo-100 text-indigo-800':''}`}>States</button>
-                        <button onClick={()=>setActiveTab('curriculum')} className={`px-3 py-1 rounded ${activeTab==='curriculum'?'bg-indigo-100 text-indigo-800':''}`}>Curriculum</button>
+                <div className="p-6 pb-24 space-y-5 font-sans">
+                    <div className="theme-surface border border-red-300 rounded-xl p-4 bg-red-500/10">
+                        <h3 className="font-bold text-red-600">Admin Control Center</h3>
+                        <p className="text-sm theme-text-muted mt-1">Manage legal data, curriculum, and system-wide compliance content.</p>
                     </div>
+
+                    <div className="inline-flex border theme-border rounded-lg p-1">
+                        <button onClick={() => setActiveTab('states')} className={`px-3 py-1.5 rounded-md text-sm ${activeTab === 'states' ? 'theme-surface theme-text' : 'theme-text-muted'}`}>State Rules</button>
+                        <button onClick={() => setActiveTab('curriculum')} className={`px-3 py-1.5 rounded-md text-sm ${activeTab === 'curriculum' ? 'theme-surface theme-text' : 'theme-text-muted'}`}>Curriculum</button>
+                    </div>
+
                     {activeTab === 'states' ? (
-                        <div className="bg-white p-4 rounded shadow border">
-                            <select className="w-full border p-2 mb-4" value={selectedState} onChange={e=>setSelectedState(e.target.value)}>
-                                {Object.keys(stateDB).map(k=><option key={k} value={k}>{stateDB[k].state}</option>)}
-                            </select>
-                            <div className="space-y-2">
-                                <label className="text-xs font-bold text-gray-500">Fees (Ack)</label>
-                                <input className="w-full border p-2 rounded" defaultValue={stateDB[selectedState].fees.acknowledgment} />
-                                <button className="bg-indigo-600 text-white px-4 py-2 rounded w-full">Save Changes</button>
+                        <div className="theme-surface theme-border border rounded-2xl p-5 space-y-4 max-w-2xl">
+                            <div>
+                                <label className="text-xs font-bold theme-text-muted uppercase">Select State</label>
+                                <select className="w-full mt-1 px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" value={selectedState} onChange={e => setSelectedState(e.target.value)}>
+                                    {Object.keys(stateDB).map(k => <option key={k} value={k}>{stateDB[k].state}</option>)}
+                                </select>
                             </div>
+                            <div>
+                                <label className="text-xs font-bold theme-text-muted uppercase">Acknowledgment Fee</label>
+                                <input value={ackFee} onChange={(e) => setAckFee(e.target.value)} className="w-full mt-1 px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                            </div>
+                            <button onClick={saveStateChanges} className="theme-accent-btn px-4 py-2 rounded-lg font-semibold">Save Changes</button>
                         </div>
                     ) : (
-                        <div className="bg-white p-4 rounded shadow border"><p>Curriculum Editor Placeholder</p></div>
+                        <div className="theme-surface theme-border border rounded-2xl p-5 max-w-2xl">
+                            <h4 className="font-semibold theme-text">Curriculum Editor</h4>
+                            <p className="text-sm theme-text-muted mt-1">Use this panel to publish updated AI Coach lessons and exam prompts.</p>
+                            <textarea rows={6} className="w-full mt-4 px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" defaultValue="Module update notes..." />
+                            <button onClick={() => showToast('Curriculum published (demo).')} className="mt-3 theme-accent-btn px-4 py-2 rounded-lg font-semibold">Publish Curriculum</button>
+                        </div>
                     )}
                 </div>
             );
