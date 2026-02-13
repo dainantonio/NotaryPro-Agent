@@ -316,12 +316,10 @@
         .text-notary-gold { color: #fbbf24; }
         .bg-notary-gold { background-color: #fbbf24; }
     
-/* --- THEMES (non-breaking overrides for Tailwind utility colors) --- */
+/* --- THEMES (Legible themes only - Dark and Midnight removed for better readability) --- */
 :root { --app-bg:#f8fafc; --card-bg:#ffffff; --text:#0f172a; --muted:#475569; --border:#e2e8f0; --shadow: 0 10px 25px rgba(2,6,23,.08); }
 body { background: var(--app-bg); color: var(--text); }
-body[data-theme="dark"] { --app-bg:#0b1220; --card-bg:#0f172a; --text:#e2e8f0; --muted:#94a3b8; --border:#1f2937; --shadow: 0 10px 25px rgba(0,0,0,.35); }
 body[data-theme="classic"] { --app-bg:#f6f1e7; --card-bg:#ffffff; --text:#2b2b2b; --muted:#5a5a5a; --border:#e7ddcc; --shadow: 0 10px 25px rgba(43,43,43,.10); }
-body[data-theme="midnight"] { --app-bg:#070a12; --card-bg:#0b1020; --text:#e5e7eb; --muted:#9ca3af; --border:#111827; --shadow: 0 12px 28px rgba(0,0,0,.45); }
 
 /* Override common Tailwind utility classes used across the UI */
 body[data-theme] .bg-slate-50 { background-color: var(--app-bg) !important; }
@@ -3658,9 +3656,19 @@ return (
                         <div className="flex flex-wrap items-center gap-2">
                             {activeTab === 'mileage' && (
                                 gpsState.tracking ? (
-                                    <button onClick={stopGpsAndSave} className="theme-accent-btn px-4 py-2 rounded-lg font-semibold"><i className="fas fa-stop mr-2"></i>Stop GPS & Save</button>
+                                    <div className="flex items-center gap-2">
+                                        <div className="px-4 py-2 rounded-lg bg-green-50 border-2 border-green-500 text-green-700 font-semibold flex items-center gap-2">
+                                            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                            <span className="text-sm">Tracking: {(gpsState.meters / 1609.344).toFixed(2)} mi</span>
+                                        </div>
+                                        <button onClick={stopGpsAndSave} className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg font-semibold shadow-lg transition-all duration-200">
+                                            <i className="fas fa-stop mr-2"></i>Stop & Save
+                                        </button>
+                                    </div>
                                 ) : (
-                                    <button onClick={startGps} className="theme-soft-btn px-4 py-2 rounded-lg font-semibold"><i className="fas fa-location-crosshairs mr-2"></i>Start GPS</button>
+                                    <button onClick={startGps} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold shadow-lg transition-all duration-200">
+                                        <i className="fas fa-location-arrow mr-2"></i>Start Trip
+                                    </button>
                                 )
                             )}
                             <button onClick={() => exportTax(activeTab)} className="theme-soft-btn px-4 py-2 rounded-lg font-semibold"><i className="fas fa-file-csv mr-2"></i>Export Tax CSV</button>
