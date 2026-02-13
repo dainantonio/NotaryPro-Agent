@@ -945,6 +945,21 @@ hr, .divider{ border-color: rgba(255,255,255,.08) !important; }
             return `mailto:${encodeURIComponent(e)}?${params.toString()}`;
         };
 
+        const formatTime12h = (timeStr) => {
+            const t = String(timeStr || '').trim();
+            if(!t) return '';
+            const parts = t.split(':').map(p => parseInt(p, 10));
+            if(parts.length < 2 || isNaN(parts[0]) || isNaN(parts[1])) return t;
+            let h = parts[0];
+            const m = parts[1];
+            const ampm = h >= 12 ? 'PM' : 'AM';
+            h = h % 12;
+            if(h === 0) h = 12;
+            const mm = String(m).padStart(2,'0');
+            return `${h}:${mm} ${ampm}`;
+        };
+
+
 
 
         // --- Phase 4 Step A: Read-only Setup Checklist (no writes, no effects) ---
@@ -3751,7 +3766,8 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                         <div className="mb-4" style={{display:'flex', gap:10, flexWrap:'wrap'}}>
                             <button type="button" className="btn btn-secondary" style={{height:40}}
                                 onClick={() => {
-                                    const msg = `Hi ${formData.clientName || ''}, confirming our Notary appointment for ${formData.date || ''} ${formData.time || ''}. Reply YES to confirm.`;
+                                    const t12 = formatTime12h(formData.time);
+                                    const msg = `Hi ${formData.clientName || ''}, confirming our Notary appointment for ${formData.date || ''} ${t12 ? (t12 + ' ET') : ''}. Reply YES to confirm.`;
                                     const link = buildSmsLink(formData.phone, msg);
                                     if(!link){ showToast('Add a client phone number first.', 'error'); return; }
                                     window.location.href = link;
@@ -3761,8 +3777,9 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
 
                             <button type="button" className="btn btn-secondary" style={{height:40}}
                                 onClick={() => {
-                                    const subject = `Notary Appointment – ${formData.clientName || 'Client'} (${formData.date || ''} ${formData.time || ''})`;
-                                    const body = `Hi ${formData.clientName || ''},%0D%0A%0D%0AThanks for scheduling your notary appointment.%0D%0A%0D%0ADate/Time: ${formData.date || ''} ${formData.time || ''}%0D%0ALocation: ${formData.address || ''}%0D%0AFee: ${formData.fee || ''}%0D%0A%0D%0ASee you soon.%0D%0A`;
+                                    const t12 = formatTime12h(formData.time);
+                                    const subject = `Notary Appointment – ${formData.clientName || 'Client'} (${formData.date || ''} ${t12 ? (t12 + ' ET') : ''})`;
+                                    const body = `Hi ${formData.clientName || ''},%0D%0A%0D%0AThanks for scheduling your notary appointment.%0D%0A%0D%0ADate/Time: ${formData.date || ''} ${t12 ? (t12 + ' ET') : ''}%0D%0ALocation: ${formData.address || ''}%0D%0AFee: ${formData.fee || ''}%0D%0A%0D%0ASee you soon.%0D%0A`;
                                     const link = buildMailtoLink(formData.email, subject, decodeURIComponent(body));
                                     if(!link){ showToast('Add a client email first.', 'error'); return; }
                                     window.location.href = link;
