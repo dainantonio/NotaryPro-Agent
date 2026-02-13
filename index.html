@@ -344,7 +344,6 @@ body[data-theme] input, body[data-theme] select, body[data-theme] textarea {
 }
 
 
-
         /* --- Native-app layout hardening (mobile + desktop) --- */
         html, body, #root { height: 100%; width: 100%; }
         body { overflow-x: hidden; overscroll-behavior-y: none; -webkit-font-smoothing: antialiased; }
@@ -365,9 +364,294 @@ body[data-theme] input, body[data-theme] select, body[data-theme] textarea {
         /* Allow tables/lists to scroll horizontally if needed */
         .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
 
+
+/* ===== NotaryOS Standard UI System (QA polish) ===== */
+:root{
+  --app-max: 1100px;
+  --app-max-mobile: 768px;
+
+  --radius-card: 18px;
+  --radius-btn: 14px;
+
+  --h-btn: 44px;
+
+  --shadow-sm: 0 2px 10px rgba(0,0,0,.08);
+  --shadow-md: 0 10px 30px rgba(0,0,0,.12);
+
+  --ring: 0 0 0 3px rgba(59,130,246,.25);
+}
+
+/* Prevent horizontal overflow everywhere */
+html, body { overflow-x: hidden; }
+#root, .app-root { min-height: 100dvh; }
+
+/* Container used by all views */
+.app-container{
+  width: 100%;
+  max-width: var(--app-max);
+  margin: 0 auto;
+  padding: 16px;
+}
+@media (max-width: 640px){
+  .app-container{ padding: 12px; }
+}
+
+/* Safe area padding for iOS */
+.safe-bottom{
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+.safe-top{
+  padding-top: calc(8px + env(safe-area-inset-top));
+}
+
+/* Cards */
+.card{
+  border-radius: var(--radius-card) !important;
+  padding: 16px !important;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(255,255,255,.06);
+  background: var(--card, rgba(255,255,255,.04));
+}
+.card-tight{ padding: 12px !important; }
+
+/* Buttons */
+.btn{
+  height: var(--h-btn);
+  border-radius: var(--radius-btn);
+  font-weight: 700;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:focus{ outline: none; box-shadow: var(--ring); }
+
+.btn-primary{
+  background: var(--accent, #3b82f6);
+  color: white;
+  border: 1px solid rgba(255,255,255,.12);
+}
+.btn-primary:hover{ filter: brightness(1.06); }
+.btn-primary:disabled{ opacity: .6; cursor: not-allowed; }
+
+.btn-secondary{
+  background: rgba(255,255,255,.08);
+  color: var(--text, #fff);
+  border: 1px solid rgba(255,255,255,.10);
+}
+.btn-ghost{
+  background: transparent;
+  color: var(--text, #fff);
+  border: 1px solid rgba(255,255,255,.14);
+}
+
+.input, select, textarea{
+  border-radius: 14px !important;
+  padding: 10px 12px !important;
+}
+
+/* Fix common "white card button text" issues */
+.theme-accent-btn, .theme-accent-btn *{ color: #fff !important; }
+.theme-accent-btn{ background: var(--accent, #3b82f6) !important; border: 1px solid rgba(255,255,255,.12) !important; }
+
+/* Floating action button for quick add (mobile) */
+.fab{
+  position: fixed;
+  right: 16px;
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  z-index: 60;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-md);
+}
+@media (min-width: 900px){
+  .fab{ right: 24px; bottom: 24px; }
+
+@media (min-width: 900px){ .fab{ display:none !important; } }
+}
+
+/* Toasts */
+.toast-wrap{
+  position: fixed;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(520px, calc(100vw - 24px));
+}
+.toast{
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.65);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.toast small{ opacity: .9; }
+
+/* Offline indicator */
+.net-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  font-weight: 700;
+  font-size: 12px;
+}
+.net-dot{
+  width: 8px; height: 8px; border-radius: 999px;
+  background: #10b981;
+}
+.net-dot.off{ background: #f59e0b; }
+
+
+/* Onboarding modal safety */
+.modal-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 9998;
+}
+.modal{
+  width: 100%;
+}
+
+
+/* Deduplicate desktop CTAs */
+@media (min-width: 900px){
+  .desktop-hide{ display:none !important; }
+}
+
+
+/* ===== UX/UI Polish Pack (consistency + motion + readability) ===== */
+html{ scroll-behavior:smooth; }
+body{
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Subtle ambient background */
+body::before{
+  content:"";
+  position: fixed;
+  inset: -20%;
+  background:
+    radial-gradient(40% 40% at 20% 10%, rgba(59,130,246,.18), transparent 60%),
+    radial-gradient(35% 35% at 90% 30%, rgba(16,185,129,.14), transparent 55%),
+    radial-gradient(35% 35% at 55% 95%, rgba(245,158,11,.12), transparent 55%);
+  pointer-events:none;
+  z-index:-1;
+  filter: blur(2px);
+}
+
+/* Global transitions for a premium feel */
+*{
+  transition: background-color .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease, transform .18s ease, opacity .18s ease;
+}
+
+/* Main view entrance */
+main{
+  animation: fadeUp .18s ease-out;
+}
+@keyframes fadeUp{
+  from{ opacity:0; transform: translateY(6px); }
+  to{ opacity:1; transform: translateY(0); }
+}
+
+/* Elevate cards */
+.card{
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(255,255,255,.10);
+}
+.card:hover{
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+@media (max-width: 640px){
+  .card:hover{ transform:none; box-shadow: var(--shadow-sm); }
+}
+
+/* Buttons feel clicky */
+.btn:active{ transform: translateY(1px) scale(.99); }
+.btn-primary{
+  box-shadow: 0 8px 22px rgba(59,130,246,.25);
+}
+.btn-primary:hover{
+  box-shadow: 0 10px 28px rgba(59,130,246,.32);
+}
+
+/* Better focus visibility */
+:focus-visible{
+  outline: none;
+  box-shadow: var(--ring);
+  border-radius: 12px;
+}
+
+/* Inputs: nicer placeholder + focus */
+input::placeholder, textarea::placeholder{ opacity:.7; }
+input:focus, textarea:focus, select:focus{
+  box-shadow: var(--ring);
+  border-color: rgba(59,130,246,.55) !important;
+}
+
+/* Modal motion */
+.modal-overlay{ animation: fadeIn .14s ease-out; }
+.modal{ animation: popIn .16s ease-out; }
+@keyframes fadeIn{ from{opacity:0} to{opacity:1} }
+@keyframes popIn{ from{opacity:0; transform: translateY(8px) scale(.98)} to{opacity:1; transform: translateY(0) scale(1)} }
+
+/* Toasts: slightly tighter */
+.toast{ border-radius: 18px; }
+
+/* Skeleton loading utility */
+.skeleton{
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  background: rgba(255,255,255,.06);
+  border: 1px solid rgba(255,255,255,.08);
+}
+.skeleton::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  transform: translateX(-120%);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.10), transparent);
+  animation: shimmer 1.2s infinite;
+}
+@keyframes shimmer{
+  0%{ transform: translateX(-120%); }
+  100%{ transform: translateX(120%); }
+}
+
+/* Reduce motion support */
+@media (prefers-reduced-motion: reduce){
+  *{ transition: none !important; }
+  main, .modal-overlay, .modal{ animation: none !important; }
+}
+/* ===== End Polish Pack ===== */
+
 </style>
-
-
 
 
 <script>
@@ -461,12 +745,213 @@ body[data-theme] input, body[data-theme] select, body[data-theme] textarea {
 
 </head>
 <body>
-    <div id="root"><div style="min-height:100vh;display:grid;place-items:center;padding:24px;font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;color:#0f172a;"><div style="max-width:520px;width:100%;background:#ffffff;border:1px solid #e2e8f0;border-radius:18px;padding:20px;box-shadow:0 10px 25px rgba(2,6,23,.08);"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;"><div style="width:44px;height:44px;border-radius:14px;background:#e0e7ff;display:grid;place-items:center;font-size:22px;">📜</div><div><div style="font-weight:700;font-size:18px;">NotaryOS</div><div style="color:#64748b;font-size:13px;">Loading…</div></div></div><div style="height:10px;background:#eef2ff;border-radius:999px;overflow:hidden;"><div style="width:55%;height:100%;background:#4f46e5;"></div></div><div style="margin-top:12px;color:#64748b;font-size:12px;">If this takes more than a few seconds, refresh the page.</div></div></div></div>
+    <div id="root"><div style="min-height:100vh;display:grid;place-items:center;padding:24px;font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;color:#0f172a;"><div style="max-width:520px;width:100%;background:#ffffff;border:1px solid #e2e8f0;border-radius:18px;padding:20px;box-shadow:0 10px 25px rgba(2,6,23,.08);"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;"><div style="width:44px;height:44px;border-radius:14px;background:#e0e7ff;display:grid;place-items:center;font-size:22px;">📜</div><div><div style="font-weight:700;font-size:18px;">NotaryOS</div>
+              <div style={{display:'flex', alignItems:'center', gap:10, flexWrap:'wrap'}}>
+                <NetworkPill />
+                {isProOrAdmin(user) && <span className="net-pill" title="Pro features unlocked"><span className="net-dot"></span>PRO</span>}
+              </div><div style="color:#64748b;font-size:13px;">Loading…</div></div></div><div style="height:10px;background:#eef2ff;border-radius:999px;overflow:hidden;"><div style="width:55%;height:100%;background:#4f46e5;"></div></div><div style="margin-top:12px;color:#64748b;font-size:12px;">If this takes more than a few seconds, refresh the page.</div></div></div></div>
 
-    <script type="text/babel">
+    
+<script>
+(function(){
+  // Simple global toast bus (works even if React crashes)
+  const MAX=3;
+  function ensureWrap(){
+    let w=document.querySelector('.toast-wrap');
+    if(!w){
+      w=document.createElement('div');
+      w.className='toast-wrap';
+      document.body.appendChild(w);
+    }
+    return w;
+  }
+  window.__toast = function(msg, kind='info', ms=2600){
+    const w=ensureWrap();
+    const t=document.createElement('div');
+    t.className='toast';
+    const label = kind==='success'?'✅':kind==='error'?'⚠️':kind==='warn'?'🟡':'ℹ️';
+    t.innerHTML = `<div style="display:flex;gap:10px;align-items:flex-start">
+        <div style="font-size:18px;line-height:1">${label}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${msg}</div>
+          <small>${kind.toUpperCase()}</small>
+        </div>
+      </div>
+      <button class="btn btn-ghost" style="height:34px;border-radius:12px;padding:0 10px">Close</button>`;
+    t.querySelector('button').onclick=()=>t.remove();
+    w.appendChild(t);
+    while(w.children.length>MAX){ w.firstElementChild.remove(); }
+    setTimeout(()=>{ try{ t.remove(); }catch(e){} }, ms);
+  };
+
+  // Network status
+  window.__net = { online: navigator.onLine };
+  function updateNet(){
+    window.__net.online = navigator.onLine;
+    window.dispatchEvent(new CustomEvent('notaryos:net', { detail: window.__net }));
+  }
+  window.addEventListener('online', updateNet);
+  window.addEventListener('offline', updateNet);
+  updateNet();
+})();
+</script>
+
+<script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
-        class AppErrorBoundary extends React.Component {
+        
+
+            // ===== Phase 4 (Safe): Templates + Notifications + Checklist flags =====
+            var DEFAULT_TEMPLATES_V1 = {
+                smsConfirm: "Hi {Client}, confirming our Notary appointment for {Date} at {Time}. Reply YES to confirm. — {Notary}",
+                smsReminder: "Hi {Client}, reminder: Notary appointment {Date} at {Time}. Location: {Address}. — {Notary}",
+                emailSubject: "Notary Appointment Confirmation — {Date} {Time}",
+                emailBody: "Hi {Client},
+
+This is to confirm your Notary appointment on {Date} at {Time}.
+
+Location:
+{Address}
+
+If anything changes, please reply to confirm.
+
+Thank you,
+{Notary}
+{Phone}"
+            };
+
+            function _lsGet(key){
+                try{ return localStorage.getItem(key); }catch(e){ return null; }
+            }
+            function _lsSet(key, val){
+                try{ localStorage.setItem(key, val); }catch(e){}
+            }
+            function _lsDel(key){
+                try{ localStorage.removeItem(key); }catch(e){}
+            }
+
+            function replaceAllSafe(str, find, repl){
+                if(str == null) return "";
+                return String(str).split(find).join(repl);
+            }
+
+            function loadTemplatesSafe(){
+                var raw = _lsGet('notary_templates_v1');
+                if(raw){
+                    try{
+                        var parsed = JSON.parse(raw);
+                        var merged = {};
+                        for(var k in DEFAULT_TEMPLATES_V1){ merged[k] = DEFAULT_TEMPLATES_V1[k]; }
+                        for(var k2 in parsed){ merged[k2] = parsed[k2]; }
+                        return merged;
+                    }catch(e){
+                        return DEFAULT_TEMPLATES_V1;
+                    }
+                }
+                return DEFAULT_TEMPLATES_V1;
+            }
+            function saveTemplatesSafe(t){
+                try{ _lsSet('notary_templates_v1', JSON.stringify(t || DEFAULT_TEMPLATES_V1)); }catch(e){}
+            }
+
+            function formatPlaceholdersSafe(tpl, user, appt){
+                var notary = (user && (user.name || user.displayName)) ? (user.name || user.displayName) : "Your Notary";
+                var phone = (user && user.phone) ? user.phone : "";
+                var client = (appt && (appt.clientName || appt.name)) ? (appt.clientName || appt.name) : "Client";
+                var date = "";
+                try{ if(appt && appt.date){ date = new Date(appt.date + "T00:00:00").toLocaleDateString(); } }catch(e){}
+                var time = (appt && appt.time) ? appt.time : "";
+                var address = (appt && appt.address) ? appt.address : "";
+
+                var out = String(tpl || "");
+                out = replaceAllSafe(out, "{Notary}", notary);
+                out = replaceAllSafe(out, "{Phone}", phone);
+                out = replaceAllSafe(out, "{Client}", client);
+                out = replaceAllSafe(out, "{Date}", date);
+                out = replaceAllSafe(out, "{Time}", time);
+                out = replaceAllSafe(out, "{Address}", address);
+                return out;
+            }
+
+            function downloadFileSafe(filename, content, mime){
+                try{
+                    var blob = new Blob([content], {type: mime || "text/plain"});
+                    var url = URL.createObjectURL(blob);
+                    var a = document.createElement('a');
+                    a.href = url;
+                    a.download = filename || "download.txt";
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(e){} }, 1200);
+                }catch(e){}
+            }
+
+            function buildICSSafe(appt){
+                var uid = ((appt && appt.id) ? appt.id : (Math.random().toString(36).slice(2))) + "@notaryos";
+                var dtStamp = (new Date()).toISOString().replace(/[-:]/g,'').split('.')[0] + "Z";
+                var d = (appt && appt.date) ? appt.date : (new Date()).toISOString().split('T')[0];
+                var t = (appt && appt.time) ? appt.time : "09:00";
+                var startLocal = new Date(d + "T" + t);
+                var endLocal = new Date(startLocal.getTime() + 60*60*1000);
+
+                function fmt(dt){
+                    var yyyy = dt.getFullYear();
+                    var mm = String(dt.getMonth()+1).padStart(2,'0');
+                    var dd = String(dt.getDate()).padStart(2,'0');
+                    var HH = String(dt.getHours()).padStart(2,'0');
+                    var MM = String(dt.getMinutes()).padStart(2,'0');
+                    var SS = String(dt.getSeconds()).padStart(2,'0');
+                    return "" + yyyy + mm + dd + "T" + HH + MM + SS;
+                }
+
+                var summary = "Notary Appointment: " + (((appt && appt.clientName) ? appt.clientName : "Client"));
+                var location = (appt && appt.address) ? appt.address : "";
+                var fee = 0; try{ fee = parseFloat(appt && appt.fee ? appt.fee : 0) || 0; }catch(e){}
+                var desc = "Service: " + ((appt && appt.type) ? appt.type : "Notary Service") + "
+" +
+                           "Fee: $" + fee.toFixed(2) + "
+" +
+                           "Status: " + ((appt && appt.status) ? appt.status : "Scheduled");
+
+                return [
+                    "BEGIN:VCALENDAR",
+                    "VERSION:2.0",
+                    "PRODID:-//NotaryOS//EN",
+                    "CALSCALE:GREGORIAN",
+                    "METHOD:PUBLISH",
+                    "BEGIN:VEVENT",
+                    "UID:" + uid,
+                    "DTSTAMP:" + dtStamp,
+                    "DTSTART:" + fmt(startLocal),
+                    "DTEND:" + fmt(endLocal),
+                    "SUMMARY:" + summary.replace(/
+/g,' '),
+                    "LOCATION:" + location.replace(/
+/g,' '),
+                    "DESCRIPTION:" + desc.replace(/
+/g,'\n'),
+                    "END:VEVENT",
+                    "END:VCALENDAR"
+                ].join("
+");
+            }
+
+            function openSMSSafe(body){
+                try{
+                    window.location.href = "sms:?&body=" + encodeURIComponent(body || "");
+                }catch(e){}
+            }
+            function openEmailSafe(subject, body){
+                try{
+                    var s = encodeURIComponent(subject || "");
+                    var b = encodeURIComponent(body || "");
+                    window.location.href = "mailto:?subject=" + s + "&body=" + b;
+                }catch(e){}
+            }
+            // ===== End Phase 4 (Safe) =====
+
+class AppErrorBoundary extends React.Component {
             constructor(props) {
                 super(props);
                 this.state = { hasError: false, errorMsg: '' };
@@ -1041,6 +1526,7 @@ body[data-theme] input, body[data-theme] select, body[data-theme] textarea {
         const SettingsModal = ({ user, onClose, onSave, onOpenBillingPortal }) => {
             const [data, setData] = useState(user || {});
             const [adminPreviewEnabled, setAdminPreviewEnabled] = useState(isAdminPreview(user));
+            const [templates, setTemplates] = useState(loadTemplatesSafe());
 
 
             useEffect(() => { if (typeof applyTheme === "function") applyTheme((user && user.theme) || data.theme); }, []);
@@ -1292,7 +1778,48 @@ body[data-theme] input, body[data-theme] select, body[data-theme] textarea {
                                 <button type="button" onClick={onClose} className="px-4 py-2 rounded-lg border theme-border theme-text">Cancel</button>
                                 <button className="theme-accent-btn px-4 py-2 rounded-lg font-semibold">Save Settings</button>
                             </div>
-                        </form>
+                        
+                        <div className="card" style={{marginTop:12}}>
+                            <div style={{fontWeight:900, marginBottom:8}}>Notification Templates</div>
+                            <div className="theme-text-muted" style={{fontSize:12, marginBottom:10}}>
+                                Used in Schedule actions. Placeholders: <b>{'{Client}'}</b> <b>{'{Date}'}</b> <b>{'{Time}'}</b> <b>{'{Address}'}</b> <b>{'{Notary}'}</b> <b>{'{Phone}'}</b>
+                            </div>
+
+                            <div style={{display:'grid', gap:10}}>
+                                <div>
+                                    <div className="theme-text-muted" style={{fontSize:11, fontWeight:900, textTransform:'uppercase', marginBottom:6}}>SMS Confirmation</div>
+                                    <textarea className="w-full theme-input" rows={2} value={templates.smsConfirm} onChange={(e)=>setTemplates({ ...templates, smsConfirm: e.target.value })} />
+                                </div>
+                                <div>
+                                    <div className="theme-text-muted" style={{fontSize:11, fontWeight:900, textTransform:'uppercase', marginBottom:6}}>SMS Reminder</div>
+                                    <textarea className="w-full theme-input" rows={2} value={templates.smsReminder} onChange={(e)=>setTemplates({ ...templates, smsReminder: e.target.value })} />
+                                </div>
+                                <div>
+                                    <div className="theme-text-muted" style={{fontSize:11, fontWeight:900, textTransform:'uppercase', marginBottom:6}}>Email Subject</div>
+                                    <input className="w-full theme-input" value={templates.emailSubject} onChange={(e)=>setTemplates({ ...templates, emailSubject: e.target.value })} />
+                                </div>
+                                <div>
+                                    <div className="theme-text-muted" style={{fontSize:11, fontWeight:900, textTransform:'uppercase', marginBottom:6}}>Email Body</div>
+                                    <textarea className="w-full theme-input" rows={4} value={templates.emailBody} onChange={(e)=>setTemplates({ ...templates, emailBody: e.target.value })} />
+                                </div>
+
+                                <div style={{display:'flex', gap:10, flexWrap:'wrap', marginTop:2}}>
+                                    <button type="button" className="btn btn-primary" style={{height:40}} onClick={()=>{
+                                        saveTemplatesSafe(templates);
+                                        showToast('Templates saved', 'success');
+                                        try{ track('templates_saved', {}); }catch(e){}
+                                    }}>Save Templates</button>
+                                    <button type="button" className="btn btn-secondary" style={{height:40}} onClick={()=>{
+                                        saveTemplatesSafe(DEFAULT_TEMPLATES_V1);
+                                        setTemplates(loadTemplatesSafe());
+                                        showToast('Templates reset', 'info');
+                                        try{ track('templates_reset', {}); }catch(e){}
+                                    }}>Reset</button>
+                                </div>
+                            </div>
+                        </div>
+
+</form>
                     </div>
                 </div>
             );
@@ -2669,7 +3196,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                 <div className="md:hidden fixed bottom-0 w-full bg-white/70 border-t border-slate-200/70 p-2 flex justify-around z-30 safe-area-pb shadow-sm backdrop-blur">
                     <button onClick={() => setView('dashboard')}><i className="fas fa-home text-slate-400 text-lg"></i></button>
                     <button onClick={() => setView('schedule')}><i className="fas fa-calendar-alt text-slate-400 text-lg"></i></button>
-                    <button onClick={() => setView('addAppointment')} className="-mt-8 bg-blue-600 text-white rounded-full p-4 shadow-xl border-4 border-white active:scale-95 transition-transform"><i className="fas fa-plus text-2xl"></i></button>
+                    <button onClick={() => setView('Add Appointment')} className="-mt-8 bg-blue-600 text-white rounded-full p-4 shadow-xl border-4 border-white active:scale-95 transition-transform"><i className="fas fa-plus text-2xl"></i></button>
                     <button onClick={() => trainerLocked ? onLockedFeature('trainer') : setView('trainer')} className="relative">
                         <i className="fas fa-robot text-slate-400 text-lg"></i>
                         <span className="absolute -top-2 -right-4 text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-600 font-bold">PRO</span>
@@ -2926,10 +3453,80 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
             return <div className="h-64 w-full"><canvas ref={canvasRef}></canvas></div>;
         };
 
-        const Dashboard = ({ appointments, credentials, setView, user }) => {
+        
+        const SetupChecklist = ({ user, appointments, entries, expenses, setView }) => {
+            const gpsEnabled = (_lsGet('notary_gps_enabled') === 'true');
+            const exportedOnce = (_lsGet('notary_exported_once') === 'true');
+            const hasName = !!(user && (user.name || user.displayName));
+            const hasPhone = !!(user && user.phone);
+
+            const steps = [
+                { key:'profile', label:'Complete profile (name + phone)', done: (hasName && hasPhone), action: ()=> { showToast('Open Settings (top-right) to update your profile.', 'info'); } },
+                { key:'appt', label:'Add your first appointment', done: (appointments && appointments.length>0), action: ()=> setView('schedule') },
+                { key:'journal', label:'Add your first eJournal entry', done: (entries && entries.length>0), action: ()=> setView('journal') },
+                { key:'expense', label:'Add your first expense', done: (expenses && expenses.length>0), action: ()=> setView('finances') },
+                { key:'gps', label:'Enable GPS mileage tracking', done: gpsEnabled, action: ()=> setView('finances') },
+                { key:'export', label:'Export a tax CSV preview', done: exportedOnce, action: ()=> setView('finances') },
+            ];
+
+            const doneCount = steps.filter(s=>s.done).length;
+            const pct = Math.round((doneCount/steps.length)*100);
+
+            return (
+                <div className="card" style={{marginTop:12}}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap'}}>
+                        <div>
+                            <div style={{fontWeight:900}}>Setup Checklist</div>
+                            <div className="theme-text-muted" style={{fontSize:13}}>Finish setup so you can work faster in the field.</div>
+                        </div>
+                        <button className="btn btn-secondary" style={{height:40}} onClick={()=>{
+                            _lsDel('notary_exported_once');
+                            _lsDel('notary_gps_enabled');
+                            showToast('Checklist reset', 'info');
+                        }}>Reset</button>
+                    </div>
+
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap', marginTop:12}}>
+                        <div className="net-pill" title="Checklist progress">
+                            <span className="net-dot"></span>
+                            {doneCount}/{steps.length} complete • {pct}%
+                        </div>
+                        {doneCount < steps.length && (
+                            <button className="btn btn-primary" style={{height:40}} onClick={()=>{
+                                const next = steps.find(s=>!s.done);
+                                if(next && next.action) next.action();
+                            }}>Continue Setup</button>
+                        )}
+                    </div>
+
+                    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))', gap:10, marginTop:12}}>
+                        {steps.map(s=>(
+                            <div key={s.key} className="card card-tight" style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:10}}>
+                                <div style={{display:'flex', alignItems:'center', gap:10, minWidth:0}}>
+                                    <span style={{
+                                        width:24, height:24, borderRadius:999,
+                                        display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                        background: s.done ? 'rgba(16,185,129,.18)' : 'rgba(255,255,255,.08)',
+                                        border: '1px solid rgba(255,255,255,.12)'
+                                    }}>
+                                        <i className={("fas " + (s.done ? "fa-check" : "fa-circle") + " text-[11px]")}></i>
+                                    </span>
+                                    <div style={{fontWeight:800, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap'}} title={s.label}>{s.label}</div>
+                                </div>
+                                {!s.done && (
+                                    <button className="btn btn-secondary" style={{height:36}} onClick={s.action}>Go</button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            );
+        };
+
+const Dashboard = ({ appointments, credentials, entries, expenses, setView, user }) => {
             const now = new Date();
             const hour = now.getHours();
-            const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+            const greeting = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
             const dateLabel = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
             const today = now.toISOString().split('T')[0];
 
@@ -2970,7 +3567,6 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
             };
 
             const quickActions = [
-                { label: 'New Appointment', icon: 'fa-plus', onClick: () => setView('addAppointment') },
                 { label: 'Log Journal Entry', icon: 'fa-pen-to-square', onClick: () => setView('journal') },
                 { label: 'Add Expense', icon: 'fa-dollar-sign', onClick: () => setView('finances') },
                 { label: 'Ask AI Coach', icon: 'fa-robot', onClick: () => setView('trainer') }
@@ -2982,6 +3578,8 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                         <h2 className="text-3xl font-bold theme-text truncate">{greeting}, {user?.name || 'Notary'}.</h2>
                         <p className="theme-text-muted mt-1 truncate">{dateLabel}</p>
                     </div>
+                    <SetupChecklist user={user} appointments={appointments} entries={entries} expenses={expenses} setView={setView} />
+
 
                     <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
                         {quickActions.map(action => (
@@ -3078,7 +3676,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                                     <div className="rounded-xl border border-dashed theme-border p-5 text-center">
                                         <i className="fas fa-calendar-day text-2xl theme-text-muted"></i>
                                         <p className="mt-2 font-semibold theme-text">Schedule clear. Great day for marketing!</p>
-                                        <button onClick={() => setView('addAppointment')} className="mt-4 px-4 py-2 rounded-lg theme-accent-btn text-sm">Add Appointment</button>
+                                        <button onClick={() => setView('Add Appointment')} className="mt-4 px-4 py-2 rounded-lg theme-accent-btn text-sm">Add Appointment</button>
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
@@ -3293,7 +3891,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                 <div className="p-4 sm:p-6 pb-24 space-y-5 font-sans max-w-6xl mx-auto w-full">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <h3 className="text-2xl font-bold theme-text">Schedule</h3>
-                        <button onClick={() => (onAdd ? onAdd(new Date().toISOString().split('T')[0]) : setView('addAppointment'))} className="theme-accent-btn px-4 py-2.5 rounded-xl font-semibold shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">
+                        <button onClick={() => (onAdd ? onAdd(new Date().toISOString().split('T')[0]) : setView('Add Appointment'))} className="theme-accent-btn px-4 py-2.5 rounded-xl font-semibold shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">
                             <i className="fas fa-plus mr-2"></i>New Appointment
                         </button>
                     </div>
@@ -3315,7 +3913,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                             <div className="w-14 h-14 mx-auto rounded-2xl theme-surface-muted flex items-center justify-center mb-3"><i className="fas fa-calendar-check theme-text-muted text-xl"></i></div>
                             <h4 className="theme-text text-lg font-semibold">No appointments in this view</h4>
                             <p className="theme-text-muted text-sm mt-1">Create your first appointment to kick off your schedule pipeline.</p>
-                            <button onClick={() => setView('addAppointment')} className="mt-4 theme-accent-btn px-4 py-2 rounded-lg font-semibold">Create your first appointment</button>
+                            <button onClick={() => setView('Add Appointment')} className="mt-4 theme-accent-btn px-4 py-2 rounded-lg font-semibold">Create your first appointment</button>
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -3344,6 +3942,41 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                                                         <button onClick={() => setPaymentTarget(appt)} className="w-7 h-7 rounded-lg border theme-border theme-text-muted hover:theme-text"><i className="fas fa-dollar-sign text-[11px]"></i></button>
                                                     )}
                                                     <button onClick={() => onEdit(appt)} className="w-7 h-7 rounded-lg border theme-border theme-text-muted hover:theme-text"><i className="fas fa-ellipsis-h text-[11px]"></i></button>
+
+<button onClick={() => {
+    try{
+        var fn = "notaryos_" + String((appt && (appt.clientName || appt.name)) ? (appt.clientName || appt.name) : "client").replace(/\s+/g,"_") + "_" + String(appt && appt.date ? appt.date : "") + ".ics";
+        downloadFileSafe(fn, buildICSSafe(appt), "text/calendar");
+        showToast('Calendar invite downloaded', 'success');
+        try{ track('calendar_ics_download', {}); }catch(e){}
+    }catch(e){ showToast('Unable to create calendar invite','error'); }
+}} className="w-7 h-7 rounded-lg border theme-border theme-text-muted hover:theme-text" title="Add to Calendar">
+  <i className="fas fa-calendar-plus text-[11px]"></i>
+</button>
+<button onClick={() => {
+    try{
+        var t = loadTemplatesSafe();
+        var body = formatPlaceholdersSafe(t.smsConfirm, user, appt);
+        openSMSSafe(body);
+        showToast('SMS template opened', 'info');
+        try{ track('sms_open', {}); }catch(e){}
+    }catch(e){ showToast('Unable to open SMS','error'); }
+}} className="w-7 h-7 rounded-lg border theme-border theme-text-muted hover:theme-text" title="Send SMS">
+  <i className="fas fa-comment-dots text-[11px]"></i>
+</button>
+<button onClick={() => {
+    try{
+        var t2 = loadTemplatesSafe();
+        var subj = formatPlaceholdersSafe(t2.emailSubject, user, appt);
+        var body2 = formatPlaceholdersSafe(t2.emailBody, user, appt);
+        openEmailSafe(subj, body2);
+        showToast('Email template opened', 'info');
+        try{ track('email_open', {}); }catch(e){}
+    }catch(e){ showToast('Unable to open email','error'); }
+}} className="w-7 h-7 rounded-lg border theme-border theme-text-muted hover:theme-text" title="Send Email">
+  <i className="fas fa-envelope text-[11px]"></i>
+</button>
+
                                                 </div>
                                             </div>
                                         </div>
@@ -3532,7 +4165,8 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
             const deleteEntry = async (id) => { 
                 await DataManager.delete('notary_journal', id); 
                 setEntries(await DataManager.get('notary_journal')); 
-                showToast('Entry Deleted'); 
+                showToast('Entry Deleted');
+                try{ window.posthog && window.posthog.capture && window.posthog.capture('journal_deleted'); }catch(e){} 
                 track('ejournal_delete', {});
             };
 
@@ -3642,7 +4276,9 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
         const Finances = ({ user }) => {
             const [activeTab, setActiveTab] = useState('expenses');
             const [expenses, setExpenses] = useState([]);
+            const [loadingFinances, setLoadingFinances] = useState(true);
             const [mileage, setMileage] = useState([]);
+            const [loadingMileage, setLoadingMileage] = useState(true);
             const [showExpenseModal, setShowExpenseModal] = useState(false);
             const [showMileageModal, setShowMileageModal] = useState(false);
             const [editingExpense, setEditingExpense] = useState(null);
@@ -3652,12 +4288,20 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
             useEffect(() => {
                 const load = async () => {
                     setExpenses(await DataManager.get('notary_expenses'));
+                    setLoadingFinances(false);
                     setMileage(await DataManager.get('notary_mileage'));
+                    setLoadingMileage(false);
                 };
                 load();
             }, []);
 
             const saveExpense = async (e) => {
+                // Free-plan monthly limits (create only)
+                const __isEdit = !!editingExpense;
+                if(!__isEdit && (user?.plan||'free')==='free'){
+                    const g = limitGuard('expensesPerMonth', user, (expenses||[]));
+                    if(!g.ok){ showToast(`Free expenses limit reached (${g.used}/${g.lim}). Upgrade to continue.`, 'error'); try{ setShowPricing(true);}catch(e){} return; }
+                }
                 e.preventDefault();
                 const fd = new FormData(e.target);
                 const now = Date.now();
@@ -3671,6 +4315,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                 };
                 await DataManager.save('notary_expenses', payload);
                 setExpenses(await DataManager.get('notary_expenses'));
+                    setLoadingFinances(false);
                 setShowExpenseModal(false);
                 setEditingExpense(null);
                 showToast(editingExpense ? 'Expense Updated' : 'Expense Saved');
@@ -3690,6 +4335,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                 };
                 await DataManager.save('notary_mileage', payload);
                 setMileage(await DataManager.get('notary_mileage'));
+                    setLoadingMileage(false);
                 setShowMileageModal(false);
                 setEditingMileage(null);
                 showToast(editingMileage ? 'Mileage Trip Updated' : 'Mileage Trip Saved');
@@ -3709,10 +4355,14 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
 
             
             const startEditExpense = (item) => { setEditingExpense(item); setShowExpenseModal(true); };
-            const deleteExpense = async (id) => { await DataManager.delete('notary_expenses', id); setExpenses(await DataManager.get('notary_expenses')); showToast('Expense Deleted'); };
+            const deleteExpense = async (id) => { await DataManager.delete('notary_expenses', id); setExpenses(await DataManager.get('notary_expenses'));
+                    setLoadingFinances(false); showToast('Expense Deleted');
+                try{ window.posthog && window.posthog.capture && window.posthog.capture('expense_deleted'); }catch(e){} };
 
             const startEditMileage = (item) => { setEditingMileage(item); setShowMileageModal(true); };
-            const deleteMileage = async (id) => { await DataManager.delete('notary_mileage', id); setMileage(await DataManager.get('notary_mileage')); showToast('Mileage Deleted'); };
+            const deleteMileage = async (id) => { await DataManager.delete('notary_mileage', id); setMileage(await DataManager.get('notary_mileage'));
+                    setLoadingMileage(false); showToast('Mileage Deleted');
+                try{ window.posthog && window.posthog.capture && window.posthog.capture('mileage_deleted'); }catch(e){} };
 
             const exportCSV = (rows, filename) => {
                 const esc = (v) => {
@@ -3732,10 +4382,22 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
             };
 
             const exportTax = (mode) => {
-                if (!canAccess('pro', user)) { showToast('Upgrade to Pro to export tax CSV', 'error'); return; }
+                const __pro = canAccess('pro', user);
+                const __watermark = __pro ? null : 'FREE PLAN EXPORT (PREVIEW) - Upgrade for full tax export';
+
                 if (mode === 'expenses') {
-                    exportCSV(
-                        [['Date','Category','Description','Amount']].concat(expenses.map(e => [e.date||'', e.category||'', e.desc||'', e.amount||''])),
+                    
+                    const rows = [['Date','Category','Description','Amount']].concat(expenses.map(e => [e.date||'', e.category||'', e.desc||'', e.amount||'']));
+                    if(!__pro){
+                        rows.unshift([__watermark,'','','']);
+                        const head = rows.slice(0,2);
+                        const tail = rows.slice(-26);
+                        exportCSV(head.concat(tail), `notaryos_expenses_PREVIEW_${new Date().toISOString().split('T')[0]}.csv`);
+                        _lsSet('notary_exported_once','true');
+                        showToast('Exported preview CSV (watermarked). Upgrade for full export.', 'info');
+                        return;
+                    }
+                    exportCSV([['Date','Category','Description','Amount']].concat(expenses.map(e => [e.date||'', e.category||'', e.desc||'', e.amount||''])),
                         `notaryos_expenses_${new Date().toISOString().split('T')[0]}.csv`
                     );
                     track('export_tax_csv', { type:'expenses' });
@@ -3778,6 +4440,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                         showToast('GPS error: ' + (err && err.message ? err.message : 'Unknown'), 'error');
                     }, { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 });
                     setGpsState({ tracking: true, starting: false, watchId, start, last: start, meters: 0, startedAt });
+                    _lsSet('notary_gps_enabled','true');
                     showToast('GPS tracking started');
                     track('gps_mileage_start', {});
                 } catch (e) {
@@ -3801,6 +4464,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                 };
                 await DataManager.save('notary_mileage', trip);
                 setMileage(await DataManager.get('notary_mileage'));
+                    setLoadingMileage(false);
                 setGpsState({ tracking:false, starting:false, watchId:null, start:null, last:null, meters:0, startedAt:null });
                 showToast('GPS trip saved');
                 track('gps_mileage_stop_save', { miles: trip.miles });
@@ -4496,12 +5160,12 @@ const handleUpgrade = (targetPlan = 'pro') => {
             
             const handleEditAppt = (appt) => {
                 setEditingAppointment(appt);
-                setCurrentView('addAppointment');
+                setCurrentView('Add Appointment');
             };
             
             const handleAddApptWithDate = (dateStr) => {
                 setEditingAppointment({ date: dateStr });
-                setCurrentView('addAppointment');
+                setCurrentView('Add Appointment');
             };
 
             const handleMarkPaid = async (appt) => {
@@ -4537,9 +5201,9 @@ const handleUpgrade = (targetPlan = 'pro') => {
                 switch(currentView) {
                     case 'landing': return <LandingPage onNavigate={() => setCurrentView('auth')} />;
                     case 'auth': return <AuthScreen onAuth={handleLogin} onBack={() => setCurrentView('landing')} />;
-                    case 'dashboard': return <Dashboard appointments={appointments} credentials={credentials} setView={setCurrentView} user={user} />;
+                    case 'dashboard': return <Dashboard appointments={appointments} credentials={credentials} entries={entries} expenses={expenses} setView={setCurrentView} user={user} />;
                     case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onMarkPaid={handleMarkPaid} onEdit={handleEditAppt} onAdd={handleAddApptWithDate} />;
-                    case 'addAppointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => { setEditingAppointment(null); setCurrentView('schedule'); }} initialData={editingAppointment} />;
+                    case 'Add Appointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => { setEditingAppointment(null); setCurrentView('schedule'); }} initialData={editingAppointment} />;
                     case 'clients': return <Clients />;
                     case 'portal': return hasFeatureAccess(user, 'pro') ? <ClientPortal user={user} appointments={appointments} /> : <PaywallState featureKey='portal' onUpgrade={handleUpgrade} />;
                     case 'journal': return <Journal user={user} onUpgrade={()=>{}} />;
@@ -4617,7 +5281,19 @@ const handleUpgrade = (targetPlan = 'pro') => {
                         <Header title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} onNotify={handleNotify} onSyncNow={handleSyncNow} />
                         <div className="flex-1 overflow-y-auto relative no-x-overflow pb-safe" style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}><div className="app-container">{renderView()}</div></div>
                         <MobileNav currentView={currentView} setView={setCurrentView} onOpenMenu={() => setShowMobileMenu(true)} user={user} onLockedFeature={handleLockedFeature} />
-                    </main>
+                    
+{/* Quick Add FAB (mobile) */}
+<button className="btn btn-primary fab desktop-hide" title="Quick Add"
+  onClick={() => {
+    // prioritize most common action
+    if(setActiveView){ setActiveView('appointments'); }
+    window.__toast && window.__toast('Quick Add: create an appointment', 'info');
+    setShowQuickAdd && setShowQuickAdd(true);
+  }}>
+  <span style={{fontSize:24, lineHeight:1}}>+</span>
+</button>
+
+</main>
                 </div>
             );
         };
@@ -4638,8 +5314,19 @@ const handleUpgrade = (targetPlan = 'pro') => {
             console.error('Root render failure:', e);
         }
     </script>
+
+<script>
+(function(){
+  // Keep PWA back button inside app: push a state and trap a single back to prevent exit
+  try{
+    if(!history.state || !history.state.__notaryos){
+      history.replaceState({__notaryos:true}, "", location.href);
+      history.pushState({__notaryos:true, __pushed:true}, "", location.href);
+    }
+  }catch(e){}
+})();
+</script>
+
 </body>
 </html>
-
-
 
