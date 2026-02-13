@@ -344,7 +344,6 @@ body[data-theme] input, body[data-theme] select, body[data-theme] textarea {
 }
 
 
-
         /* --- Native-app layout hardening (mobile + desktop) --- */
         html, body, #root { height: 100%; width: 100%; }
         body { overflow-x: hidden; overscroll-behavior-y: none; -webkit-font-smoothing: antialiased; }
@@ -365,9 +364,184 @@ body[data-theme] input, body[data-theme] select, body[data-theme] textarea {
         /* Allow tables/lists to scroll horizontally if needed */
         .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
 
+
+/* ===== NotaryOS Standard UI System (QA polish) ===== */
+:root{
+  --app-max: 1100px;
+  --app-max-mobile: 768px;
+
+  --radius-card: 18px;
+  --radius-btn: 14px;
+
+  --h-btn: 44px;
+
+  --shadow-sm: 0 2px 10px rgba(0,0,0,.08);
+  --shadow-md: 0 10px 30px rgba(0,0,0,.12);
+
+  --ring: 0 0 0 3px rgba(59,130,246,.25);
+}
+
+/* Prevent horizontal overflow everywhere */
+html, body { overflow-x: hidden; }
+#root, .app-root { min-height: 100dvh; }
+
+/* Container used by all views */
+.app-container{
+  width: 100%;
+  max-width: var(--app-max);
+  margin: 0 auto;
+  padding: 16px;
+}
+@media (max-width: 640px){
+  .app-container{ padding: 12px; }
+}
+
+/* Safe area padding for iOS */
+.safe-bottom{
+  padding-bottom: calc(16px + env(safe-area-inset-bottom));
+}
+.safe-top{
+  padding-top: calc(8px + env(safe-area-inset-top));
+}
+
+/* Cards */
+.card{
+  border-radius: var(--radius-card) !important;
+  padding: 16px !important;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(255,255,255,.06);
+  background: var(--card, rgba(255,255,255,.04));
+}
+.card-tight{ padding: 12px !important; }
+
+/* Buttons */
+.btn{
+  height: var(--h-btn);
+  border-radius: var(--radius-btn);
+  font-weight: 700;
+  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn:focus{ outline: none; box-shadow: var(--ring); }
+
+.btn-primary{
+  background: var(--accent, #3b82f6);
+  color: white;
+  border: 1px solid rgba(255,255,255,.12);
+}
+.btn-primary:hover{ filter: brightness(1.06); }
+.btn-primary:disabled{ opacity: .6; cursor: not-allowed; }
+
+.btn-secondary{
+  background: rgba(255,255,255,.08);
+  color: var(--text, #fff);
+  border: 1px solid rgba(255,255,255,.10);
+}
+.btn-ghost{
+  background: transparent;
+  color: var(--text, #fff);
+  border: 1px solid rgba(255,255,255,.14);
+}
+
+.input, select, textarea{
+  border-radius: 14px !important;
+  padding: 10px 12px !important;
+}
+
+/* Fix common "white card button text" issues */
+.theme-accent-btn, .theme-accent-btn *{ color: #fff !important; }
+.theme-accent-btn{ background: var(--accent, #3b82f6) !important; border: 1px solid rgba(255,255,255,.12) !important; }
+
+/* Floating action button for quick add (mobile) */
+.fab{
+  position: fixed;
+  right: 16px;
+  bottom: calc(84px + env(safe-area-inset-bottom));
+  z-index: 60;
+  width: 52px;
+  height: 52px;
+  border-radius: 999px;
+  box-shadow: var(--shadow-md);
+}
+@media (min-width: 900px){
+  .fab{ right: 24px; bottom: 24px; }
+
+@media (min-width: 900px){ .fab{ display:none !important; } }
+}
+
+/* Toasts */
+.toast-wrap{
+  position: fixed;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: min(520px, calc(100vw - 24px));
+}
+.toast{
+  border-radius: 16px;
+  padding: 12px 14px;
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(0,0,0,.65);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+.toast small{ opacity: .9; }
+
+/* Offline indicator */
+.net-pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,.14);
+  background: rgba(255,255,255,.06);
+  font-weight: 700;
+  font-size: 12px;
+}
+.net-dot{
+  width: 8px; height: 8px; border-radius: 999px;
+  background: #10b981;
+}
+.net-dot.off{ background: #f59e0b; }
+
+
+/* Onboarding modal safety */
+.modal-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 9998;
+}
+.modal{
+  width: 100%;
+}
+
+
+/* Deduplicate desktop CTAs */
+@media (min-width: 900px){
+  .desktop-hide{ display:none !important; }
+}
+
 </style>
-
-
 
 
 <script>
@@ -461,9 +635,58 @@ body[data-theme] input, body[data-theme] select, body[data-theme] textarea {
 
 </head>
 <body>
-    <div id="root"><div style="min-height:100vh;display:grid;place-items:center;padding:24px;font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;color:#0f172a;"><div style="max-width:520px;width:100%;background:#ffffff;border:1px solid #e2e8f0;border-radius:18px;padding:20px;box-shadow:0 10px 25px rgba(2,6,23,.08);"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;"><div style="width:44px;height:44px;border-radius:14px;background:#e0e7ff;display:grid;place-items:center;font-size:22px;">📜</div><div><div style="font-weight:700;font-size:18px;">NotaryOS</div><div style="color:#64748b;font-size:13px;">Loading…</div></div></div><div style="height:10px;background:#eef2ff;border-radius:999px;overflow:hidden;"><div style="width:55%;height:100%;background:#4f46e5;"></div></div><div style="margin-top:12px;color:#64748b;font-size:12px;">If this takes more than a few seconds, refresh the page.</div></div></div></div>
+    <div id="root"><div style="min-height:100vh;display:grid;place-items:center;padding:24px;font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;color:#0f172a;"><div style="max-width:520px;width:100%;background:#ffffff;border:1px solid #e2e8f0;border-radius:18px;padding:20px;box-shadow:0 10px 25px rgba(2,6,23,.08);"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;"><div style="width:44px;height:44px;border-radius:14px;background:#e0e7ff;display:grid;place-items:center;font-size:22px;">📜</div><div><div style="font-weight:700;font-size:18px;">NotaryOS</div>
+              <div style={{display:'flex', alignItems:'center', gap:10, flexWrap:'wrap'}}>
+                <NetworkPill />
+                {isProOrAdmin(user) && <span className="net-pill" title="Pro features unlocked"><span className="net-dot"></span>PRO</span>}
+              </div><div style="color:#64748b;font-size:13px;">Loading…</div></div></div><div style="height:10px;background:#eef2ff;border-radius:999px;overflow:hidden;"><div style="width:55%;height:100%;background:#4f46e5;"></div></div><div style="margin-top:12px;color:#64748b;font-size:12px;">If this takes more than a few seconds, refresh the page.</div></div></div></div>
 
-    <script type="text/babel">
+    
+<script>
+(function(){
+  // Simple global toast bus (works even if React crashes)
+  const MAX=3;
+  function ensureWrap(){
+    let w=document.querySelector('.toast-wrap');
+    if(!w){
+      w=document.createElement('div');
+      w.className='toast-wrap';
+      document.body.appendChild(w);
+    }
+    return w;
+  }
+  window.__toast = function(msg, kind='info', ms=2600){
+    const w=ensureWrap();
+    const t=document.createElement('div');
+    t.className='toast';
+    const label = kind==='success'?'✅':kind==='error'?'⚠️':kind==='warn'?'🟡':'ℹ️';
+    t.innerHTML = `<div style="display:flex;gap:10px;align-items:flex-start">
+        <div style="font-size:18px;line-height:1">${label}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${msg}</div>
+          <small>${kind.toUpperCase()}</small>
+        </div>
+      </div>
+      <button class="btn btn-ghost" style="height:34px;border-radius:12px;padding:0 10px">Close</button>`;
+    t.querySelector('button').onclick=()=>t.remove();
+    w.appendChild(t);
+    while(w.children.length>MAX){ w.firstElementChild.remove(); }
+    setTimeout(()=>{ try{ t.remove(); }catch(e){} }, ms);
+  };
+
+  // Network status
+  window.__net = { online: navigator.onLine };
+  function updateNet(){
+    window.__net.online = navigator.onLine;
+    window.dispatchEvent(new CustomEvent('notaryos:net', { detail: window.__net }));
+  }
+  window.addEventListener('online', updateNet);
+  window.addEventListener('offline', updateNet);
+  updateNet();
+})();
+</script>
+
+<script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
 
         class AppErrorBoundary extends React.Component {
@@ -2669,7 +2892,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                 <div className="md:hidden fixed bottom-0 w-full bg-white/70 border-t border-slate-200/70 p-2 flex justify-around z-30 safe-area-pb shadow-sm backdrop-blur">
                     <button onClick={() => setView('dashboard')}><i className="fas fa-home text-slate-400 text-lg"></i></button>
                     <button onClick={() => setView('schedule')}><i className="fas fa-calendar-alt text-slate-400 text-lg"></i></button>
-                    <button onClick={() => setView('addAppointment')} className="-mt-8 bg-blue-600 text-white rounded-full p-4 shadow-xl border-4 border-white active:scale-95 transition-transform"><i className="fas fa-plus text-2xl"></i></button>
+                    <button onClick={() => setView('Add Appointment')} className="-mt-8 bg-blue-600 text-white rounded-full p-4 shadow-xl border-4 border-white active:scale-95 transition-transform"><i className="fas fa-plus text-2xl"></i></button>
                     <button onClick={() => trainerLocked ? onLockedFeature('trainer') : setView('trainer')} className="relative">
                         <i className="fas fa-robot text-slate-400 text-lg"></i>
                         <span className="absolute -top-2 -right-4 text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-600 font-bold">PRO</span>
@@ -2929,7 +3152,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
         const Dashboard = ({ appointments, credentials, setView, user }) => {
             const now = new Date();
             const hour = now.getHours();
-            const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+            const greeting = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
             const dateLabel = now.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' });
             const today = now.toISOString().split('T')[0];
 
@@ -2970,7 +3193,6 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
             };
 
             const quickActions = [
-                { label: 'New Appointment', icon: 'fa-plus', onClick: () => setView('addAppointment') },
                 { label: 'Log Journal Entry', icon: 'fa-pen-to-square', onClick: () => setView('journal') },
                 { label: 'Add Expense', icon: 'fa-dollar-sign', onClick: () => setView('finances') },
                 { label: 'Ask AI Coach', icon: 'fa-robot', onClick: () => setView('trainer') }
@@ -3078,7 +3300,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                                     <div className="rounded-xl border border-dashed theme-border p-5 text-center">
                                         <i className="fas fa-calendar-day text-2xl theme-text-muted"></i>
                                         <p className="mt-2 font-semibold theme-text">Schedule clear. Great day for marketing!</p>
-                                        <button onClick={() => setView('addAppointment')} className="mt-4 px-4 py-2 rounded-lg theme-accent-btn text-sm">Add Appointment</button>
+                                        <button onClick={() => setView('Add Appointment')} className="mt-4 px-4 py-2 rounded-lg theme-accent-btn text-sm">Add Appointment</button>
                                     </div>
                                 ) : (
                                     <div className="space-y-3">
@@ -3293,7 +3515,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                 <div className="p-4 sm:p-6 pb-24 space-y-5 font-sans max-w-6xl mx-auto w-full">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                         <h3 className="text-2xl font-bold theme-text">Schedule</h3>
-                        <button onClick={() => (onAdd ? onAdd(new Date().toISOString().split('T')[0]) : setView('addAppointment'))} className="theme-accent-btn px-4 py-2.5 rounded-xl font-semibold shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">
+                        <button onClick={() => (onAdd ? onAdd(new Date().toISOString().split('T')[0]) : setView('Add Appointment'))} className="theme-accent-btn px-4 py-2.5 rounded-xl font-semibold shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200">
                             <i className="fas fa-plus mr-2"></i>New Appointment
                         </button>
                     </div>
@@ -3315,7 +3537,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                             <div className="w-14 h-14 mx-auto rounded-2xl theme-surface-muted flex items-center justify-center mb-3"><i className="fas fa-calendar-check theme-text-muted text-xl"></i></div>
                             <h4 className="theme-text text-lg font-semibold">No appointments in this view</h4>
                             <p className="theme-text-muted text-sm mt-1">Create your first appointment to kick off your schedule pipeline.</p>
-                            <button onClick={() => setView('addAppointment')} className="mt-4 theme-accent-btn px-4 py-2 rounded-lg font-semibold">Create your first appointment</button>
+                            <button onClick={() => setView('Add Appointment')} className="mt-4 theme-accent-btn px-4 py-2 rounded-lg font-semibold">Create your first appointment</button>
                         </div>
                     ) : (
                         <div className="space-y-3">
@@ -3532,7 +3754,8 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
             const deleteEntry = async (id) => { 
                 await DataManager.delete('notary_journal', id); 
                 setEntries(await DataManager.get('notary_journal')); 
-                showToast('Entry Deleted'); 
+                showToast('Entry Deleted');
+                try{ window.posthog && window.posthog.capture && window.posthog.capture('journal_deleted'); }catch(e){} 
                 track('ejournal_delete', {});
             };
 
@@ -3658,6 +3881,12 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
             }, []);
 
             const saveExpense = async (e) => {
+                // Free-plan monthly limits (create only)
+                const __isEdit = !!editingExpense;
+                if(!__isEdit && (user?.plan||'free')==='free'){
+                    const g = limitGuard('expensesPerMonth', user, (expenses||[]));
+                    if(!g.ok){ showToast(`Free expenses limit reached (${g.used}/${g.lim}). Upgrade to continue.`, 'error'); try{ setShowPricing(true);}catch(e){} return; }
+                }
                 e.preventDefault();
                 const fd = new FormData(e.target);
                 const now = Date.now();
@@ -3709,10 +3938,12 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
 
             
             const startEditExpense = (item) => { setEditingExpense(item); setShowExpenseModal(true); };
-            const deleteExpense = async (id) => { await DataManager.delete('notary_expenses', id); setExpenses(await DataManager.get('notary_expenses')); showToast('Expense Deleted'); };
+            const deleteExpense = async (id) => { await DataManager.delete('notary_expenses', id); setExpenses(await DataManager.get('notary_expenses')); showToast('Expense Deleted');
+                try{ window.posthog && window.posthog.capture && window.posthog.capture('expense_deleted'); }catch(e){} };
 
             const startEditMileage = (item) => { setEditingMileage(item); setShowMileageModal(true); };
-            const deleteMileage = async (id) => { await DataManager.delete('notary_mileage', id); setMileage(await DataManager.get('notary_mileage')); showToast('Mileage Deleted'); };
+            const deleteMileage = async (id) => { await DataManager.delete('notary_mileage', id); setMileage(await DataManager.get('notary_mileage')); showToast('Mileage Deleted');
+                try{ window.posthog && window.posthog.capture && window.posthog.capture('mileage_deleted'); }catch(e){} };
 
             const exportCSV = (rows, filename) => {
                 const esc = (v) => {
@@ -3732,10 +3963,21 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
             };
 
             const exportTax = (mode) => {
-                if (!canAccess('pro', user)) { showToast('Upgrade to Pro to export tax CSV', 'error'); return; }
+                const __pro = canAccess('pro', user);
+                const __watermark = __pro ? null : 'FREE PLAN EXPORT (PREVIEW) - Upgrade for full tax export';
+
                 if (mode === 'expenses') {
-                    exportCSV(
-                        [['Date','Category','Description','Amount']].concat(expenses.map(e => [e.date||'', e.category||'', e.desc||'', e.amount||''])),
+                    
+                    const rows = [['Date','Category','Description','Amount']].concat(expenses.map(e => [e.date||'', e.category||'', e.desc||'', e.amount||'']));
+                    if(!__pro){
+                        rows.unshift([__watermark,'','','']);
+                        const head = rows.slice(0,2);
+                        const tail = rows.slice(-26);
+                        exportCSV(head.concat(tail), `notaryos_expenses_PREVIEW_${new Date().toISOString().split('T')[0]}.csv`);
+                        showToast('Exported preview CSV (watermarked). Upgrade for full export.', 'info');
+                        return;
+                    }
+                    exportCSV([['Date','Category','Description','Amount']].concat(expenses.map(e => [e.date||'', e.category||'', e.desc||'', e.amount||''])),
                         `notaryos_expenses_${new Date().toISOString().split('T')[0]}.csv`
                     );
                     track('export_tax_csv', { type:'expenses' });
@@ -4496,12 +4738,12 @@ const handleUpgrade = (targetPlan = 'pro') => {
             
             const handleEditAppt = (appt) => {
                 setEditingAppointment(appt);
-                setCurrentView('addAppointment');
+                setCurrentView('Add Appointment');
             };
             
             const handleAddApptWithDate = (dateStr) => {
                 setEditingAppointment({ date: dateStr });
-                setCurrentView('addAppointment');
+                setCurrentView('Add Appointment');
             };
 
             const handleMarkPaid = async (appt) => {
@@ -4539,7 +4781,7 @@ const handleUpgrade = (targetPlan = 'pro') => {
                     case 'auth': return <AuthScreen onAuth={handleLogin} onBack={() => setCurrentView('landing')} />;
                     case 'dashboard': return <Dashboard appointments={appointments} credentials={credentials} setView={setCurrentView} user={user} />;
                     case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onMarkPaid={handleMarkPaid} onEdit={handleEditAppt} onAdd={handleAddApptWithDate} />;
-                    case 'addAppointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => { setEditingAppointment(null); setCurrentView('schedule'); }} initialData={editingAppointment} />;
+                    case 'Add Appointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => { setEditingAppointment(null); setCurrentView('schedule'); }} initialData={editingAppointment} />;
                     case 'clients': return <Clients />;
                     case 'portal': return hasFeatureAccess(user, 'pro') ? <ClientPortal user={user} appointments={appointments} /> : <PaywallState featureKey='portal' onUpgrade={handleUpgrade} />;
                     case 'journal': return <Journal user={user} onUpgrade={()=>{}} />;
@@ -4617,7 +4859,19 @@ const handleUpgrade = (targetPlan = 'pro') => {
                         <Header title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} onNotify={handleNotify} onSyncNow={handleSyncNow} />
                         <div className="flex-1 overflow-y-auto relative no-x-overflow pb-safe" style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}><div className="app-container">{renderView()}</div></div>
                         <MobileNav currentView={currentView} setView={setCurrentView} onOpenMenu={() => setShowMobileMenu(true)} user={user} onLockedFeature={handleLockedFeature} />
-                    </main>
+                    
+{/* Quick Add FAB (mobile) */}
+<button className="btn btn-primary fab desktop-hide" title="Quick Add"
+  onClick={() => {
+    // prioritize most common action
+    if(setActiveView){ setActiveView('appointments'); }
+    window.__toast && window.__toast('Quick Add: create an appointment', 'info');
+    setShowQuickAdd && setShowQuickAdd(true);
+  }}>
+  <span style={{fontSize:24, lineHeight:1}}>+</span>
+</button>
+
+</main>
                 </div>
             );
         };
@@ -4638,8 +4892,19 @@ const handleUpgrade = (targetPlan = 'pro') => {
             console.error('Root render failure:', e);
         }
     </script>
+
+<script>
+(function(){
+  // Keep PWA back button inside app: push a state and trap a single back to prevent exit
+  try{
+    if(!history.state || !history.state.__notaryos){
+      history.replaceState({__notaryos:true}, "", location.href);
+      history.pushState({__notaryos:true, __pushed:true}, "", location.href);
+    }
+  }catch(e){}
+})();
+</script>
+
 </body>
 </html>
-
-
 
