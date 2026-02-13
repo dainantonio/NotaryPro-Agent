@@ -928,6 +928,25 @@ hr, .divider{ border-color: rgba(255,255,255,.08) !important; }
             }
         };
 
+        const buildSmsLink = (phone, message) => {
+            const p = String(phone || '').trim();
+            if(!p) return null;
+            const body = encodeURIComponent(message || '');
+            // iOS supports sms:&body= ; Android often uses ?body=
+            return `sms:${encodeURIComponent(p)}?&body=${body}`;
+        };
+
+        const buildMailtoLink = (email, subject, body) => {
+            const e = String(email || '').trim();
+            if(!e) return null;
+            const params = new URLSearchParams();
+            if(subject) params.set('subject', subject);
+            if(body) params.set('body', body);
+            return `mailto:${encodeURIComponent(e)}?${params.toString()}`;
+        };
+
+
+
         // --- Phase 4 Step A: Read-only Setup Checklist (no writes, no effects) ---
         const computeSetupChecklistReadOnly = ({ user, appointments }) => {
             const profileName = (user && (user.name || user.displayName)) ? (user.name || user.displayName) : '';
@@ -3368,8 +3387,8 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                                     <input name="name" defaultValue={editingClient?.name || ''} placeholder="Full Name" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" required />
                                     <input name="phone" defaultValue={editingClient?.phone || ''} placeholder="Phone" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
                                     <input name="email" defaultValue={editingClient?.email || ''} placeholder="Email" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text md:col-span-2" />
-                                    <input name="address" defaultValue={editingClient?.address || ''} placeholder="Address" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text md:col-span-2" defaultValue={editingEntry ? (editingEntry.address || '') : ''} />
-                                    <textarea name="notes" defaultValue={editingClient?.notes || ''} placeholder="Notes" rows={3} className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text md:col-span-2">{editingEntry ? (editingEntry.notes || "") : ""}</textarea>
+                                    <input name="address" defaultValue={editingClient?.address || ''} placeholder="Address" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text md:col-span-2" defaultValue={editingClient ? (editingClient.address || '') : ''} />
+                                    <textarea name="notes" defaultValue={editingClient?.notes || ''} placeholder="Notes" rows={3} className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text md:col-span-2">{editingClient ? (editingClient.notes || "") : ""}</textarea>
                                 </div>
                                 <div className="flex justify-end gap-2">
                                     <button type="button" onClick={() => { setShowForm(false); setEditingClient(null); }} className="px-4 py-2 rounded-lg border theme-border theme-text">Cancel</button>
@@ -3728,6 +3747,30 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                 <div className="p-6 pb-24 max-w-2xl mx-auto">
                     <div className="bg-white rounded-2xl shadow p-6">
                         <h3 className="font-bold text-lg mb-4">{initialData ? 'Edit Appointment' : 'New Appointment'}</h3>
+
+                        <div className="mb-4" style={{display:'flex', gap:10, flexWrap:'wrap'}}>
+                            <button type="button" className="btn btn-secondary" style={{height:40}}
+                                onClick={() => {
+                                    const msg = `Hi ${formData.clientName || ''}, confirming our Notary appointment for ${formData.date || ''} ${formData.time || ''}. Reply YES to confirm.`;
+                                    const link = buildSmsLink(formData.phone, msg);
+                                    if(!link){ showToast('Add a client phone number first.', 'error'); return; }
+                                    window.location.href = link;
+                                }}>
+                                <i className="fas fa-sms mr-2"></i>Text Reminder
+                            </button>
+
+                            <button type="button" className="btn btn-secondary" style={{height:40}}
+                                onClick={() => {
+                                    const subject = `Notary Appointment – ${formData.clientName || 'Client'} (${formData.date || ''} ${formData.time || ''})`;
+                                    const body = `Hi ${formData.clientName || ''},%0D%0A%0D%0AThanks for scheduling your notary appointment.%0D%0A%0D%0ADate/Time: ${formData.date || ''} ${formData.time || ''}%0D%0ALocation: ${formData.address || ''}%0D%0AFee: ${formData.fee || ''}%0D%0A%0D%0ASee you soon.%0D%0A`;
+                                    const link = buildMailtoLink(formData.email, subject, decodeURIComponent(body));
+                                    if(!link){ showToast('Add a client email first.', 'error'); return; }
+                                    window.location.href = link;
+                                }}>
+                                <i className="fas fa-envelope mr-2"></i>Email Template
+                            </button>
+                        </div>
+
                         <div className="mb-6 p-4 bg-blue-50 rounded-xl border border-blue-100">
                             <label className="text-xs font-bold text-blue-600 uppercase block mb-2"><i className="fas fa-magic"></i> Smart Fill</label>
                             <div className="flex gap-2"><input value={magicInput} onChange={e=>setMagicInput(e.target.value)} className="flex-1 p-2 border rounded text-sm" placeholder="e.g. Loan signing with Sarah tomorrow at 2pm for $150..." /><button onClick={handleSmartFill} className="bg-blue-600 text-white px-3 py-1 rounded text-xs font-bold">Fill</button></div>
