@@ -25,7 +25,6 @@
     <link rel="icon" sizes="32x32" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22512%22%20height%3D%22512%22%20viewBox%3D%220%200%20512%20512%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%234f46e5%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%237c3aed%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%22512%22%20height%3D%22512%22%20rx%3D%22112%22%20fill%3D%22url%28%23g%29%22/%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2256%25%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20font-size%3D%22260%22%3E%F0%9F%93%9C%3C/text%3E%3C/svg%3E">
     <link rel="icon" sizes="16x16" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20width%3D%22512%22%20height%3D%22512%22%20viewBox%3D%220%200%20512%20512%22%3E%3Cdefs%3E%3ClinearGradient%20id%3D%22g%22%20x1%3D%220%22%20y1%3D%220%22%20x2%3D%221%22%20y2%3D%221%22%3E%3Cstop%20offset%3D%220%22%20stop-color%3D%22%234f46e5%22/%3E%3Cstop%20offset%3D%221%22%20stop-color%3D%22%237c3aed%22/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect%20width%3D%22512%22%20height%3D%22512%22%20rx%3D%22112%22%20fill%3D%22url%28%23g%29%22/%3E%3Ctext%20x%3D%2250%25%22%20y%3D%2256%25%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20font-size%3D%22260%22%3E%F0%9F%93%9C%3C/text%3E%3C/svg%3E">
 
-<text y=%22.9em%22 font-size=%2290%22>📜</text></svg>">
 
     <!-- React & Babel -->
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
@@ -367,9 +366,102 @@ body[data-theme] input, body[data-theme] select, body[data-theme] textarea {
         .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
 
 </style>
+
+
+
+
+<script>
+(function(){
+  const params = new URLSearchParams(window.location.search);
+  const hostname = location.hostname;
+
+  const allowedDevHosts = ["localhost","127.0.0.1"];
+  const isDev = allowedDevHosts.includes(hostname);
+
+  const adminParam = params.get("admin") === "1";
+
+  if(isDev){
+    localStorage.setItem("notary_admin_preview","true");
+    console.log("Admin Preview Auto-Enabled (Dev Mode)");
+  } else {
+    // In production, ONLY enable admin if explicitly allowed domain is added here
+    const allowedProdAdminDomains = []; // add your staging domain if needed
+    if(allowedProdAdminDomains.includes(hostname) && adminParam){
+      localStorage.setItem("notary_admin_preview","true");
+      console.log("Admin Preview Enabled (Staging)");
+    } else {
+      localStorage.removeItem("notary_admin_preview");
+    }
+  }
+})();
+</script>
+
+
+<script>
+(function(){
+  function renderFatal(title, msg){
+    try{
+      var mount = document.getElementById('root');
+      if(!mount) return;
+      mount.innerHTML = ''
+        + '<div style="min-height:100vh;display:grid;place-items:center;padding:24px;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#f8fafc;">'
+        + ' <div style="max-width:640px;width:100%;background:#fff;border:1px solid #fecaca;border-radius:18px;padding:20px;box-shadow:0 10px 25px rgba(2,6,23,.08);">'
+        + '  <div style="display:flex;gap:12px;align-items:flex-start;">'
+        + '   <div style="width:44px;height:44px;border-radius:14px;background:#fee2e2;display:grid;place-items:center;font-size:20px;">⚠️</div>'
+        + '   <div style="flex:1;">'
+        + '    <div style="font-weight:800;font-size:18px;color:#0f172a;margin-bottom:4px;">'+(title||'App Error')+'</div>'
+        + '    <div style="color:#475569;font-size:13px;line-height:1.4;">'+(msg||'Something went wrong while loading the app.')+'</div>'
+        + '    <details style="margin-top:12px;"><summary style="cursor:pointer;color:#2563eb;font-size:13px;">Show technical details</summary>'
+        + '      <pre style="white-space:pre-wrap;margin-top:8px;font-size:12px;color:#0f172a;background:#f1f5f9;padding:12px;border-radius:12px;border:1px solid #e2e8f0;">'
+        + (window.__NOTARY_LAST_ERROR||'No details')
+        + '</pre>'
+        + '    </details>'
+        + '    <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">'
+        + '      <button id="notary_retry_btn" style="background:#2563eb;color:#fff;border:none;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;">Reload</button>'
+        + '      <button id="notary_reset_btn" style="background:#fff;color:#0f172a;border:1px solid #e2e8f0;border-radius:12px;padding:10px 14px;font-weight:700;cursor:pointer;">Reset Local Data</button>'
+        + '    </div>'
+        + '   </div>'
+        + '  </div>'
+        + ' </div>'
+        + '</div>';
+      setTimeout(function(){
+        var rb=document.getElementById('notary_retry_btn');
+        var sb=document.getElementById('notary_reset_btn');
+        if(rb) rb.onclick=function(){ location.reload(); };
+        if(sb) sb.onclick=function(){
+          try{
+            var keys=['notary_user_profile','notary_appointments','notary_clients','notary_credentials','notary_journal','notary_team','notary_assignments','notary_esignatures','notary_active_trip','notary_onboarded','notary_tour_completed'];
+            keys.forEach(function(k){ localStorage.removeItem(k); });
+          }catch(e){}
+          location.reload();
+        };
+      },0);
+    }catch(e){}
+  }
+
+  window.addEventListener('error', function(ev){
+    try{
+      window.__NOTARY_LAST_ERROR = (ev && ev.error && ev.error.stack) ? ev.error.stack : String(ev.message || ev.error || ev);
+      // If React hasn't mounted yet, show fatal UI.
+      if(!window.__NOTARY_APP_MOUNTED){ renderFatal('App failed to load', 'A script error prevented NotaryOS from starting.'); }
+    }catch(e){}
+  });
+
+  window.addEventListener('unhandledrejection', function(ev){
+    try{
+      window.__NOTARY_LAST_ERROR = (ev && ev.reason && ev.reason.stack) ? ev.reason.stack : String(ev.reason || ev);
+      if(!window.__NOTARY_APP_MOUNTED){ renderFatal('App failed to load', 'A promise error prevented NotaryOS from starting.'); }
+    }catch(e){}
+  });
+
+  // Mark mounted when React renders successfully
+  window.__NOTARY_MARK_MOUNTED = function(){ window.__NOTARY_APP_MOUNTED = true; };
+})();
+</script>
+
 </head>
 <body>
-    <div id="root"></div>
+    <div id="root"><div style="min-height:100vh;display:grid;place-items:center;padding:24px;font-family:system-ui, -apple-system, Segoe UI, Roboto, sans-serif;color:#0f172a;"><div style="max-width:520px;width:100%;background:#ffffff;border:1px solid #e2e8f0;border-radius:18px;padding:20px;box-shadow:0 10px 25px rgba(2,6,23,.08);"><div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;"><div style="width:44px;height:44px;border-radius:14px;background:#e0e7ff;display:grid;place-items:center;font-size:22px;">📜</div><div><div style="font-weight:700;font-size:18px;">NotaryOS</div><div style="color:#64748b;font-size:13px;">Loading…</div></div></div><div style="height:10px;background:#eef2ff;border-radius:999px;overflow:hidden;"><div style="width:55%;height:100%;background:#4f46e5;"></div></div><div style="margin-top:12px;color:#64748b;font-size:12px;">If this takes more than a few seconds, refresh the page.</div></div></div></div>
 
     <script type="text/babel">
         const { useState, useEffect, useMemo, useRef } = React;
@@ -472,6 +564,27 @@ body[data-theme] input, body[data-theme] select, body[data-theme] textarea {
             if (feature === 'pro') return plan === 'pro' || plan === 'team';
 
             return true;
+        };
+
+
+        // --- ADMIN / PREVIEW MODE ---
+        const getAdminPreview = () => {
+            try { return localStorage.getItem('notary_admin_preview') === '1'; } catch(e) { return false; }
+        };
+        const setAdminPreview = (enabled) => {
+            try { localStorage.setItem('notary_admin_preview', enabled ? '1' : '0'); } catch(e) {}
+        };
+        const isAdminPreview = (user) => {
+            // Demo-only admin preview. Enable via Settings or by adding ?admin=1 to the URL once.
+            const urlHasAdmin = (typeof window !== 'undefined') && new URLSearchParams(window.location.search).get('admin') === '1';
+            if (urlHasAdmin) { setAdminPreview(true); return true; }
+            return getAdminPreview() === true;
+        };
+
+        // Unified access check used across the app (paywall + admin preview)
+        const canAccess = (feature, user) => {
+            if (isAdminPreview(user)) return true;
+            return hasFeatureAccess(user, feature);
         };
 
         // Added mock encryption/decryption to prevent ReferenceErrors in Journal
@@ -927,6 +1040,7 @@ body[data-theme] input, body[data-theme] select, body[data-theme] textarea {
 
         const SettingsModal = ({ user, onClose, onSave, onOpenBillingPortal }) => {
             const [data, setData] = useState(user || {});
+            const [adminPreviewEnabled, setAdminPreviewEnabled] = useState(isAdminPreview(user));
 
 
             useEffect(() => { if (typeof applyTheme === "function") applyTheme((user && user.theme) || data.theme); }, []);
@@ -1085,7 +1199,47 @@ body[data-theme] input, body[data-theme] select, body[data-theme] textarea {
                             <div className="theme-surface-muted border theme-border rounded-xl p-4 space-y-3">
                                 
 <div className="rounded-xl border theme-border p-4 bg-white/60 mb-4">
-    <p className="text-xs font-bold theme-text-muted uppercase">Billing</p>
+    
+                            <p className="text-xs font-bold theme-text-muted uppercase mt-1">Preferences</p>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label className="block text-sm font-semibold theme-text mb-1">Theme</label>
+                                    <select
+                                        value={(data.theme || (user && user.theme) || 'default')}
+                                        onChange={(e) => { const v = e.target.value; setData({ ...data, theme: v }); if (typeof applyTheme === 'function') applyTheme(v); }}
+                                        className="w-full px-3 py-2 rounded-lg border theme-border theme-bg theme-text"
+                                    >
+                                        <option value="default">Default</option>
+                                        <option value="dark">Dark</option>
+                                        <option value="classic">Classic</option>
+                                        <option value="midnight">Midnight</option>
+                                    </select>
+                                    <div className="text-xs theme-text-muted mt-1">Applies instantly and saves to your profile.</div>
+                                </div>
+
+                                <div className="rounded-xl border theme-border p-3 theme-bg">
+                                    <div className="flex items-center justify-between gap-3">
+                                        <div>
+                                            <div className="text-sm font-semibold theme-text">Admin Preview</div>
+                                            <div className="text-xs theme-text-muted">Unlock Pro features for testing (demo).</div>
+                                        </div>
+                                        <label className="inline-flex items-center cursor-pointer">
+                                            <input
+                                                type="checkbox"
+                                                className="sr-only"
+                                                checked={adminPreviewEnabled}
+                                                onChange={(e) => { const on = !!e.target.checked; setAdminPreviewEnabled(on); setAdminPreview(on); showToast(on ? 'Admin preview enabled (Pro unlocked)' : 'Admin preview disabled'); }}
+                                            />
+                                            <span className={`w-12 h-7 flex items-center rounded-full p-1 transition-all duration-200 ${adminPreviewEnabled ? 'bg-green-600' : 'bg-gray-300'}`}>
+                                                <span className={`bg-white w-5 h-5 rounded-full shadow transform transition-all duration-200 ${adminPreviewEnabled ? 'translate-x-5' : ''}`}></span>
+                                            </span>
+                                        </label>
+                                    </div>
+                                    <div className="text-xs theme-text-muted mt-2">Tip: add <span className="font-semibold">?admin=1</span> to the URL once to enable automatically.</div>
+                                </div>
+                            </div>
+
+<p className="text-xs font-bold theme-text-muted uppercase">Billing</p>
     <div className="mt-2 flex flex-col gap-2">
         <div className="text-sm theme-text">
             <span className="font-semibold">Current plan:</span> {String(user?.plan || 'free').toUpperCase()}
@@ -1208,7 +1362,7 @@ body[data-theme] input, body[data-theme] select, body[data-theme] textarea {
                 <div className={`w-20 h-20 ${bgClass} ${colorClass} rounded-full flex items-center justify-center mb-6 text-3xl shadow-inner`}><i className={`fas ${icon}`}></i></div>
                 <h3 className="text-xl font-bold text-gray-800 mb-2">{title}</h3>
                 <p className="text-gray-500 max-w-xs mb-8 leading-relaxed text-sm">{description}</p>
-                {onAction && <button onClick={onAction} className={`px-8 py-3 ${colorClass.replace('text', 'bg')} text-white rounded-xl font-bold shadow-lg transform transition-all hover:scale-105 active:scale-95`}>{actionLabel}</button>}
+                {onAction && <button onClick={onAction} className={`${String(colorClass||'').startsWith('theme-') ? 'theme-accent-btn' : (colorClass.replace('text','bg') + ' text-white')} px-8 py-3 rounded-xl font-bold shadow-lg transform transition-all hover:scale-105 active:scale-95`}>{actionLabel}</button>}
             </div>
         );
 
@@ -3493,7 +3647,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
             const [showMileageModal, setShowMileageModal] = useState(false);
             const [editingExpense, setEditingExpense] = useState(null);
             const [editingMileage, setEditingMileage] = useState(null);
-            const [gpsState, setGpsState] = useState({ tracking:false, watchId:null, start:null, last:null, meters:0, startedAt:null });
+            const [gpsState, setGpsState] = useState({ tracking:false, starting:false, watchId:null, start:null, last:null, meters:0, startedAt:null });
 
             useEffect(() => {
                 const load = async () => {
@@ -3609,6 +3763,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
             const startGps = async () => {
                 if (!canAccess('pro', user)) { showToast('Upgrade to Pro for GPS mileage tracking', 'error'); return; }
                 if (!('geolocation' in navigator)) { showToast('GPS not available on this device', 'error'); return; }
+                setGpsState(prev => ({ ...prev, starting: true }));
                 try {
                     const startedAt = new Date().toISOString();
                     const init = await new Promise((resolve, reject) => navigator.geolocation.getCurrentPosition(resolve, reject, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }));
@@ -3622,11 +3777,13 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                     }, (err) => {
                         showToast('GPS error: ' + (err && err.message ? err.message : 'Unknown'), 'error');
                     }, { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 });
-                    setGpsState({ tracking: true, watchId, start, last: start, meters: 0, startedAt });
+                    setGpsState({ tracking: true, starting: false, watchId, start, last: start, meters: 0, startedAt });
                     showToast('GPS tracking started');
                     track('gps_mileage_start', {});
                 } catch (e) {
                     showToast('Unable to start GPS tracking', 'error');
+                } finally {
+                    setGpsState(prev => ({ ...prev, starting: false }));
                 }
             };
 
@@ -3644,7 +3801,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                 };
                 await DataManager.save('notary_mileage', trip);
                 setMileage(await DataManager.get('notary_mileage'));
-                setGpsState({ tracking:false, watchId:null, start:null, last:null, meters:0, startedAt:null });
+                setGpsState({ tracking:false, starting:false, watchId:null, start:null, last:null, meters:0, startedAt:null });
                 showToast('GPS trip saved');
                 track('gps_mileage_stop_save', { miles: trip.miles });
             };
@@ -3666,8 +3823,8 @@ return (
                                         </button>
                                     </div>
                                 ) : (
-                                    <button onClick={startGps} className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold shadow-lg transition-all duration-200">
-                                        <i className="fas fa-location-arrow mr-2"></i>Start Trip
+                                    <button onClick={startGps} disabled={gpsState.starting} className={`bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-semibold shadow-lg transition-all duration-200 ${gpsState.starting ? 'opacity-60 cursor-not-allowed' : ''}`}>
+                                        <i className={`fas ${gpsState.starting ? 'fa-spinner fa-spin' : 'fa-location-arrow'} mr-2`}></i>{gpsState.starting ? 'Starting…' : 'Start Trip'}
                                     </button>
                                 )
                             )}
@@ -4113,6 +4270,27 @@ return (
 
         const App = () => {
             const [user, setUser] = useState(() => safeParse(safeStorageGet('notary_user_profile', null), null));
+
+            // Ensure trialEndsAt exists for free users (first run)
+            useEffect(() => {
+                if (!user) return;
+                const plan = (user.plan || 'free');
+                if (plan !== 'free') return;
+                if (user.trialEndsAt) return;
+                const trialEndsAt = Date.now() + (TRIAL_DAYS * 24 * 60 * 60 * 1000);
+                const next = { ...user, trialEndsAt };
+                setUser(next);
+                try { localStorage.setItem('notary_user_profile', JSON.stringify(next)); } catch(e) {}
+            }, []);
+
+            const isTrialExpired = useMemo(() => {
+                if (!user) return false;
+                const plan = (user.plan || 'free');
+                if (plan !== 'free') return false;
+                const te = user.trialEndsAt;
+                if (!te) return false;
+                return Date.now() > te;
+            }, [user]);
             const [currentView, setCurrentView] = useState(user ? 'dashboard' : 'landing');
             const [appointments, setAppointments] = useState([]);
             const [credentials, setCredentials] = useState([]);
@@ -4239,6 +4417,23 @@ const handleUpgrade = (targetPlan = 'pro') => {
     const link = (STRIPE_PAYMENT_LINKS && STRIPE_PAYMENT_LINKS[planKey]) || STRIPE_PAYMENT_LINK;
 
     if (!link) {
+        // Allow bypass for testing when Admin Preview is enabled
+        if (adminPreviewEnabled) {
+            setUser(prev => {
+                const next = { ...(prev || {}) };
+                next.plan = planKey;
+                next.isPaid = true;
+                next.paid = true;
+                next.paidAt = next.paidAt || new Date().toISOString();
+                // Extend trial far into the future so nothing locks during testing
+                next.trialEndsAt = next.trialEndsAt || (Date.now() + 365 * 24 * 60 * 60 * 1000);
+                return next;
+            });
+            try { saveUserProfile({ plan: planKey, isPaid: true, paid: true, paidAt: new Date().toISOString() }); } catch(e) {}
+            showToast(`Admin preview: unlocked ${planKey.toUpperCase()} (Stripe bypass)`);
+            return;
+        }
+
         showToast("Stripe Checkout not configured. Add your Stripe Payment Link in STRIPE_PAYMENT_LINK / STRIPE_PAYMENT_LINKS.");
         return;
     }
@@ -4358,7 +4553,22 @@ const handleUpgrade = (targetPlan = 'pro') => {
                 }
             };
 
-            if (!user && currentView !== 'landing' && currentView !== 'auth') { return <LandingPage onNavigate={() => setCurrentView('auth')} />; }
+            if (!user && currentView !== 'landing' && currentView !== 'auth') { 
+                return <LandingPage onNavigate={() => setCurrentView('auth')} />; 
+            }
+
+            // Trial enforcement: lock app if trial is expired and user is still on free plan.
+            if (user && isTrialExpired && currentView !== 'landing' && currentView !== 'auth') {
+                return (
+                    <TrialExpiredScreen
+                        trialEndsAt={user.trialEndsAt}
+                        onUpgrade={() => handleUpgrade('pro')}
+                        onOpenBillingPortal={openBillingPortal}
+                        onLogout={handleLogout}
+                    />
+                );
+            }
+
             if (currentView === 'landing' || currentView === 'auth') return renderView();
 
             return (
@@ -4419,6 +4629,7 @@ const handleUpgrade = (targetPlan = 'pro') => {
                     <App />
                 </AppErrorBoundary>
             );
+            try { window.__NOTARY_MARK_MOUNTED && window.__NOTARY_MARK_MOUNTED(); } catch(e){}
         } catch (e) {
             const mount = document.getElementById('root');
             if (mount) {
@@ -4429,4 +4640,6 @@ const handleUpgrade = (targetPlan = 'pro') => {
     </script>
 </body>
 </html>
+
+
 
