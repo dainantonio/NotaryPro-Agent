@@ -537,10 +537,10 @@ html, body { overflow-x: hidden; }
 
 
 /* Deduplicate desktop CTAs */
-@media (min-width: 900px){
-  .desktop-hide{ display:none !important; }
-}
 
+
+
+@media (min-width: 640px){ .desktop-hide{ display:none !important; } }
 </style>
 
 
@@ -844,6 +844,26 @@ html, body { overflow-x: hidden; }
                 return fallback;
             }
         };
+
+        const viewLabel = (key) => {
+            const map = {
+                dashboard: 'Dashboard',
+                schedule: 'Schedule',
+                journal: 'eJournal',
+                clients: 'Client Directory',
+                finances: 'Finances',
+                credentials: 'Credentials',
+                compliance: 'Compliance',
+                training: 'Training',
+                trainer: 'Training',
+                settings: 'Settings',
+            };
+            if (map[key]) return map[key];
+            const s = String(key || '').replace(/[-_]/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2');
+            return s.split(' ').map(w => w ? (w[0].toUpperCase()+w.slice(1)) : '').join(' ').trim();
+        };
+
+
 
         // --- ONBOARDING PROGRESS (Phase 4, Step 1: Profile) ---
         const ONBOARDING_KEY = 'notary_onboarding_progress_v1';
@@ -3091,8 +3111,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                             <div className="w-14 h-14 mx-auto rounded-2xl theme-surface-muted flex items-center justify-center mb-3"><i className="fas fa-users theme-text-muted text-xl"></i></div>
                             <h4 className="theme-text text-lg font-semibold">No clients found</h4>
                             <p className="theme-text-muted text-sm mt-1">Build your CRM by adding your first client profile.</p>
-                            <button onClick={() => { setEditingClient(null); setShowForm(true); }} className="mt-4 theme-accent-btn px-4 py-2 rounded-lg font-semibold">Add Client</button>
-                        </div>
+                            </div>
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {filteredClients.map(c => {
@@ -4671,7 +4690,7 @@ return (
 
             useEffect(() => {
                 if (isHandlingPopRef.current) return;
-                try { history.pushState({ view: currentView }, '', `#${currentView}`); } catch (e) {}
+                try { history.pushState({ view: currentView }, '', `#${viewLabel(currentView)}`); } catch (e) {}
             }, [currentView]);
 useEffect(() => {
                 DataManager.get('notary_appointments').then(setAppointments);
@@ -4930,7 +4949,7 @@ const handleUpgrade = (targetPlan = 'pro') => {
                     )}
                     
                     <Sidebar 
-                        currentView={currentView} 
+                        currentView={viewLabel(currentView)} 
                         setView={setCurrentView} 
                         isOpen={showMobileMenu} 
                         onClose={() => setShowMobileMenu(false)} 
@@ -4945,18 +4964,8 @@ const handleUpgrade = (targetPlan = 'pro') => {
                     <main className="flex-1 flex flex-col app-viewport md:ml-64 relative theme-app-bg no-x-overflow px-safe">
                         <Header title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} onNotify={handleNotify} onSyncNow={handleSyncNow} />
                         <div className="flex-1 overflow-y-auto relative no-x-overflow pb-safe" style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}><div className="app-container">{renderView()}</div></div>
-                        <MobileNav currentView={currentView} setView={setCurrentView} onOpenMenu={() => setShowMobileMenu(true)} user={user} onLockedFeature={handleLockedFeature} />
+                        <MobileNav currentView={viewLabel(currentView)} setView={setCurrentView} onOpenMenu={() => setShowMobileMenu(true)} user={user} onLockedFeature={handleLockedFeature} />
                     
-{/* Quick Add FAB (mobile) */}
-<button className="btn btn-primary fab desktop-hide" title="Quick Add"
-  onClick={() => {
-    // prioritize most common action
-    if(setActiveView){ setActiveView('appointments'); }
-    window.__toast && window.__toast('Quick Add: create an appointment', 'info');
-    setShowQuickAdd && setShowQuickAdd(true);
-  }}>
-  <span style={{fontSize:24, lineHeight:1}}>+</span>
-</button>
 
 </main>
                 </div>
