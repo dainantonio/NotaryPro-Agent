@@ -845,6 +845,54 @@ html, body { overflow-x: hidden; }
             }
         };
 
+        // --- ONBOARDING PROGRESS (Phase 4, Step 1: Profile) ---
+        const ONBOARDING_KEY = 'notary_onboarding_progress_v1';
+
+        const computeProfileProgress = (profile) => {
+            const name = (profile && (profile.name || profile.displayName)) ? (profile.name || profile.displayName) : '';
+            const phone = (profile && profile.phone) ? String(profile.phone).trim() : '';
+            const completed = !!name && !!phone;
+            return { completed, name: !!name, phone: !!phone };
+        };
+
+        const loadOnboardingProgress = () => {
+            return safeParse(safeStorageGet(ONBOARDING_KEY, null), {
+                profile: { completed: false, completedAt: null }
+            });
+        };
+
+        const persistOnboardingProgress = (userProfile) => {
+            const existing = loadOnboardingProgress();
+            const p = computeProfileProgress(userProfile);
+            const now = Date.now();
+
+            const next = {
+                ...existing,
+                updatedAt: now,
+                profile: {
+                    completed: p.completed,
+                    completedAt: p.completed ? (existing?.profile?.completedAt || now) : null
+                }
+            };
+
+            safeStorageSet(ONBOARDING_KEY, JSON.stringify(next));
+
+            // Persist onto the user profile as well (for cross-device persistence when/if cloud auth is used)
+            const mergedUser = {
+                ...userProfile,
+                onboarding: {
+                    ...(userProfile && userProfile.onboarding ? userProfile.onboarding : {}),
+                    profile: next.profile,
+                    updatedAt: now,
+                    version: 1
+                }
+            };
+
+            return { nextProgress: next, mergedUser };
+        };
+
+
+
         // --- DATA MANAGER ---
         const DataManager = {
             isCloud: () => typeof firebase !== 'undefined' && firebase.auth && firebase.auth().currentUser !== null,
@@ -1379,6 +1427,16 @@ html, body { overflow-x: hidden; }
                                     <label className="block text-xs font-bold theme-text-muted uppercase mb-1">Your Name</label>
                                     <input className="w-full px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" value={data.name || ''} onChange={e => setData({ ...data, name: e.target.value })} />
                                 </div>
+                                <div>
+                                    <label className="block text-xs font-bold theme-text-muted uppercase mb-1">Phone Number</label>
+                                    <input className="w-full px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text"
+                                        inputMode="tel"
+                                        placeholder="(555) 555-5555"
+                                        value={data.phone || ''}
+                                        onChange={e => setData({ ...data, phone: e.target.value })} />
+                                    <div className="theme-text-muted" style={{fontSize:12, marginTop:6}}>Used for confirmations and exports.</div>
+                                </div>
+
                                 <div>
                                     <label className="block text-xs font-bold theme-text-muted uppercase mb-1">Business Name</label>
                                     <input className="w-full px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" value={data.businessName || ''} onChange={e => setData({ ...data, businessName: e.target.value })} />
@@ -3149,7 +3207,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
             return <div className="h-64 w-full"><canvas ref={canvasRef}></canvas></div>;
         };
 
-        const Dashboard = ({ appointments, credentials, setView, user }) => {
+        const Dashboard = ({ appointments, credentials, setView, user, onOpenSettings }) => {
             const now = new Date();
             const hour = now.getHours();
             const greeting = hour < 12 ? 'Good Morning' : hour < 18 ? 'Good Afternoon' : 'Good Evening';
@@ -3203,6 +3261,31 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                     <div className="overflow-hidden">
                         <h2 className="text-3xl font-bold theme-text truncate">{greeting}, {user?.name || 'Notary'}.</h2>
                         <p className="theme-text-muted mt-1 truncate">{dateLabel}</p>
+
+                    {(() => {
+                        const p = computeProfileProgress(user);
+                        if (p.completed) return null;
+                        return (
+                            <div className="card">
+                                <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap'}}>
+                                    <div>
+                                        <div style={{fontWeight:900}}>Complete Your Profile</div>
+                                        <div className="theme-text-muted" style={{fontSize:13}}>Add your name and phone so confirmations and exports are ready when you are.</div>
+                                    </div>
+                                    <button className="btn btn-primary" style={{height:40}} onClick={() => { if(onOpenSettings) onOpenSettings(); }}>
+                                        Update Profile
+                                    </button>
+                                </div>
+                                <div style={{marginTop:10}}>
+                                    <div className="net-pill" title="Profile requirements">
+                                        <span className="net-dot"></span>
+                                        Name: {p.name ? '✓' : '—'} • Phone: {p.phone ? '✓' : '—'}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })()}
+
                     </div>
 
                     <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -4613,8 +4696,9 @@ useEffect(() => {
 
             const handleUpdateProfile = (updatedData) => {
                 const newUser = { ...user, ...updatedData };
-                setUser(newUser);
-                localStorage.setItem('notary_user_profile', JSON.stringify(newUser));
+                const { mergedUser } = persistOnboardingProgress(newUser);
+                setUser(mergedUser);
+                localStorage.setItem('notary_user_profile', JSON.stringify(mergedUser));
                 showToast("Profile Saved");
             };
 
@@ -4631,8 +4715,11 @@ const handleLogin = (profile) => {
     }
 
     const normalizedProfile = { ...profile, plan, trialEndsAt };
-    localStorage.setItem('notary_user_profile', JSON.stringify(normalizedProfile));
-    setUser(normalizedProfile);
+
+    const persisted = persistOnboardingProgress(normalizedProfile);
+    const normalizedWithOnboarding = persisted.mergedUser;
+    localStorage.setItem('notary_user_profile', JSON.stringify(normalizedWithOnboarding));
+    setUser(normalizedWithOnboarding);
     setCurrentView('dashboard');
     // Onboarding triggers will handle the rest via useEffect
     showToast("Welcome Back!");
@@ -4779,7 +4866,7 @@ const handleUpgrade = (targetPlan = 'pro') => {
                 switch(currentView) {
                     case 'landing': return <LandingPage onNavigate={() => setCurrentView('auth')} />;
                     case 'auth': return <AuthScreen onAuth={handleLogin} onBack={() => setCurrentView('landing')} />;
-                    case 'dashboard': return <Dashboard appointments={appointments} credentials={credentials} setView={setCurrentView} user={user} />;
+                    case 'dashboard': return <Dashboard appointments={appointments} credentials={credentials} setView={setCurrentView} user={user} onOpenSettings={() => setShowSettings(true)} />;
                     case 'schedule': return <Schedule appointments={appointments} setView={setCurrentView} onMarkPaid={handleMarkPaid} onEdit={handleEditAppt} onAdd={handleAddApptWithDate} />;
                     case 'Add Appointment': return <AppointmentForm onSave={handleSaveAppt} onCancel={() => { setEditingAppointment(null); setCurrentView('schedule'); }} initialData={editingAppointment} />;
                     case 'clients': return <Clients />;
