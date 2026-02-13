@@ -346,6 +346,28 @@ body[data-theme] input, body[data-theme] select, body[data-theme] textarea {
   border-color: var(--border);
 }
 
+
+
+        /* --- Native-app layout hardening (mobile + desktop) --- */
+        html, body, #root { height: 100%; width: 100%; }
+        body { overflow-x: hidden; overscroll-behavior-y: none; -webkit-font-smoothing: antialiased; }
+        /* Use dynamic viewport on mobile (prevents bottom cut-off) */
+        .app-viewport { height: 100dvh; min-height: 100vh; }
+        /* Centered page container used across views */
+        .app-container { width: 100%; max-width: 1200px; margin: 0 auto; padding: 16px; }
+        @media (min-width: 768px) { .app-container { padding: 24px; } }
+
+        /* Safe-area padding for notches + iOS home indicator */
+        .pt-safe { padding-top: env(safe-area-inset-top); }
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+        .px-safe { padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right); }
+
+        /* Ensure long content doesn't force horizontal scroll */
+        .no-x-overflow { overflow-x: hidden; }
+        .minw0 { min-width: 0; }
+        /* Allow tables/lists to scroll horizontally if needed */
+        .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; width: 100%; }
+
 </style>
 </head>
 <body>
@@ -1025,7 +1047,19 @@ body[data-theme] input, body[data-theme] select, body[data-theme] textarea {
                                 <div>
                                     <label className="block text-xs font-bold theme-text-muted uppercase mb-1">Business Name</label>
                                     <input className="w-full px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" value={data.businessName || ''} onChange={e => setData({ ...data, businessName: e.target.value })} />
+                                
+                                <div>
+                                    <label className="block text-xs font-bold theme-text-muted uppercase mb-1">Theme</label>
+                                    <select className="w-full px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text"
+                                        value={data.theme || 'default'}
+                                        onChange={e => { const t=e.target.value; setData({ ...data, theme: t }); try { if (typeof applyTheme==='function') applyTheme(t); } catch(err){} }}>
+                                        <option value="default">Default</option>
+                                        <option value="dark">Dark</option>
+                                        <option value="classic">Classic</option>
+                                        <option value="midnight">Midnight</option>
+                                    </select>
                                 </div>
+</div>
                             </div>
 
                             <div className="theme-surface-muted border theme-border rounded-xl p-4">
@@ -2416,7 +2450,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
             return (
                 <>
                     <div className={`fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden ${isOpen ? 'block' : 'hidden'}`} onClick={onClose}></div>
-                    <div className={`fixed inset-y-0 left-0 bg-slate-950 text-white z-50 transform transition-all duration-300 ease-in-out lg:static lg:flex lg:flex-col border-r border-slate-800/60 ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${isCollapsed ? 'w-20' : 'w-72'} lg:translate-x-0 shadow-2xl lg:shadow-none`}>
+                    <div className={`fixed inset-y-0 left-0 pb-safe px-safe overflow-y-auto bg-slate-950 text-white z-50 transform transition-all duration-300 ease-in-out lg:static lg:flex lg:flex-col border-r border-slate-800/60 ${isOpen ? 'translate-x-0' : '-translate-x-full'} ${isCollapsed ? 'w-20' : 'w-72'} lg:translate-x-0 shadow-2xl lg:shadow-none`}>
                         <div className="px-6 py-5 flex justify-between items-center border-b border-slate-800/60 h-18">
                             {!isCollapsed && (
                                 <div className="flex items-center gap-2.5">
@@ -2674,8 +2708,8 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                                     <input name="name" defaultValue={editingClient?.name || ''} placeholder="Full Name" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" required />
                                     <input name="phone" defaultValue={editingClient?.phone || ''} placeholder="Phone" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
                                     <input name="email" defaultValue={editingClient?.email || ''} placeholder="Email" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text md:col-span-2" />
-                                    <input name="address" defaultValue={editingClient?.address || ''} placeholder="Address" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text md:col-span-2" />
-                                    <textarea name="notes" defaultValue={editingClient?.notes || ''} placeholder="Notes" rows={3} className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text md:col-span-2"></textarea>
+                                    <input name="address" defaultValue={editingClient?.address || ''} placeholder="Address" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text md:col-span-2" defaultValue={editingEntry ? (editingEntry.address || '') : ''} />
+                                    <textarea name="notes" defaultValue={editingClient?.notes || ''} placeholder="Notes" rows={3} className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text md:col-span-2">{editingEntry ? (editingEntry.notes || "") : ""}</textarea>
                                 </div>
                                 <div className="flex justify-end gap-2">
                                     <button type="button" onClick={() => { setShowForm(false); setEditingClient(null); }} className="px-4 py-2 rounded-lg border theme-border theme-text">Cancel</button>
@@ -3302,14 +3336,16 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
             const [entries, setEntries] = useState([]);
             const [showForm, setShowForm] = useState(false);
             const [search, setSearch] = useState('');
+            const [editingEntry, setEditingEntry] = useState(null);
 
             useEffect(() => { DataManager.get('notary_journal').then(setEntries); }, []);
 
             const handleSave = async (e) => {
                 e.preventDefault();
                 const fd = new FormData(e.target);
-                await DataManager.save('notary_journal', {
-                    id: Date.now().toString(),
+                const now = Date.now();
+                const payload = {
+                    id: (editingEntry && (editingEntry.id || editingEntry._id)) ? (editingEntry.id || editingEntry._id) : Date.now().toString(),
                     date: fd.get('date'),
                     time: fd.get('time'),
                     signer: fd.get('signer'),
@@ -3318,11 +3354,14 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                     idNumber: fd.get('idNumber'),
                     docType: fd.get('docType'),
                     fee: fd.get('fee'),
-                    notes: fd.get('notes')
-                });
+                    notes: fd.get('notes'),
+                    updatedAt: now
+                };
+                await DataManager.save('notary_journal', payload);
                 setShowForm(false);
+                setEditingEntry(null);
                 setEntries(await DataManager.get('notary_journal'));
-                showToast('Entry Logged');
+                showToast(editingEntry ? 'Entry Updated' : 'Entry Logged');
             };
 
             const handleExport = () => {
@@ -3336,6 +3375,15 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                     );
                 }
             };
+
+            const startEditEntry = (entry) => { setEditingEntry(entry); setShowForm(true); track('ejournal_edit_open', {}); };
+            const deleteEntry = async (id) => { 
+                await DataManager.delete('notary_journal', id); 
+                setEntries(await DataManager.get('notary_journal')); 
+                showToast('Entry Deleted'); 
+                track('ejournal_delete', {});
+            };
+
 
             const filtered = entries.filter(e => (e.signer || '').toLowerCase().includes(search.toLowerCase()));
 
@@ -3371,7 +3419,13 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                                         <div className="col-span-3 font-semibold theme-text truncate">{entry.signer}</div>
                                         <div className="col-span-3 theme-text-muted truncate">{entry.docType || 'Notary Service'}</div>
                                         <div className="col-span-2 theme-text-muted truncate">{entry.idType || "Driver's License"}</div>
-                                        <div className="col-span-2 text-right font-semibold theme-text">${parseFloat(entry.fee || 0).toFixed(2)}</div>
+                                        <div className="col-span-2 text-right">
+                                            <div className="font-semibold theme-text">${parseFloat(entry.fee || 0).toFixed(2)}</div>
+                                            <div className="mt-1 flex justify-end gap-2 text-xs">
+                                                <button onClick={() => startEditEntry(entry)} className="px-2 py-1 rounded-md border theme-border theme-text hover:theme-surface-muted"><i className="fas fa-pen"></i></button>
+                                                <button onClick={() => deleteEntry(entry.id)} className="px-2 py-1 rounded-md border theme-border text-red-600 hover:bg-red-50"><i className="fas fa-trash"></i></button>
+                                            </div>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -3385,6 +3439,10 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                                         </div>
                                         <p className="font-mono text-xs theme-text-muted mt-1">{entry.date} • {entry.time || '—'}</p>
                                         <p className="text-sm theme-text-muted mt-1 truncate">{entry.docType || 'Notary Service'}</p>
+                                        <div className="mt-3 flex gap-2">
+                                            <button onClick={() => startEditEntry(entry)} className="flex-1 px-3 py-2 rounded-lg border theme-border theme-text font-semibold text-sm"><i className="fas fa-pen mr-2"></i>Edit</button>
+                                            <button onClick={() => deleteEntry(entry.id)} className="px-3 py-2 rounded-lg border theme-border text-red-600 font-semibold text-sm"><i className="fas fa-trash"></i></button>
+                                        </div>
                                         <p className="text-xs theme-text-muted mt-1">ID: {entry.idType || "Driver's License"}</p>
                                     </div>
                                 ))}
@@ -3396,31 +3454,31 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                         <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[100] flex items-center justify-center p-4">
                             <form onSubmit={handleSave} className="w-full max-w-2xl theme-surface rounded-2xl shadow-2xl border theme-border p-6 space-y-4">
                                 <div className="flex justify-between items-center">
-                                    <h4 className="text-xl font-bold theme-text">New eJournal Entry</h4>
-                                    <button type="button" onClick={() => setShowForm(false)} className="theme-text-muted"><i className="fas fa-times"></i></button>
+                                    <h4 className="text-xl font-bold theme-text">{editingEntry ? 'Edit eJournal Entry' : 'New eJournal Entry'}</h4>
+                                    <button type="button" onClick={() => { setShowForm(false); setEditingEntry(null); }} className="theme-text-muted"><i className="fas fa-times"></i></button>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <input required name="date" type="date" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
-                                    <input name="time" type="time" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                    <input required name="date" type="date" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" defaultValue={editingEntry ? (editingEntry.date || '') : ''} />
+                                    <input name="time" type="time" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" defaultValue={editingEntry ? (editingEntry.time || '') : ''} />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <input required name="signer" placeholder="Signer Name" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                    <input required name="signer" placeholder="Signer Name" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" defaultValue={editingEntry ? (editingEntry.signer || '') : ''} />
                                     <input name="address" placeholder="Signer Address" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <select name="idType" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text">
+                                    <select name="idType" defaultValue={editingEntry ? (editingEntry.idType || "Driver\'s License") : "Driver\'s License"} className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text">
                                         <option>Driver's License</option><option>Passport</option><option>State ID</option><option>Military ID</option>
                                     </select>
-                                    <input name="idNumber" placeholder="ID Number (last 4 digits)" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                    <input name="idNumber" placeholder="ID Number (last 4 digits)" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" defaultValue={editingEntry ? (editingEntry.idNumber || '') : ''} />
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                    <input name="docType" placeholder="Document Type" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
-                                    <input name="fee" type="number" step="0.01" placeholder="Fee" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" />
+                                    <input name="docType" placeholder="Document Type" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" defaultValue={editingEntry ? (editingEntry.docType || '') : ''} />
+                                    <input name="fee" type="number" step="0.01" placeholder="Fee" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text" defaultValue={editingEntry ? (editingEntry.fee || '') : ''} />
                                 </div>
                                 <textarea name="notes" placeholder="Additional notes or observations..." rows="2" className="px-3 py-2.5 rounded-lg border theme-border theme-app-bg theme-text"></textarea>
                                 <div className="flex justify-end gap-2">
-                                    <button type="button" onClick={() => setShowForm(false)} className="px-4 py-2 rounded-lg border theme-border theme-text">Cancel</button>
-                                    <button className="theme-accent-btn px-4 py-2 rounded-lg font-semibold">Save Entry</button>
+                                    <button type="button" onClick={() => { setShowForm(false); setEditingEntry(null); }} className="px-4 py-2 rounded-lg border theme-border theme-text">Cancel</button>
+                                    <button className="theme-accent-btn px-4 py-2 rounded-lg font-semibold">{editingEntry ? "Update Entry" : "Save Entry"}</button>
                                 </div>
                             </form>
                         </div>
@@ -4062,7 +4120,49 @@ return (
             const [paywallFeature, setPaywallFeature] = useState('pro');
             const theme = 'default';
 
+            
+            // In-app Back Button Control (PWA-friendly)
+            const isHandlingPopRef = useRef(false);
+            const currentViewRef = useRef(currentView);
+            const overlayRef = useRef({ ai:false, settings:false, pricing:false, menu:false });
+
+            useEffect(() => { currentViewRef.current = currentView; }, [currentView]);
+            useEffect(() => { overlayRef.current.ai = showAIModal; }, [showAIModal]);
+            useEffect(() => { overlayRef.current.settings = showSettings; }, [showSettings]);
+            useEffect(() => { overlayRef.current.pricing = showPricing; }, [showPricing]);
+            useEffect(() => { overlayRef.current.menu = showMobileMenu; }, [showMobileMenu]);
+
             useEffect(() => {
+                try { history.replaceState({ view: currentViewRef.current }, '', `#${currentViewRef.current}`); } catch (e) {}
+                const onPopState = (ev) => {
+                    // Close overlays/modals first (back should step "inside" the app, not exit)
+                    if (overlayRef.current.ai) { setShowAIModal(false); try { history.pushState({ view: currentViewRef.current }, '', `#${currentViewRef.current}`); } catch (e) {} return; }
+                    if (overlayRef.current.settings) { setShowSettings(false); try { history.pushState({ view: currentViewRef.current }, '', `#${currentViewRef.current}`); } catch (e) {} return; }
+                    if (overlayRef.current.pricing) { setShowPricing(false); try { history.pushState({ view: currentViewRef.current }, '', `#${currentViewRef.current}`); } catch (e) {} return; }
+                    if (overlayRef.current.menu) { setShowMobileMenu(false); try { history.pushState({ view: currentViewRef.current }, '', `#${currentViewRef.current}`); } catch (e) {} return; }
+
+                    const v = ev && ev.state && ev.state.view ? ev.state.view : null;
+                    if (v) {
+                        isHandlingPopRef.current = true;
+                        setCurrentView(v);
+                        setTimeout(() => { isHandlingPopRef.current = false; }, 0);
+                    } else {
+                        // If there is no view state, keep the app open and return to dashboard.
+                        isHandlingPopRef.current = true;
+                        setCurrentView('dashboard');
+                        try { history.pushState({ view: 'dashboard' }, '', '#dashboard'); } catch (e) {}
+                        setTimeout(() => { isHandlingPopRef.current = false; }, 0);
+                    }
+                };
+                window.addEventListener('popstate', onPopState);
+                return () => window.removeEventListener('popstate', onPopState);
+            }, []);
+
+            useEffect(() => {
+                if (isHandlingPopRef.current) return;
+                try { history.pushState({ view: currentView }, '', `#${currentView}`); } catch (e) {}
+            }, [currentView]);
+useEffect(() => {
                 DataManager.get('notary_appointments').then(setAppointments);
                 DataManager.get('notary_credentials').then(setCredentials);
                 
@@ -4295,9 +4395,9 @@ const handleUpgrade = (targetPlan = 'pro') => {
                         onLockedFeature={handleLockedFeature} 
                         onSettings={() => setShowSettings(true)}
                     />
-                    <main className="flex-1 flex flex-col h-screen md:ml-64 relative theme-app-bg">
+                    <main className="flex-1 flex flex-col app-viewport md:ml-64 relative theme-app-bg no-x-overflow px-safe">
                         <Header title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} onNotify={handleNotify} onSyncNow={handleSyncNow} />
-                        <div className="flex-1 overflow-y-auto relative">{renderView()}</div>
+                        <div className="flex-1 overflow-y-auto relative no-x-overflow pb-safe" style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}><div className="app-container">{renderView()}</div></div>
                         <MobileNav currentView={currentView} setView={setCurrentView} onOpenMenu={() => setShowMobileMenu(true)} user={user} onLockedFeature={handleLockedFeature} />
                     </main>
                 </div>
@@ -4321,3 +4421,4 @@ const handleUpgrade = (targetPlan = 'pro') => {
     </script>
 </body>
 </html>
+
