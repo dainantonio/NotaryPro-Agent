@@ -541,6 +541,89 @@ html, body { overflow-x: hidden; }
 
 
 @media (min-width: 640px){ .desktop-hide{ display:none !important; } }
+
+
+
+/* =========================
+   UX-1 POLISH (Hybrid B: "You're in good hands")
+   Visual-only: spacing, typography, surfaces, buttons
+   ========================= */
+
+html, body { height: 100%; }
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  background: radial-gradient(1200px 700px at 15% 0%, rgba(59,130,246,0.12), transparent 55%),
+              radial-gradient(900px 600px at 100% 0%, rgba(16,185,129,0.10), transparent 55%),
+              var(--app-bg);
+}
+
+/* Section rhythm */
+.section-title {
+  letter-spacing: -0.01em;
+  font-weight: 900;
+  margin-top: 18px;
+  margin-bottom: 10px;
+}
+.theme-text-muted { line-height: 1.4; }
+
+/* Card hierarchy */
+.card {
+  border-radius: 18px !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: var(--shadow) !important;
+  backdrop-filter: saturate(120%) blur(6px);
+}
+.card-tight {
+  border-radius: 16px !important;
+  box-shadow: 0 10px 22px rgba(0,0,0,.10);
+}
+
+/* Typography */
+h1, .page-title, .headline { letter-spacing: -0.02em; }
+h1 { font-weight: 900; }
+
+/* Buttons: calmer enterprise */
+.btn {
+  border-radius: 14px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.01em;
+  transition: transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease, opacity .12s ease;
+}
+.btn:active { transform: translateY(1px) scale(.99); }
+.btn-primary { box-shadow: 0 14px 26px rgba(59,130,246,.22); }
+.btn-primary:hover { box-shadow: 0 18px 34px rgba(59,130,246,.28); }
+.btn-secondary:hover { box-shadow: 0 12px 22px rgba(0,0,0,.14); }
+
+/* Inputs */
+input, select, textarea, .theme-input { border-radius: 14px !important; }
+input:focus, select:focus, textarea:focus, .theme-input:focus{
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(59,130,246,.16);
+  border-color: rgba(59,130,246,.55);
+}
+
+/* Pills + badges */
+.net-pill{
+  border-radius: 999px !important;
+  padding: 8px 12px !important;
+  font-weight: 900 !important;
+}
+
+/* Reduce visual noise on dividers */
+hr, .divider{ border-color: rgba(255,255,255,.08) !important; }
+
+/* Mobile comfort */
+@media (max-width: 480px){
+  .card{ border-radius: 16px !important; }
+  .btn{ border-radius: 14px !important; }
+  .section-title{ margin-top: 14px; }
+}
+
+/* =========================
+   End UX-1 POLISH
+   ========================= */
 </style>
 
 
@@ -876,8 +959,33 @@ html, body { overflow-x: hidden; }
             };
         };
 
-        const SetupChecklistCard = ({ user, appointments, setView, onOpenSettings }) => {
-            const c = computeSetupChecklistReadOnly({ user, appointments });
+        
+        const persistSetupChecklistLocal = (user, appointments) => {
+            try{
+                const computed = computeSetupChecklistReadOnly({ user, appointments });
+                const payload = {
+                    version: 1,
+                    updatedAt: Date.now(),
+                    steps: computed
+                };
+                localStorage.setItem('notary_setup_checklist_v1', JSON.stringify(payload));
+                return payload;
+            }catch(e){
+                return null;
+            }
+        };
+
+        const markExportedOnce = () => {
+            try{ localStorage.setItem('notary_exported_once','true'); }catch(e){}
+        };
+
+        const markGpsEnabled = () => {
+            try{ localStorage.setItem('notary_gps_enabled','true'); }catch(e){}
+        };
+
+const SetupChecklistCard = ({ user, appointments, setView, onOpenSettings }) => {
+            const persisted = safeParse(localStorage.getItem('notary_setup_checklist_v1'), null);
+            const c = (persisted && persisted.steps) ? persisted.steps : computeSetupChecklistReadOnly({ user, appointments });
 
             const steps = [
                 { key:'profile', title:'Profile', subtitle:'Name + company', done:c.profile.done,
@@ -4177,7 +4285,9 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                         const head = rows.slice(0,2);
                         const tail = rows.slice(-26);
                         exportCSV(head.concat(tail), `notaryos_expenses_PREVIEW_${new Date().toISOString().split('T')[0]}.csv`);
+                        markExportedOnce();
                         showToast('Exported preview CSV (watermarked). Upgrade for full export.', 'info');
+                        persistSetupChecklistLocal(user, appointments);
                         return;
                     }
                     exportCSV([['Date','Category','Description','Amount']].concat(expenses.map(e => [e.date||'', e.category||'', e.desc||'', e.amount||''])),
@@ -4223,7 +4333,9 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                         showToast('GPS error: ' + (err && err.message ? err.message : 'Unknown'), 'error');
                     }, { enableHighAccuracy: true, maximumAge: 2000, timeout: 20000 });
                     setGpsState({ tracking: true, starting: false, watchId, start, last: start, meters: 0, startedAt });
+                    markGpsEnabled();
                     showToast('GPS tracking started');
+                    persistSetupChecklistLocal(user, appointments);
                     track('gps_mileage_start', {});
                 } catch (e) {
                     showToast('Unable to start GPS tracking', 'error');
