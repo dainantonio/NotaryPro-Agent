@@ -46,8 +46,13 @@
             messagingSenderId: "660325303334",
             appId: "1:660325303334:web:bb0f062fd4da8c7fca12e7"
         };
-        const STRIPE_PAYMENT_LINK = "";
+        const STRIPE_PAYMENT_LINK = ""; // Default Stripe Payment Link (fallback)
+        const STRIPE_PAYMENT_LINKS = { pro: "", team: "" }; // Optional: plan-specific links
+        const STRIPE_BILLING_PORTAL_URL = ""; // Link to your Stripe Customer Portal (or an endpoint that redirects there)
+        const TRIAL_DAYS = 14;
 
+        // NOTE: Without a backend/webhook, client-side plan unlock can be spoofed.
+        // For a production-grade setup, verify payments server-side via Stripe webhooks.
         try {
             if (!firebase.apps.length) {
                 firebase.initializeApp(firebaseConfig);
@@ -776,7 +781,7 @@
             </div>
         );
 
-        const SettingsModal = ({ user, onClose, onSave }) => {
+        const SettingsModal = ({ user, onClose, onSave, onOpenBillingPortal }) => {
             const [data, setData] = useState(user || {});
 
             const handleLogoUpload = (e) => {
@@ -882,7 +887,51 @@
                             </div>
 
                             <div className="theme-surface-muted border theme-border rounded-xl p-4 space-y-3">
-                                <p className="text-xs font-bold theme-text-muted uppercase">Data Management</p>
+                                
+<div className="rounded-xl border theme-border p-4 bg-white/60 mb-4">
+    <p className="text-xs font-bold theme-text-muted uppercase">Billing</p>
+    <div className="mt-2 flex flex-col gap-2">
+        <div className="text-sm theme-text">
+            <span className="font-semibold">Current plan:</span> {String(user?.plan || 'free').toUpperCase()}
+        </div>
+        <div className="text-sm theme-text-muted">
+            {user?.plan === 'free' && user?.trialEndsAt
+                ? <>Trial ends: <span className="font-semibold theme-text">{new Date(user.trialEndsAt).toLocaleDateString()}</span></>
+                : (user?.plan === 'free' ? <>Trial ends: <span className="font-semibold theme-text">Not set</span></> : <>Your subscription is active.</>)
+            }
+        </div>
+        <div className="flex flex-wrap gap-2 pt-1">
+            {user?.plan === 'free' && (
+                <>
+                    <button type="button" onClick={() => window.location.href = (STRIPE_PAYMENT_LINKS.pro || STRIPE_PAYMENT_LINK)} className="px-3 py-2 rounded-lg theme-accent-btn text-sm font-semibold">
+                        Upgrade to Pro
+                    </button>
+                    <button type="button" onClick={() => window.location.href = (STRIPE_PAYMENT_LINKS.team || STRIPE_PAYMENT_LINK)} className="px-3 py-2 rounded-lg border theme-border theme-text text-sm font-semibold">
+                        Upgrade to Team
+                    </button>
+                </>
+            )}
+            <button
+                type="button"
+                onClick={() => {
+                    if (!onOpenBillingPortal) {
+                        alert('Billing portal not configured in this build.');
+                        return;
+                    }
+                    onOpenBillingPortal();
+                }}
+                className="px-3 py-2 rounded-lg border theme-border theme-text text-sm"
+                title="Manage subscription (cancel, update card, invoices)"
+            >
+                <i className="fas fa-credit-card mr-2"></i>Manage Billing
+            </button>
+        </div>
+        <div className="text-xs theme-text-muted">
+            Tip: In Stripe, set your Payment Link <span className="font-semibold">success_url</span> to include <span className="font-semibold">?paid=1&amp;plan=pro</span> (or <span className="font-semibold">team</span>) so the app can unlock automatically in this demo build.
+        </div>
+    </div>
+</div>
+                            <p className="text-xs font-bold theme-text-muted uppercase">Data Management</p>
                                 <div className="flex flex-wrap gap-2">
                                     <button type="button" onClick={handleExportData} className="px-3 py-2 rounded-lg border theme-border theme-text text-sm"><i className="fas fa-download mr-2"></i>Export Backup</button>
                                     <label className="px-3 py-2 rounded-lg border theme-border theme-text text-sm cursor-pointer"><i className="fas fa-upload mr-2"></i>Import Backup<input type="file" accept="application/json" className="hidden" onChange={handleImportData} /></label>
@@ -1857,6 +1906,55 @@
                 </div>
             );
         };
+
+
+const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLogout }) => {
+    const endDate = trialEndsAt ? new Date(trialEndsAt).toLocaleDateString() : '—';
+    return (
+        <div className="min-h-screen flex items-center justify-center p-6 theme-app-bg">
+            <div className="max-w-xl w-full rounded-2xl border theme-border bg-white shadow-xl p-6">
+                <div className="flex items-start gap-3">
+                    <div className="w-12 h-12 rounded-xl flex items-center justify-center" style={{ background: "rgba(79,70,229,.12)" }}>
+                        <i className="fas fa-lock theme-text" style={{ color: "var(--accent-color)" }}></i>
+                    </div>
+                    <div className="flex-1">
+                        <h2 className="text-2xl font-extrabold theme-text">Your free trial has ended</h2>
+                        <p className="mt-1 theme-text-muted">
+                            Trial end date: <span className="font-semibold theme-text">{endDate}</span>
+                        </p>
+                        <p className="mt-3 theme-text-muted">
+                            To keep using NotaryOS, upgrade to a paid plan. You can also manage/cancel your subscription in the billing portal.
+                        </p>
+                    </div>
+                </div>
+
+                <div className="mt-6 flex flex-col gap-2">
+                    <button onClick={() => onUpgrade('pro')} className="theme-accent-btn px-4 py-3 rounded-xl font-semibold">
+                        Upgrade to Pro
+                    </button>
+                    <button onClick={() => onUpgrade('team')} className="px-4 py-3 rounded-xl border theme-border theme-text font-semibold">
+                        Upgrade to Team
+                    </button>
+                    <button
+                        onClick={() => onOpenBillingPortal && onOpenBillingPortal()}
+                        className="px-4 py-3 rounded-xl border theme-border theme-text"
+                        title="Cancel, update card, invoices"
+                    >
+                        Manage Billing
+                    </button>
+                    <button onClick={onLogout} className="px-4 py-3 rounded-xl theme-text-muted hover:underline">
+                        Log out
+                    </button>
+                </div>
+
+                <div className="mt-4 text-xs theme-text-muted">
+                    Demo note: this build can optionally unlock after Stripe redirects back with <span className="font-semibold">?paid=1&amp;plan=pro</span> (or <span className="font-semibold">team</span>) in the URL.
+                </div>
+            </div>
+        </div>
+    );
+};
+
 
         const AuthScreen = ({ onAuth, onBack }) => {
             const [isLogin, setIsLogin] = useState(true);
@@ -3703,14 +3801,25 @@
                 showToast("Profile Saved");
             };
 
-            const handleLogin = (profile) => {
-                const normalizedProfile = { ...profile, plan: profile?.plan || 'free' };
-                localStorage.setItem('notary_user_profile', JSON.stringify(normalizedProfile));
-                setUser(normalizedProfile);
-                setCurrentView('dashboard');
-                // Onboarding triggers will handle the rest via useEffect
-                showToast("Welcome Back!");
-            };
+            
+const handleLogin = (profile) => {
+    const now = Date.now();
+    const plan = profile?.plan || 'free';
+
+    // Trial setup: if no trialEndsAt exists, start a 14-day trial on first login/signup.
+    // (If you already have trial data from your auth provider, keep it.)
+    let trialEndsAt = profile?.trialEndsAt;
+    if (!trialEndsAt && plan === 'free') {
+        trialEndsAt = now + (TRIAL_DAYS * 24 * 60 * 60 * 1000);
+    }
+
+    const normalizedProfile = { ...profile, plan, trialEndsAt };
+    localStorage.setItem('notary_user_profile', JSON.stringify(normalizedProfile));
+    setUser(normalizedProfile);
+    setCurrentView('dashboard');
+    // Onboarding triggers will handle the rest via useEffect
+    showToast("Welcome Back!");
+};
 
             const handleLogout = () => {
                 localStorage.removeItem('notary_user_profile');
@@ -3718,17 +3827,30 @@
                 setCurrentView('landing');
             };
 
-            const handleUpgrade = (targetPlan = 'pro') => {
-                const upgraded = {
-                    ...user,
-                    plan: targetPlan,
-                    role: targetPlan === 'team' ? 'agency' : (user?.role || 'solo')
-                };
-                setUser(upgraded);
-                localStorage.setItem('notary_user_profile', JSON.stringify(upgraded));
-                setShowPricing(false);
-                showToast("Upgrade Successful!");
-            };
+const openBillingPortal = () => {
+    if (!STRIPE_BILLING_PORTAL_URL) {
+        showToast("Billing portal not configured. Set STRIPE_BILLING_PORTAL_URL (or wire an endpoint that creates a Stripe Customer Portal session).");
+        return;
+    }
+    window.open(STRIPE_BILLING_PORTAL_URL, '_blank', 'noopener,noreferrer');
+};
+
+            
+const handleUpgrade = (targetPlan = 'pro') => {
+    const planKey = String(targetPlan || 'pro').toLowerCase();
+    const link = (STRIPE_PAYMENT_LINKS && STRIPE_PAYMENT_LINKS[planKey]) || STRIPE_PAYMENT_LINK;
+
+    if (!link) {
+        showToast("Stripe Checkout not configured. Add your Stripe Payment Link in STRIPE_PAYMENT_LINK / STRIPE_PAYMENT_LINKS.");
+        return;
+    }
+
+    // Remember what the user tried to buy (used after Stripe redirects back in demo mode)
+    localStorage.setItem('notary_pending_upgrade_plan', planKey);
+
+    // Redirect to Stripe Checkout (Payment Link / Checkout session URL)
+    window.location.href = link;
+};
 
 
             const handleLockedFeature = (featureId) => {
@@ -3852,7 +3974,7 @@
 
                     {showAIModal && <AIHelperModal onClose={() => setShowAIModal(false)} />}
                     {showPricing && <PricingModal onClose={() => setShowPricing(false)} onUpgrade={handleUpgrade} />}
-                    {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} onSave={handleUpdateProfile} />}
+                    {showSettings && <SettingsModal user={user} onClose={() => setShowSettings(false)} onSave={handleUpdateProfile} onOpenBillingPortal={openBillingPortal} />}
                     {showOnboarding && <OnboardingTour stateDB={STATE_DATABASE} onComplete={handleOnboardingComplete} />}
                     {showWelcomeTour && <WelcomeTour onComplete={handleTourComplete} />}
                     
