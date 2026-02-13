@@ -3594,7 +3594,6 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                     track('export_tax_csv', { type:'mileage' });
                     showToast('Mileage CSV exported');
                 }
-                setShowMileageModal(true);
             };
 
             const haversineMeters = (a, b) => {
@@ -4177,11 +4176,6 @@ useEffect(() => {
                 
                 // Onboarding Logic Flow
                 if (user) {
-                    const normalized = ensureTrialFields(user);
-                    if (normalized !== user) {
-                        setUser(normalized);
-                        localStorage.setItem('notary_user_profile', JSON.stringify(normalized));
-                    }
                     const isOnboarded = localStorage.getItem('notary_onboarded');
                     const isTourComplete = localStorage.getItem('notary_tour_completed');
                     
@@ -4366,7 +4360,6 @@ const handleUpgrade = (targetPlan = 'pro') => {
 
             if (!user && currentView !== 'landing' && currentView !== 'auth') { return <LandingPage onNavigate={() => setCurrentView('auth')} />; }
             if (currentView === 'landing' || currentView === 'auth') return renderView();
-            if (isTrialExpired(user)) return <TrialExpiredState onUpgrade={handleUpgrade} onOpenBillingPortal={handleOpenBillingPortal} />;
 
             return (
                 <div className="flex h-screen overflow-hidden font-sans theme-app-bg">
