@@ -845,6 +845,106 @@ html, body { overflow-x: hidden; }
             }
         };
 
+        // --- Phase 4 Step A: Read-only Setup Checklist (no writes, no effects) ---
+        const computeSetupChecklistReadOnly = ({ user, appointments }) => {
+            const profileName = (user && (user.name || user.displayName)) ? (user.name || user.displayName) : '';
+            const profileCompany = (user && (user.company || user.businessName)) ? (user.company || user.businessName) : '';
+            const profileDone = !!profileName && !!profileCompany;
+
+            const apptDone = Array.isArray(appointments) && appointments.length > 0;
+
+            const journal = safeParse(localStorage.getItem('notary_journal'), []);
+            const expenses = safeParse(localStorage.getItem('notary_expenses'), []);
+            const mileage = safeParse(localStorage.getItem('notary_mileage'), []);
+
+            const journalDone = Array.isArray(journal) && journal.length > 0;
+            const expenseDone = Array.isArray(expenses) && expenses.length > 0;
+
+            // Step A is read-only; GPS "enabled" is inferred if we have at least one saved mileage trip.
+            const gpsDone = Array.isArray(mileage) && mileage.length > 0;
+
+            // If future steps set a flag, we reflect it; otherwise false.
+            const exportDone = (localStorage.getItem('notary_exported_once') === 'true');
+
+            return {
+                profile: { done: profileDone, name: !!profileName, company: !!profileCompany },
+                appointment: { done: apptDone },
+                journal: { done: journalDone },
+                expense: { done: expenseDone },
+                gps: { done: gpsDone },
+                export: { done: exportDone }
+            };
+        };
+
+        const SetupChecklistCard = ({ user, appointments, setView, onOpenSettings }) => {
+            const c = computeSetupChecklistReadOnly({ user, appointments });
+
+            const steps = [
+                { key:'profile', title:'Profile', subtitle:'Name + company', done:c.profile.done,
+                  cta: c.profile.done ? null : { label:'Update Profile', onClick: () => { onOpenSettings && onOpenSettings(); } } },
+                { key:'appointment', title:'First Appointment', subtitle:'Add your first appointment', done:c.appointment.done,
+                  cta: c.appointment.done ? null : { label:'Go to Schedule', onClick: () => setView('schedule') } },
+                { key:'journal', title:'First eJournal Entry', subtitle:'Record your first entry', done:c.journal.done,
+                  cta: c.journal.done ? null : { label:'Go to eJournal', onClick: () => setView('journal') } },
+                { key:'expense', title:'First Expense', subtitle:'Track business costs', done:c.expense.done,
+                  cta: c.expense.done ? null : { label:'Go to Finances', onClick: () => setView('finances') } },
+                { key:'gps', title:'GPS Mileage', subtitle:'Start + stop a trip', done:c.gps.done,
+                  cta: c.gps.done ? null : { label:'Open GPS', onClick: () => { setView('finances'); showToast('Go to Finances → GPS Mileage to start a trip.', 'info'); } } },
+                { key:'export', title:'Export Preview', subtitle:'Download CSV for taxes', done:c.export.done,
+                  cta: c.export.done ? null : { label:'Open Export', onClick: () => { setView('finances'); showToast('Go to Finances → Export to download a CSV.', 'info'); } } },
+            ];
+
+            const doneCount = steps.filter(s => s.done).length;
+            const pct = Math.round((doneCount / steps.length) * 100);
+
+            return (
+                <div className="card" style={{marginTop:12}}>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:12, flexWrap:'wrap'}}>
+                        <div>
+                            <div style={{fontWeight:900}}>Setup Checklist</div>
+                            <div className="theme-text-muted" style={{fontSize:13}}>Finish setup to unlock the full workflow.</div>
+                        </div>
+                        <div className="net-pill" title="Progress"><span className="net-dot"></span>{doneCount}/{steps.length} • {pct}%</div>
+                    </div>
+
+                    <div style={{display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))', gap:10, marginTop:12}}>
+                        {steps.map(s => (
+                            <div key={s.key} className="card card-tight" style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:10}}>
+                                <div style={{display:'flex', alignItems:'center', gap:10, minWidth:0}}>
+                                    <span style={{
+                                        width:24, height:24, borderRadius:999,
+                                        display:'inline-flex', alignItems:'center', justifyContent:'center',
+                                        background: s.done ? 'rgba(16,185,129,.18)' : 'rgba(255,255,255,.08)',
+                                        border: '1px solid rgba(255,255,255,.12)'
+                                    }}>
+                                        <i className={("fas " + (s.done ? "fa-check" : "fa-circle") + " text-[11px]")}></i>
+                                    </span>
+                                    <div style={{minWidth:0}}>
+                                        <div style={{fontWeight:900, lineHeight:1.2}}>{s.title}</div>
+                                        <div className="theme-text-muted" style={{fontSize:12, marginTop:2}}>{s.subtitle}</div>
+                                    </div>
+                                </div>
+                                {!s.done && s.cta && (
+                                    <button className="btn btn-secondary" style={{height:36, whiteSpace:'nowrap'}} onClick={s.cta.onClick}>
+                                        {s.cta.label}
+                                    </button>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+
+                    {!c.profile.done && (
+                        <div className="theme-text-muted" style={{fontSize:12, marginTop:10}}>
+                            Profile completion requires <b>Name</b> and <b>Company</b>. (We’ll add the company field in the next step.)
+                        </div>
+                    )}
+                </div>
+            );
+        };
+        // --- End Phase 4 Step A ---
+
+
+
         const viewLabel = (key) => {
             const map = {
                 dashboard: 'Dashboard',
@@ -3280,6 +3380,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                     <div className="overflow-hidden">
                         <h2 className="text-3xl font-bold theme-text truncate">{greeting}, {user?.name || 'Notary'}.</h2>
                         <p className="theme-text-muted mt-1 truncate">{dateLabel}</p>
+                    <SetupChecklistCard user={user} appointments={appointments} setView={setView} onOpenSettings={onOpenSettings} />
 
                     {(() => {
                         const p = computeProfileProgress(user);
