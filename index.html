@@ -2154,10 +2154,20 @@ const SetupChecklistCard = ({ user, appointments, setView, onOpenSettings }) => 
             const [weeklyAppts, setWeeklyAppts] = useState(5);
             const [adminMins, setAdminMins] = useState(20);
             const [billing, setBilling] = useState('monthly');
+            const [activeSection, setActiveSection] = useState('home');
+            const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
             const [demoQuestion, setDemoQuestion] = useState("");
             const [demoResponse, setDemoResponse] = useState(null);
             const [openFaqIndex, setOpenFaqIndex] = useState(0);
             const [infoContent, setInfoContent] = useState(null);
+
+            const navItems = [
+                { id: 'home', label: 'Home' },
+                { id: 'demo', label: 'Demo' },
+                { id: 'workflow', label: 'How it Works' },
+                { id: 'faq', label: 'FAQ' },
+                { id: 'pricing', label: 'Pricing' }
+            ];
 
             const faqItems = [
                 {
@@ -2197,26 +2207,94 @@ const SetupChecklistCard = ({ user, appointments, setView, onOpenSettings }) => 
                 }, 1500);
             };
 
+            const handleNavClick = (sectionId) => {
+                const section = document.getElementById(sectionId);
+                if (section) {
+                    section.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    setActiveSection(sectionId);
+                    setIsMobileMenuOpen(false);
+                }
+            };
+
+            useEffect(() => {
+                const observer = new IntersectionObserver((entries) => {
+                    const visibleSection = entries
+                        .filter(entry => entry.isIntersecting)
+                        .sort((a, b) => b.intersectionRatio - a.intersectionRatio)[0];
+
+                    if (visibleSection?.target?.id) {
+                        setActiveSection(visibleSection.target.id);
+                    }
+                }, {
+                    root: null,
+                    rootMargin: '-40% 0px -45% 0px',
+                    threshold: [0.2, 0.35, 0.5]
+                });
+
+                navItems.forEach(item => {
+                    const section = document.getElementById(item.id);
+                    if (section) observer.observe(section);
+                });
+
+                return () => observer.disconnect();
+            }, []);
+
             return (
                 <div className="min-h-screen landing-bg text-white font-inter flex flex-col relative overflow-x-hidden">
                     {infoContent && <InfoModal title={infoContent.title} content={infoContent.content} onClose={() => setInfoContent(null)} />}
-                    <div className="w-full p-6 flex justify-between items-center z-20 container mx-auto">
-                        <div className="flex items-center gap-2">
-                            <i className="fas fa-file-signature text-xl text-teal-400"></i>
-                            <h1 className="text-xl font-bold tracking-tight font-sans">NotaryOS</h1>
-                        </div>
-                        <button onClick={onNavigate} className="text-gray-300 hover:text-white font-medium text-sm transition-colors border border-gray-600 hover:border-gray-400 px-4 py-2 rounded-lg font-sans">Log In</button>
-                    </div>
+                    <header className="w-full sticky top-0 z-30 backdrop-blur-xl bg-slate-950/75 border-b border-slate-800/80">
+                        <div className="w-full px-4 sm:px-6 py-4 flex justify-between items-center container mx-auto gap-3">
+                            <button type="button" onClick={() => handleNavClick('home')} className="flex items-center gap-2">
+                                <i className="fas fa-file-signature text-xl text-teal-400"></i>
+                                <h1 className="text-xl font-bold tracking-tight font-sans">NotaryOS</h1>
+                            </button>
 
-                    <div className="flex-1 flex flex-col justify-center items-center text-center px-6 relative z-10 py-20">
-                        <h1 className="text-5xl md:text-7xl font-extrabold mb-6 leading-tight tracking-tight max-w-5xl drop-shadow-2xl font-sans">
+                            <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+                                {navItems.map(item => (
+                                    <button
+                                        key={item.id}
+                                        type="button"
+                                        onClick={() => handleNavClick(item.id)}
+                                        className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${activeSection === item.id ? 'text-white bg-slate-800' : 'text-slate-300 hover:text-white hover:bg-slate-800/70'}`}
+                                    >
+                                        {item.label}
+                                    </button>
+                                ))}
+                            </nav>
+
+                            <div className="flex items-center gap-2">
+                                <button type="button" onClick={() => setIsMobileMenuOpen(v => !v)} className="md:hidden h-10 w-10 inline-flex items-center justify-center rounded-lg border border-slate-700 text-slate-300 hover:text-white hover:border-slate-500" aria-label="Toggle menu" aria-expanded={isMobileMenuOpen}>
+                                    <i className={`fas ${isMobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
+                                </button>
+                                <button onClick={onNavigate} className="text-gray-300 hover:text-white font-medium text-sm transition-colors border border-gray-600 hover:border-gray-400 px-4 py-2 rounded-lg font-sans">Log In</button>
+                            </div>
+                        </div>
+
+                        {isMobileMenuOpen && (
+                            <nav className="md:hidden border-t border-slate-800 px-4 pb-4 pt-2 flex flex-col gap-1 bg-slate-950/95">
+                                {navItems.map(item => (
+                                    <button
+                                        key={item.id}
+                                        type="button"
+                                        onClick={() => handleNavClick(item.id)}
+                                        className={`w-full text-left px-3 py-2 rounded-lg text-sm transition-colors ${activeSection === item.id ? 'bg-slate-800 text-white' : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'}`}
+                                    >
+                                        {item.label}
+                                    </button>
+                                ))}
+                            </nav>
+                        )}
+                    </header>
+
+                    <div id="home" className="scroll-mt-28 flex-1 flex flex-col justify-center items-center text-center px-6 relative z-10 py-16 md:py-20">
+                        <h1 className="text-4xl md:text-7xl font-extrabold mb-6 leading-tight tracking-tight max-w-5xl drop-shadow-2xl font-sans">
                             Drowning in paperwork? <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-teal-400 to-blue-500">Chasing payments?</span>
                         </h1>
                         <p className="text-lg text-slate-300 mb-10 max-w-2xl leading-relaxed">
                             Stop worrying about state compliance. NotaryOS handles it all—so you can focus on signings, not spreadsheets.
                         </p>
-                        <button onClick={onNavigate} className="bg-teal-500 hover:bg-teal-600 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-xl shadow-teal-500/20 transition-all transform hover:-translate-y-1 font-sans">
+                        <button onClick={onNavigate} className="bg-teal-500 hover:bg-teal-600 text-white px-8 md:px-10 py-4 rounded-xl font-bold text-base md:text-lg shadow-xl shadow-teal-500/20 transition-all transform hover:-translate-y-1 font-sans w-full sm:w-auto">
                             Start Free Trial
                         </button>
                     </div>
@@ -2231,7 +2309,7 @@ const SetupChecklistCard = ({ user, appointments, setView, onOpenSettings }) => 
                     </div>
 
                     {/* RESTORED AI Hero Feature Section */}
-                    <div className="w-full bg-slate-900/50 border-y border-slate-800 py-20 relative overflow-hidden">
+                    <div id="demo" className="scroll-mt-28 w-full bg-slate-900/50 border-y border-slate-800 py-20 relative overflow-hidden">
                         <div className="absolute top-0 left-0 w-full h-full bg-blue-500/5 blur-[100px] pointer-events-none"></div>
                         <div className="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center relative z-10">
                             <div className="text-left">
@@ -2471,7 +2549,7 @@ const SetupChecklistCard = ({ user, appointments, setView, onOpenSettings }) => 
                     </div>
 
                     {/* How NotaryOS Works Section */}
-                    <div className="bg-slate-900/80 py-24 w-full border-t border-slate-800 font-sans">
+                    <div id="workflow" className="scroll-mt-28 bg-slate-900/80 py-24 w-full border-t border-slate-800 font-sans">
                         <div className="max-w-6xl mx-auto px-6">
                             <div className="text-center mb-16">
                                 <h3 className="text-4xl md:text-5xl font-bold text-white mb-4">How NotaryOS works</h3>
@@ -2583,7 +2661,7 @@ const SetupChecklistCard = ({ user, appointments, setView, onOpenSettings }) => 
                     </div>
 
                     {/* FAQ Section - Trust, Security & Clarity */}
-                    <div className="bg-slate-900/80 py-24 w-full border-t border-slate-800 font-sans">
+                    <div id="faq" className="scroll-mt-28 bg-slate-900/80 py-24 w-full border-t border-slate-800 font-sans">
                         <div className="max-w-5xl mx-auto px-6">
                             <div className="text-center mb-12">
                                 <div className="inline-flex items-center gap-2 bg-slate-900/80 border border-slate-700 text-teal-300 px-4 py-2 rounded-full text-xs font-bold tracking-wide">
@@ -2625,7 +2703,7 @@ const SetupChecklistCard = ({ user, appointments, setView, onOpenSettings }) => 
                     </div>
 
                     {/* Pricing Section - Alternating Background: Dark Slate 800 */}
-                    <div className="bg-slate-800 py-24 w-full border-t border-slate-700 font-sans">
+                    <div id="pricing" className="scroll-mt-28 bg-slate-800 py-24 w-full border-t border-slate-700 font-sans">
                         <div className="max-w-6xl mx-auto px-6">
                             <div className="text-center mb-10">
                                 <h3 className="text-3xl font-bold text-white mb-4">Simple, Transparent Pricing</h3>
@@ -2643,8 +2721,8 @@ const SetupChecklistCard = ({ user, appointments, setView, onOpenSettings }) => 
 
                                 {/* Billing Toggle */}
                                 <div className="inline-flex bg-slate-900 p-1 rounded-xl border border-slate-700 relative">
-                                    <button onClick={() => setBilling('monthly')} className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${billing === 'monthly' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}>Monthly</button>
-                                    <button onClick={() => setBilling('yearly')} className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${billing === 'yearly' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}>Yearly</button>
+                                    <button type="button" aria-pressed={billing === 'monthly'} onClick={() => setBilling('monthly')} className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${billing === 'monthly' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}>Monthly</button>
+                                    <button type="button" aria-pressed={billing === 'yearly'} onClick={() => setBilling('yearly')} className={`px-6 py-2 rounded-lg text-sm font-bold transition-all ${billing === 'yearly' ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-white'}`}>Yearly</button>
                                     {billing === 'yearly' && <span className="absolute -top-3 -right-3 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-lg animate-bounce">SAVE 20%</span>}
                                 </div>
                             </div>
@@ -2766,9 +2844,9 @@ const SetupChecklistCard = ({ user, appointments, setView, onOpenSettings }) => 
                             <div>
                                 <h4 className="text-white font-bold mb-4">Product</h4>
                                 <ul className="space-y-3 text-sm text-slate-400">
-                                    <li><button type="button" onClick={onNavigate} className="hover:text-teal-400 transition-colors">Features</button></li>
-                                    <li><button type="button" onClick={onNavigate} className="hover:text-teal-400 transition-colors">Pricing</button></li>
-                                    <li><button type="button" onClick={onNavigate} className="hover:text-teal-400 transition-colors">AI Mentor</button></li>
+                                    <li><button type="button" onClick={() => handleNavClick('workflow')} className="hover:text-teal-400 transition-colors">Features</button></li>
+                                    <li><button type="button" onClick={() => handleNavClick('pricing')} className="hover:text-teal-400 transition-colors">Pricing</button></li>
+                                    <li><button type="button" onClick={() => handleNavClick('demo')} className="hover:text-teal-400 transition-colors">AI Mentor</button></li>
                                     <li><button type="button" onClick={onNavigate} className="hover:text-teal-400 transition-colors">Client Portal</button></li>
                                 </ul>
                             </div>
@@ -3478,31 +3556,50 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
             const safeAppointments = Array.isArray(appointments) ? appointments : [];
             const safeCredentials = Array.isArray(credentials) ? credentials : [];
 
-            const paidAppointments = safeAppointments.filter(a => a.status === 'Paid');
-            const ytdRevenue = paidAppointments.reduce((sum, a) => sum + parseFloat(a.fee || 0), 0);
+            const normalizedAppointments = safeAppointments.map(a => ({
+                ...a,
+                feeValue: parseFloat(a.fee || 0) || 0,
+                dt: new Date(`${a.date || ''}T${a.time || '00:00'}`)
+            }));
 
-            const scheduled = safeAppointments.filter(a => a.status === 'Scheduled');
-            const nextScheduled = [...scheduled]
-                .map(a => ({ ...a, dt: new Date(`${a.date || ''}T${a.time || '00:00'}`) }))
+            const paidAppointments = normalizedAppointments.filter(a => a.status === 'Paid');
+            const completedOrPaid = normalizedAppointments.filter(a => a.status === 'Completed' || a.status === 'Paid');
+            const scheduledAppointments = normalizedAppointments.filter(a => a.status === 'Scheduled');
+            const validUpcoming = scheduledAppointments
                 .filter(a => !isNaN(a.dt.getTime()) && a.dt >= now)
-                .sort((a, b) => a.dt - b.dt)[0] || null;
+                .sort((a, b) => a.dt - b.dt);
+
+            const ytdRevenue = paidAppointments.reduce((sum, a) => sum + a.feeValue, 0);
+            const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+            const monthRevenue = paidAppointments
+                .filter(a => String(a.date || '').startsWith(monthKey))
+                .reduce((sum, a) => sum + a.feeValue, 0);
+
+            const pipelineValue = validUpcoming.reduce((sum, a) => sum + a.feeValue, 0);
+            const avgTicket = paidAppointments.length ? (ytdRevenue / paidAppointments.length) : 0;
+            const collectionRate = completedOrPaid.length ? Math.round((paidAppointments.length / completedOrPaid.length) * 100) : 0;
+
+            const nextScheduled = validUpcoming[0] || null;
+            const jobsThisWeek = validUpcoming.filter(a => (a.dt - now) <= (7 * 24 * 60 * 60 * 1000)).length;
+
+            const todaysJobs = normalizedAppointments.filter(a => a.date === today);
+            const todayCompleted = todaysJobs.filter(a => a.status === 'Completed' || a.status === 'Paid').length;
+            const unpaidInvoices = normalizedAppointments.filter(a => a.status === 'Completed').length;
 
             const expiringCreds = safeCredentials
                 .map(c => ({ ...c, expDate: new Date(c.expiry) }))
                 .filter(c => !isNaN(c.expDate.getTime()))
                 .map(c => ({ ...c, daysLeft: Math.ceil((c.expDate - now) / (1000 * 60 * 60 * 24)) }))
-                .filter(c => c.daysLeft <= 60);
+                .filter(c => c.daysLeft <= 60)
+                .sort((a, b) => a.daysLeft - b.daysLeft);
 
-            const urgentCred = expiringCreds.sort((a, b) => a.daysLeft - b.daysLeft)[0] || null;
+            const urgentCred = expiringCreds[0] || null;
             const complianceState = urgentCred ? (urgentCred.daysLeft <= 30 ? 'critical' : 'warning') : 'clear';
 
-            const todaysJobs = safeAppointments.filter(a => a.date === today);
-            const unpaidInvoices = safeAppointments.filter(a => a.status === 'Completed').length;
-
-            const recentActivity = [...safeAppointments]
-                .map(a => ({ ...a, dt: new Date(`${a.date || ''}T${a.time || '00:00'}`) }))
+            const recentActivity = [...normalizedAppointments]
+                .filter(a => !isNaN(a.dt.getTime()))
                 .sort((a, b) => b.dt - a.dt)
-                .slice(0, 5);
+                .slice(0, 6);
 
             const statusPill = (status) => {
                 if (status === 'Paid') return 'bg-emerald-100 text-emerald-700';
@@ -3511,17 +3608,46 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                 return 'bg-amber-100 text-amber-700';
             };
 
+            const kpiCards = [
+                { label: 'YTD Revenue', value: `$${ytdRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, sub: `${paidAppointments.length} paid appointment${paidAppointments.length === 1 ? '' : 's'}`, icon: 'fa-dollar-sign', tone: 'text-emerald-600 bg-emerald-50' },
+                { label: 'This Month', value: `$${monthRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, sub: `Avg ticket $${avgTicket.toFixed(0)}`, icon: 'fa-chart-line', tone: 'text-blue-600 bg-blue-50' },
+                { label: 'Collection Rate', value: `${collectionRate}%`, sub: `${unpaidInvoices} unpaid invoice${unpaidInvoices === 1 ? '' : 's'}`, icon: 'fa-file-invoice-dollar', tone: 'text-indigo-600 bg-indigo-50' },
+                { label: '7-Day Pipeline', value: `$${pipelineValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}`, sub: `${jobsThisWeek} upcoming job${jobsThisWeek === 1 ? '' : 's'}`, icon: 'fa-briefcase', tone: 'text-purple-600 bg-purple-50' }
+            ];
+
             const quickActions = [
+                { label: 'New Appointment', icon: 'fa-calendar-plus', onClick: () => setView('Add Appointment') },
+                { label: 'Open Schedule', icon: 'fa-calendar-days', onClick: () => setView('schedule') },
                 { label: 'Log Journal Entry', icon: 'fa-pen-to-square', onClick: () => setView('journal') },
-                { label: 'Add Expense', icon: 'fa-dollar-sign', onClick: () => setView('finances') },
                 { label: 'Ask AI Coach', icon: 'fa-robot', onClick: () => setView('trainer') }
             ];
 
             return (
-                <div className="p-6 pb-24 space-y-6 font-sans">
-                    <div className="overflow-hidden">
-                        <h2 className="text-3xl font-bold theme-text truncate">{greeting}, {user?.name || 'Notary'}.</h2>
-                        <p className="theme-text-muted mt-1 truncate">{dateLabel}</p>
+                <div className="p-4 md:p-6 pb-24 space-y-6 font-sans">
+                    <div className="theme-surface theme-border border rounded-2xl p-5 md:p-7 shadow-sm overflow-hidden relative">
+                        <div className="absolute inset-0 pointer-events-none bg-gradient-to-r from-indigo-500/10 via-transparent to-teal-500/10"></div>
+                        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                            <div className="min-w-0">
+                                <p className="text-xs uppercase tracking-[0.2em] theme-text-muted mb-2">Executive dashboard</p>
+                                <h2 className="text-2xl md:text-3xl font-bold theme-text truncate">{greeting}, {user?.name || 'Notary'}.</h2>
+                                <p className="theme-text-muted mt-1">{dateLabel}</p>
+                                <p className="theme-text-muted text-sm mt-2">{nextScheduled ? `Next signing: ${nextScheduled.clientName || 'Client'} • ${nextScheduled.dt.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : 'No upcoming signings yet. Add a new appointment to start your pipeline.'}</p>
+                            </div>
+                            <div className="grid grid-cols-2 gap-3 w-full lg:w-auto lg:min-w-[300px]">
+                                <div className="theme-surface-muted rounded-xl p-3 border theme-border">
+                                    <p className="text-xs theme-text-muted">Today progress</p>
+                                    <p className="text-xl font-bold theme-text">{todayCompleted}/{todaysJobs.length || 0}</p>
+                                    <p className="text-xs theme-text-muted">completed</p>
+                                </div>
+                                <div className="theme-surface-muted rounded-xl p-3 border theme-border">
+                                    <p className="text-xs theme-text-muted">Compliance</p>
+                                    <p className={`text-xl font-bold ${complianceState === 'critical' ? 'text-red-600' : complianceState === 'warning' ? 'text-amber-600' : 'text-emerald-600'}`}>{complianceState === 'critical' ? 'At Risk' : complianceState === 'warning' ? 'Watch' : 'Clear'}</p>
+                                    <p className="text-xs theme-text-muted">{urgentCred ? `${urgentCred.daysLeft}d to renewal` : 'No expiring credentials'}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <SetupChecklistCard user={user} appointments={appointments} setView={setView} onOpenSettings={onOpenSettings} />
 
                     {(() => {
@@ -3548,6 +3674,19 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                         );
                     })()}
 
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                        {kpiCards.map(card => (
+                            <div key={card.label} className="theme-surface theme-border border rounded-xl p-4 shadow-sm">
+                                <div className="flex items-center justify-between mb-3">
+                                    <p className="text-sm font-semibold theme-text-muted">{card.label}</p>
+                                    <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${card.tone}`}>
+                                        <i className={`fas ${card.icon} text-sm`}></i>
+                                    </div>
+                                </div>
+                                <p className="text-2xl font-bold theme-text truncate">{card.value}</p>
+                                <p className="text-xs theme-text-muted mt-1 truncate">{card.sub}</p>
+                            </div>
+                        ))}
                     </div>
 
                     <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-hide">
@@ -3564,48 +3703,32 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
 
                     <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                         <div className="xl:col-span-2 space-y-6">
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div className="theme-surface theme-border border rounded-xl p-5 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 overflow-hidden">
-                                    <p className="theme-text-muted text-xs font-semibold uppercase tracking-wide mb-2">Revenue (YTD)</p>
-                                    <p className="text-3xl font-bold theme-text truncate">${ytdRevenue.toLocaleString()}</p>
-                                    <p className="text-emerald-600 text-xs mt-2 font-semibold"><i className="fas fa-arrow-trend-up mr-1"></i>+12.5% vs last month</p>
-                                </div>
-                                <div className="theme-surface theme-border border rounded-xl p-5 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 overflow-hidden">
-                                    <p className="theme-text-muted text-xs font-semibold uppercase tracking-wide mb-2">Upcoming Signings</p>
-                                    <p className="text-3xl font-bold theme-text">{scheduled.length}</p>
-                                    <p className="theme-text-muted text-xs mt-2 truncate">{nextScheduled ? `Next: ${nextScheduled.clientName || 'Client'} • ${nextScheduled.dt.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}` : 'No upcoming appointments'}</p>
-                                </div>
-                                <button onClick={() => setView('credentials')} className="text-left theme-surface theme-border border rounded-xl p-5 shadow-sm hover:-translate-y-0.5 hover:shadow-md transition-all duration-200 overflow-hidden">
-                                    <p className="theme-text-muted text-xs font-semibold uppercase tracking-wide mb-2">Compliance Status</p>
-                                    <p className={`text-2xl font-bold truncate ${complianceState === 'clear' ? 'text-emerald-600' : complianceState === 'warning' ? 'text-amber-600' : 'text-red-600'}`}>
-                                        {complianceState === 'clear' ? 'All Clear' : complianceState === 'warning' ? 'Attention Needed' : 'Critical'}
-                                    </p>
-                                    <p className="theme-text-muted text-xs mt-2 truncate">
-                                        {urgentCred ? `${urgentCred.name || 'Credential'} expires in ${urgentCred.daysLeft} days` : 'All credentials valid for 60+ days'}
-                                    </p>
-                                </button>
-                            </div>
-
                             <div className="theme-surface theme-border border rounded-xl p-5 shadow-sm">
-                                <div className="flex items-center justify-between mb-4">
-                                    <h3 className="text-lg font-bold theme-text">Revenue Trend</h3>
-                                    <button onClick={() => setView('finances')} className="text-xs font-semibold theme-text-muted hover:theme-text">Open Finances</button>
+                                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                                    <div>
+                                        <h3 className="text-lg font-bold theme-text">Revenue Performance</h3>
+                                        <p className="theme-text-muted text-xs">Paid revenue trend across months</p>
+                                    </div>
+                                    <button onClick={() => setView('finances')} className="px-3 py-1.5 rounded-lg border theme-border text-xs font-semibold theme-text-muted">Open Finance Hub</button>
                                 </div>
                                 <IncomeChart appointments={safeAppointments} />
                             </div>
 
-                            <div className="theme-surface theme-border border rounded-xl p-5 shadow-sm overflow-hidden">
-                                <h3 className="text-lg font-bold theme-text mb-4">Recent Activity</h3>
+                            <div className="theme-surface theme-border border rounded-xl p-5 shadow-sm">
+                                <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                                    <h3 className="text-lg font-bold theme-text">Recent Activity</h3>
+                                    <button onClick={() => setView('schedule')} className="text-xs font-semibold theme-text-muted">View all</button>
+                                </div>
                                 {recentActivity.length === 0 ? (
-                                    <p className="theme-text-muted text-sm">No recent activity yet. Start by creating your first appointment.</p>
+                                    <EmptyState icon="fa-calendar-check" title="No recent appointments" description="Appointments will appear here as you create and complete signings." actionLabel="Create Appointment" onAction={() => setView('Add Appointment')} />
                                 ) : (
                                     <div className="overflow-x-auto">
-                                        <table className="min-w-full text-sm">
+                                        <table className="w-full min-w-[640px] text-sm">
                                             <thead>
-                                                <tr className="theme-text-muted text-xs uppercase tracking-wide border-b theme-border">
+                                                <tr className="theme-text-muted text-xs border-b theme-border">
                                                     <th className="text-left py-2 pr-3">Client</th>
                                                     <th className="text-left py-2 pr-3">Service</th>
-                                                    <th className="text-left py-2 pr-3">Date / Time</th>
+                                                    <th className="text-left py-2 pr-3">Date</th>
                                                     <th className="text-left py-2 pr-3">Fee</th>
                                                     <th className="text-left py-2">Status</th>
                                                 </tr>
@@ -3623,7 +3746,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                                                             </td>
                                                             <td className="py-3 pr-3 theme-text-muted truncate max-w-[140px]">{item.type || 'Notary Service'}</td>
                                                             <td className="py-3 pr-3 theme-text-muted truncate max-w-[170px]">{isNaN(item.dt.getTime()) ? '—' : item.dt.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</td>
-                                                            <td className="py-3 pr-3 theme-text font-semibold">${parseFloat(item.fee || 0).toFixed(2)}</td>
+                                                            <td className="py-3 pr-3 theme-text font-semibold">${item.feeValue.toFixed(2)}</td>
                                                             <td className="py-3"><span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${statusPill(item.status)}`}>{item.status || 'Scheduled'}</span></td>
                                                         </tr>
                                                     );
@@ -3644,7 +3767,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                                 {todaysJobs.length === 0 ? (
                                     <div className="rounded-xl border border-dashed theme-border p-5 text-center">
                                         <i className="fas fa-calendar-day text-2xl theme-text-muted"></i>
-                                        <p className="mt-2 font-semibold theme-text">Schedule clear. Great day for marketing!</p>
+                                        <p className="mt-2 font-semibold theme-text">Schedule clear. Great day for outreach.</p>
                                         <button onClick={() => setView('Add Appointment')} className="mt-4 px-4 py-2 rounded-lg theme-accent-btn text-sm">Add Appointment</button>
                                     </div>
                                 ) : (
@@ -3652,17 +3775,14 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                                         {todaysJobs.map(job => {
                                             const done = job.status === 'Completed' || job.status === 'Paid';
                                             return (
-                                                <div key={job.id} className={`border-l-4 ${done ? 'border-emerald-500' : 'border-blue-500'} theme-surface-muted rounded-r-xl p-3`}> 
+                                                <div key={job.id} className={`border-l-4 ${done ? 'border-emerald-500' : 'border-blue-500'} theme-surface-muted rounded-r-xl p-3`}>
                                                     <div className="flex items-start justify-between gap-2">
                                                         <div className="min-w-0">
                                                             <p className="text-xs theme-text-muted truncate">{job.time || 'TBD'}</p>
                                                             <p className="font-semibold theme-text truncate">{job.clientName || 'Client'}</p>
                                                             <p className="text-xs theme-text-muted truncate">{job.type || 'Notary Service'}</p>
                                                         </div>
-                                                        <div className="flex gap-2 flex-shrink-0">
-                                                            <button className="w-7 h-7 rounded-lg border theme-border theme-text-muted"><i className="fas fa-map-marker-alt text-[11px]"></i></button>
-                                                            <button onClick={() => setView('schedule')} className="w-7 h-7 rounded-lg border theme-border theme-text-muted"><i className="fas fa-pen text-[11px]"></i></button>
-                                                        </div>
+                                                        <button onClick={() => setView('schedule')} className="w-7 h-7 rounded-lg border theme-border theme-text-muted"><i className="fas fa-pen text-[11px]"></i></button>
                                                     </div>
                                                 </div>
                                             );
@@ -3672,15 +3792,19 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                             </div>
 
                             <div className="theme-surface theme-border border rounded-xl p-5 shadow-sm">
-                                <h3 className="text-lg font-bold theme-text mb-4">Action Items</h3>
+                                <h3 className="text-lg font-bold theme-text mb-4">Action Queue</h3>
                                 <div className="space-y-3">
                                     <button onClick={() => setView('credentials')} className="w-full text-left p-3 rounded-xl theme-surface-muted hover:-translate-y-0.5 transition-all duration-200">
-                                        <p className="text-sm font-semibold theme-text truncate"><i className="fas fa-triangle-exclamation text-amber-500 mr-2"></i>{urgentCred ? `${urgentCred.name || 'Credential'} expires in ${urgentCred.daysLeft} days` : 'Credentials healthy'}</p>
+                                        <p className="text-sm font-semibold theme-text truncate"><i className="fas fa-shield-alt text-amber-500 mr-2"></i>{urgentCred ? `${urgentCred.name || 'Credential'} expires in ${urgentCred.daysLeft} days` : 'Credentials healthy'}</p>
                                         <p className="text-xs theme-text-muted mt-1">Open Credentials</p>
                                     </button>
                                     <button onClick={() => setView('finances')} className="w-full text-left p-3 rounded-xl theme-surface-muted hover:-translate-y-0.5 transition-all duration-200">
-                                        <p className="text-sm font-semibold theme-text truncate"><i className="fas fa-file-invoice-dollar text-red-500 mr-2"></i>{unpaidInvoices} invoice{unpaidInvoices === 1 ? '' : 's'} unpaid</p>
+                                        <p className="text-sm font-semibold theme-text truncate"><i className="fas fa-file-invoice-dollar text-red-500 mr-2"></i>{unpaidInvoices} invoice{unpaidInvoices === 1 ? '' : 's'} awaiting payment</p>
                                         <p className="text-xs theme-text-muted mt-1">Review Finances</p>
+                                    </button>
+                                    <button onClick={() => setView('portal')} className="w-full text-left p-3 rounded-xl theme-surface-muted hover:-translate-y-0.5 transition-all duration-200">
+                                        <p className="text-sm font-semibold theme-text truncate"><i className="fas fa-users text-indigo-500 mr-2"></i>Improve re-bookings with portal follow-up</p>
+                                        <p className="text-xs theme-text-muted mt-1">Open Client Portal</p>
                                     </button>
                                 </div>
                             </div>
@@ -5276,4 +5400,3 @@ const handleUpgrade = (targetPlan = 'pro') => {
 
 </body>
 </html>
-
