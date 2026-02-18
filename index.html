@@ -3200,32 +3200,341 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
 };
 
 
-        const AuthScreen = ({ onAuth, onBack }) => {
+        
+        const COMMON_PASSWORDS = new Set([
+            "password", "password1", "password123", "12345678", "123456789", "qwerty", "qwerty123",
+            "letmein", "welcome", "admin", "iloveyou", "monkey", "dragon", "football", "baseball"
+        ]);
+
+        function evaluatePasswordPolicy(password, email) {
+            const pw = (password || "");
+            const lowerPw = pw.toLowerCase();
+            const emailStr = (email || "").trim().toLowerCase();
+            const emailLocal = emailStr.includes("@") ? emailStr.split("@")[0] : emailStr;
+
+            const hasLower = /[a-z]/.test(pw);
+            const hasUpper = /[A-Z]/.test(pw);
+            const hasNumber = /\d/.test(pw);
+            const hasSymbol = /[^A-Za-z0-9]/.test(pw);
+
+            const categories = [hasLower, hasUpper, hasNumber, hasSymbol].filter(Boolean).length;
+
+            const isCommon = COMMON_PASSWORDS.has(lowerPw);
+            const containsEmail = emailLocal && emailLocal.length >= 3 && lowerPw.includes(emailLocal);
+
+            const meetsMin =
+                !isCommon &&
+                !containsEmail &&
+                ((pw.length >= 12 && categories >= 3) || (pw.length >= 10 && categories >= 4));
+
+            let score = 0;
+            if (pw.length >= 8) score += 1;
+            if (pw.length >= 10) score += 1;
+            if (categories >= 3) score += 1;
+            if (pw.length >= 12 && categories >= 4) score += 1;
+
+            const label = ["Too weak", "Weak", "Okay", "Strong", "Very strong"][Math.max(0, Math.min(4, score))];
+
+            const issues = [];
+            if (!pw) issues.push("Enter a password.");
+            if (pw.length < 10) issues.push("Use at least 10 characters (12+ recommended).");
+            if (!(pw.length >= 12 && categories >= 3) && !(pw.length >= 10 && categories >= 4)) {
+                issues.push("Use upper + lower + number + symbol (or 12+ chars with 3 types).");
+            }
+            if (containsEmail) issues.push("Avoid using your email in your password.");
+            if (isCommon) issues.push("Avoid common passwords.");
+
+            return { score, label, meetsMin, hasLower, hasUpper, hasNumber, hasSymbol, categories, issues, isCommon, containsEmail };
+        }
+
+// --- Auth hardening (client-side) ---
+// NOTE: This is a UI-layer throttle (per-device). It complements server-side controls.
+const AUTH_THROTTLE_STORAGE_KEY = "notaryos_auth_throttle_v1";
+const AUTH_THROTTLE_MAX_FAILS = 5;
+const AUTH_THROTTLE_LOCK_MS = 15 * 60 * 1000;
+const AUTH_THROTTLE_WINDOW_MS = 15 * 60 * 1000;
+
+function normalizeEmail(email) {
+    return (email || "").trim().toLowerCase();
+}
+
+function fnv1a32(input) {
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < input.length; i++) {
+        hash ^= input.charCodeAt(i);
+        hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(16).padStart(8, "0");
+}
+
+function authThrottleKeyForEmail(email) {
+    return `e_${fnv1a32(normalizeEmail(email))}`;
+}
+
+function loadAuthThrottleMap() {
+    try {
+        const raw = localStorage.getItem(AUTH_THROTTLE_STORAGE_KEY);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (e) {
+        return {};
+    }
+}
+
+function saveAuthThrottleMap(map) {
+    try {
+        localStorage.setItem(AUTH_THROTTLE_STORAGE_KEY, JSON.stringify(map || {}));
+    } catch (e) {}
+}
+
+function getAuthThrottleState(email) {
+    const key = authThrottleKeyForEmail(email);
+    const map = loadAuthThrottleMap();
+    const now = Date.now();
+    const state = map[key] || { fails: 0, firstFailAt: 0, lockUntil: 0 };
+
+    if (state.lockUntil && now >= state.lockUntil) {
+        delete map[key];
+        saveAuthThrottleMap(map);
+        return { fails: 0, firstFailAt: 0, lockUntil: 0 };
+    }
+
+    if (state.firstFailAt && now - state.firstFailAt > AUTH_THROTTLE_WINDOW_MS) {
+        delete map[key];
+        saveAuthThrottleMap(map);
+        return { fails: 0, firstFailAt: 0, lockUntil: 0 };
+    }
+
+    return state;
+}
+
+function getAuthLockout(email) {
+    const state = getAuthThrottleState(email);
+    const now = Date.now();
+    const remainingMs = state.lockUntil ? Math.max(0, state.lockUntil - now) : 0;
+    return { locked: remainingMs > 0, remainingMs, fails: state.fails };
+}
+
+function recordAuthFailure(email) {
+    const key = authThrottleKeyForEmail(email);
+    const map = loadAuthThrottleMap();
+    const now = Date.now();
+    const prev = map[key] || { fails: 0, firstFailAt: 0, lockUntil: 0 };
+
+    const inWindow = prev.firstFailAt && (now - prev.firstFailAt) <= AUTH_THROTTLE_WINDOW_MS;
+    const nextFails = inWindow ? (prev.fails || 0) + 1 : 1;
+    const firstFailAt = inWindow ? prev.firstFailAt : now;
+
+    const lockUntil = nextFails >= AUTH_THROTTLE_MAX_FAILS ? (now + AUTH_THROTTLE_LOCK_MS) : 0;
+    map[key] = { fails: nextFails, firstFailAt, lockUntil };
+    saveAuthThrottleMap(map);
+
+    return map[key];
+}
+
+function clearAuthThrottle(email) {
+    const key = authThrottleKeyForEmail(email);
+    const map = loadAuthThrottleMap();
+    if (map[key]) {
+        delete map[key];
+        saveAuthThrottleMap(map);
+    }
+}
+
+function formatMsAsClock(ms) {
+    const totalSeconds = Math.ceil(ms / 1000);
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${String(seconds).padStart(2, "0")}`;
+}
+
+function humanizeAuthError(err) {
+    const code = err && (err.code || err.name);
+    const msg = (err && err.message) ? String(err.message) : "Authentication failed.";
+    if (!code) return msg;
+
+    const map = {
+        "auth/invalid-email": "That email address looks invalid.",
+        "auth/user-disabled": "This account is disabled.",
+        "auth/user-not-found": "No account found for that email.",
+        "auth/wrong-password": "Incorrect password.",
+        "auth/email-already-in-use": "An account with that email already exists.",
+        "auth/weak-password": "Password is too weak.",
+        "auth/operation-not-allowed": "Email/password sign-in is not enabled for this project.",
+        "auth/too-many-requests": "Too many attempts. Please wait and try again."
+    };
+
+    return map[code] || msg;
+}
+
+const AuthScreen = ({ onAuth, onBack }) => {
             const [isLogin, setIsLogin] = useState(true);
             const [formData, setFormData] = useState({ name: '', email: '', password: '' });
             const [showTermsModal, setShowTermsModal] = useState(false);
             const [error, setError] = useState('');
             const [isLoading, setIsLoading] = useState(false);
             const [showPassword, setShowPassword] = useState(false);
-            const [agreedToTerms, setAgreedToTerms] = useState(false);
+            
+const [agreedToTerms, setAgreedToTerms] = useState(false);
+const [lockoutRemainingMs, setLockoutRemainingMs] = useState(0);
+
+useEffect(() => {
+    if (!isLogin) { 
+        setLockoutRemainingMs(0);
+        return;
+    }
+    const email = normalizeEmail(formData.email);
+    const { locked, remainingMs } = getAuthLockout(email);
+    setLockoutRemainingMs(locked ? remainingMs : 0);
+
+    if (!locked) return;
+
+    const t = setInterval(() => {
+        const { locked: stillLocked, remainingMs: rem } = getAuthLockout(email);
+        setLockoutRemainingMs(stillLocked ? rem : 0);
+        if (!stillLocked) clearInterval(t);
+    }, 1000);
+
+    return () => clearInterval(t);
+}, [isLogin, formData.email]);
+const passwordPolicy = useMemo(
+                () => evaluatePasswordPolicy(formData.password, formData.email),
+                [formData.password, formData.email]
+            );
+
+            
+const isSubmitDisabled =
+    isLoading ||
+    (isLogin && lockoutRemainingMs > 0) ||
+    (!isLogin && (!agreedToTerms || !passwordPolicy.meetsMin));
 
             const handleAuth = async (e) => {
                 e.preventDefault();
                 setError('');
+
+                const normalizedEmail = (formData.email || '').trim().toLowerCase();
+                if (normalizedEmail !== formData.email) {
+                    setFormData((prev) => ({ ...prev, email: normalizedEmail }));
+                }
+
+                if (!isLogin && !passwordPolicy.meetsMin) {
+                    setError(passwordPolicy.issues[0] || 'Please choose a stronger password.');
+                    return;
+                }
 
                 if (!isLogin && !agreedToTerms) {
                     setError('You must agree to the Terms of Service and Privacy Policy to continue.');
                     return;
                 }
 
-                setIsLoading(true);
+const email = normalizeEmail(normalizedEmail);
 
-                // Simulate network request for enterprise UI feel
-                setTimeout(() => {
-                    setIsLoading(false);
-                    onAuth({ id: '1', name: isLogin ? 'User' : formData.name, email: formData.email, plan: 'free', role: 'solo' });
-                }, 800);
-            };
+if (isLogin) {
+    const { locked, remainingMs } = getAuthLockout(email);
+    if (locked) {
+        setError(`Too many attempts. Try again in ${formatMsAsClock(remainingMs)}.`);
+        return;
+    }
+}
+
+setIsLoading(true);
+
+const demoAuthFallback = () => {
+    // Demo-only fallback: keep the app usable even if Firebase email/password isn't enabled.
+    setTimeout(() => {
+        setIsLoading(false);
+        clearAuthThrottle(email);
+        onAuth({
+            id: '1',
+            name: isLogin ? 'User' : formData.name,
+            email,
+            plan: 'free',
+            role: 'solo'
+        });
+    }, 800);
+};
+
+try {
+    if (typeof firebase !== 'undefined' && firebase.auth) {
+        if (isLogin) {
+            const result = await firebase.auth().signInWithEmailAndPassword(email, formData.password);
+            const u = result && result.user ? result.user : firebase.auth().currentUser;
+            clearAuthThrottle(email);
+            setIsLoading(false);
+            onAuth({
+                id: u ? u.uid : '1',
+                uid: u ? u.uid : undefined,
+                name: (u && u.displayName) ? u.displayName : 'User',
+                email,
+                plan: 'free',
+                role: 'solo'
+            });
+            return;
+        }
+
+        const created = await firebase.auth().createUserWithEmailAndPassword(email, formData.password);
+        const u = created && created.user ? created.user : firebase.auth().currentUser;
+        if (u && formData.name) {
+            try { await u.updateProfile({ displayName: formData.name }); } catch (e) {}
+        }
+        clearAuthThrottle(email);
+        setIsLoading(false);
+        onAuth({
+            id: u ? u.uid : '1',
+            uid: u ? u.uid : undefined,
+            name: formData.name || ((u && u.displayName) ? u.displayName : 'User'),
+            email,
+            plan: 'free',
+            role: 'solo'
+        });
+        return;
+    }
+
+    demoAuthFallback();
+} catch (err) {
+    if (isLogin) {
+        recordAuthFailure(email);
+        const { locked, remainingMs } = getAuthLockout(email);
+        if (locked) {
+            setError(`Too many attempts. Try again in ${formatMsAsClock(remainingMs)}.`);
+        } else {
+            setError(humanizeAuthError(err));
+        }
+    } else {
+        setError(humanizeAuthError(err));
+    }
+    setIsLoading(false);
+}
+};
+
+
+
+const handlePasswordReset = async (e) => {
+    e.preventDefault();
+    setError('');
+
+    const email = normalizeEmail(formData.email);
+    if (!email) {
+        setError("Enter your email above, then click 'Forgot password?'");
+        return;
+    }
+
+    if (typeof firebase === 'undefined' || !firebase.auth) {
+        setError("Password reset isn't available in demo mode (Firebase not connected).");
+        return;
+    }
+
+    setIsLoading(true);
+    try {
+        await firebase.auth().sendPasswordResetEmail(email);
+        showToast("Password reset email sent. Check your inbox.", "success");
+    } catch (err) {
+        setError(humanizeAuthError(err));
+    } finally {
+        setIsLoading(false);
+    }
+};
 
             const handleGoogleAuth = async () => {
                 setIsLoading(true);
@@ -3347,6 +3656,10 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                                     <input
                                         type="email"
                                         required
+                                        autoComplete="email"
+                                        inputMode="email"
+                                        spellCheck={false}
+                                        autoCapitalize="none"
                                         className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder-slate-400"
                                         value={formData.email}
                                         onChange={e => setFormData({...formData, email: e.target.value})}
@@ -3359,15 +3672,23 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                                     <div className="flex justify-between items-center mb-1.5">
                                         <label className="block text-sm font-medium text-slate-700">Password</label>
                                         {isLogin && (
-                                            <a href="#" onClick={(e) => { e.preventDefault(); showToast("Password reset link sent!", "success"); }} className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline">
+                                            <a href="#" onClick={handlePasswordReset} className="text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline">
                                                 Forgot password?
                                             </a>
                                         )}
                                     </div>
-                                    <div className="relative">
+                                    
+{isLogin && lockoutRemainingMs > 0 && (
+    <div className="mt-2 text-xs text-red-600 font-medium">
+        Too many attempts. Try again in {formatMsAsClock(lockoutRemainingMs)}.
+    </div>
+)}
+<div className="relative">
                                         <input
                                             type={showPassword ? "text" : "password"}
                                             required
+                                            autoComplete={isLogin ? "current-password" : "new-password"}
+                                            minLength={isLogin ? 1 : 10}
                                             className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all outline-none text-slate-900 placeholder-slate-400 pr-12"
                                             value={formData.password}
                                             onChange={e => setFormData({...formData, password: e.target.value})}
@@ -3384,6 +3705,52 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
                                         </button>
                                     </div>
                                 </div>
+
+                                {!isLogin && (
+                                    <div className="mt-2">
+                                        <div className="flex items-center justify-between text-xs text-slate-500">
+                                            <span>Password strength</span>
+                                            <span className={`font-semibold ${
+                                                passwordPolicy.score >= 3 ? 'text-emerald-600' : passwordPolicy.score === 2 ? 'text-amber-600' : 'text-red-600'
+                                            }`}>
+                                                {passwordPolicy.label}
+                                            </span>
+                                        </div>
+                                        <div className="mt-2 h-2 rounded-full bg-slate-200 overflow-hidden">
+                                            <div
+                                                className={`h-2 rounded-full transition-all ${
+                                                    passwordPolicy.score >= 3 ? 'bg-emerald-500' : passwordPolicy.score === 2 ? 'bg-amber-500' : 'bg-red-500'
+                                                }`}
+                                                style={{ width: `${Math.min(100, Math.max(5, (passwordPolicy.score / 4) * 100))}%` }}
+                                            />
+                                        </div>
+
+                                        <ul className="mt-3 text-xs text-slate-600 space-y-1">
+                                            <li className="flex items-center gap-2">
+                                                <i className={`fas ${formData.password.length >= 10 ? 'fa-check-circle text-emerald-500' : 'fa-circle text-slate-300'}`}></i>
+                                                10+ characters (12+ recommended)
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <i className={`fas ${passwordPolicy.categories >= 3 ? 'fa-check-circle text-emerald-500' : 'fa-circle text-slate-300'}`}></i>
+                                                Mix character types (upper/lower/number/symbol)
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <i className={`fas ${!passwordPolicy.containsEmail ? 'fa-check-circle text-emerald-500' : 'fa-times-circle text-red-500'}`}></i>
+                                                Doesn’t include your email
+                                            </li>
+                                            <li className="flex items-center gap-2">
+                                                <i className={`fas ${!passwordPolicy.isCommon ? 'fa-check-circle text-emerald-500' : 'fa-times-circle text-red-500'}`}></i>
+                                                Not a common password
+                                            </li>
+                                        </ul>
+
+                                        {!passwordPolicy.meetsMin && formData.password && (
+                                            <div className="mt-3 text-xs text-red-600">
+                                                {passwordPolicy.issues[0] || 'Please choose a stronger password.'}
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
 
                                 {!isLogin && (
                                     <div className="flex items-start gap-3 mt-4">
@@ -3405,7 +3772,7 @@ const TrialExpiredScreen = ({ trialEndsAt, onUpgrade, onOpenBillingPortal, onLog
 
                                 <button
                                     type="submit"
-                                    disabled={isLoading}
+                                    disabled={isSubmitDisabled}
                                     className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-all shadow-sm hover:shadow-md active:scale-[0.98] disabled:opacity-70 disabled:active:scale-100 flex justify-center items-center h-[52px] mt-2"
                                 >
                                     {isLoading ? (
