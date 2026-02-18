@@ -2162,76 +2162,60 @@ const SetupChecklistCard = ({ user, appointments, setView, onOpenSettings }) => 
 
 const headerRef = useRef(null);
 const mobileMenuRef = useRef(null);
-const pageRef = useRef(null);
-const scrollParentRef = useRef(null);
-
 const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-const [activeSection, setActiveSection] = useState("home");
-const [isHeaderShrunk, setIsHeaderShrunk] = useState(false);
+
+const desktopNavRef = useRef(null);
+const navItemRefs = useRef({});
+const [activeSection, setActiveSection] = useState('home');
+const [underlineStyle, setUnderlineStyle] = useState({ left: 0, width: 0, opacity: 0 });
+const [isHeaderCompact, setIsHeaderCompact] = useState(false);
 
 const getScrollParent = (node) => {
-    if (!node) return window;
-    var parent = node.parentElement;
-    while (parent) {
-        var style = window.getComputedStyle(parent);
-        var overflowY = style ? style.overflowY : "";
-        var canScroll = overflowY === "auto" || overflowY === "scroll";
-        if (canScroll && parent.scrollHeight > parent.clientHeight) return parent;
-        parent = parent.parentElement;
+    let el = node?.parentElement;
+    while (el) {
+        const style = window.getComputedStyle(el);
+        const overflowY = style.overflowY;
+        const canScroll = (overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight;
+        if (canScroll) return el;
+        el = el.parentElement;
     }
-    return window;
+    return document.scrollingElement || document.documentElement;
 };
 
-const getHeaderHeight = () => {
-    if (!headerRef.current) return 0;
-    var rect = headerRef.current.getBoundingClientRect();
-    return rect && rect.height ? rect.height : 0;
+const setHashSilently = (id) => {
+    try { history.replaceState(history.state, '', `#${id}`); } catch (e) {}
 };
 
-const scrollToSection = (sectionId, opts) => {
-    if (!sectionId) return;
-    var el = document.getElementById(sectionId);
+const scrollToSection = (sectionId, opts = {}) => {
+    const el = document.getElementById(sectionId);
     if (!el) return;
 
-    var scrollParent = scrollParentRef.current || window;
-    var headerH = getHeaderHeight();
-    var extra = (opts && typeof opts.extraOffset === "number") ? opts.extraOffset : 12;
+    const scrollParent = getScrollParent(el);
+    const headerH = headerRef.current ? headerRef.current.getBoundingClientRect().height : 0;
+    const extra = typeof opts.extraOffset === 'number' ? opts.extraOffset : 12;
 
-    // Update hash without default jump.
-    try {
-        if (window.location.hash !== "#" + sectionId) {
-            history.replaceState(null, "", "#" + sectionId);
-        }
-    } catch (e) {}
+    const elTop = el.getBoundingClientRect().top;
+    const parentTop = scrollParent === (document.scrollingElement || document.documentElement)
+        ? 0
+        : scrollParent.getBoundingClientRect().top;
 
-    if (scrollParent === window) {
-        var y = el.getBoundingClientRect().top + (window.pageYOffset || document.documentElement.scrollTop || 0) - headerH - extra;
-        window.scrollTo({ top: Math.max(0, y), behavior: "smooth" });
-    } else {
-        var parentRect = scrollParent.getBoundingClientRect();
-        var elRect = el.getBoundingClientRect();
-        var top = (elRect.top - parentRect.top) + scrollParent.scrollTop - headerH - extra;
-        scrollParent.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
-    }
+    const currentScroll = scrollParent.scrollTop;
+    const target = currentScroll + (elTop - parentTop) - headerH - extra;
 
+    scrollParent.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+    if (!opts.skipHash) setHashSilently(sectionId);
     setIsMobileMenuOpen(false);
 };
-
-useEffect(() => {
-    scrollParentRef.current = getScrollParent(pageRef.current);
-}, []);
 
 useEffect(() => {
     if (!isMobileMenuOpen) return;
 
     const onKeyDown = (e) => {
-        var key = e && e.key ? e.key : "";
-        var code = e && typeof e.keyCode === "number" ? e.keyCode : -1;
-        if (key === "Escape" || key === "Esc" || code === 27) setIsMobileMenuOpen(false);
+        if (e.key === "Escape" || e.key === "Esc" || e.keyCode === 27) setIsMobileMenuOpen(false);
     };
 
     const onPointerDown = (e) => {
-        var menu = mobileMenuRef.current;
+        const menu = mobileMenuRef.current;
         if (!menu) return;
         if (menu.contains(e.target)) return;
         setIsMobileMenuOpen(false);
@@ -2239,7 +2223,7 @@ useEffect(() => {
 
     document.addEventListener("keydown", onKeyDown);
     document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("touchstart", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown, { passive: true });
 
     return () => {
         document.removeEventListener("keydown", onKeyDown);
@@ -2249,66 +2233,78 @@ useEffect(() => {
 }, [isMobileMenuOpen]);
 
 useEffect(() => {
-    // Deep-link support on load + hash changes.
-    const onHash = () => {
-        var id = (window.location.hash || "").replace("#", "");
-        if (!id) return;
-        // Wait a tick for layout.
-        setTimeout(() => scrollToSection(id, { extraOffset: 16 }), 0);
-    };
-
-    onHash();
-    window.addEventListener("hashchange", onHash);
-    return () => window.removeEventListener("hashchange", onHash);
-}, []);
-
-useEffect(() => {
-    // Header shrink + scrollspy.
-    var scrollParent = scrollParentRef.current || window;
+    const homeEl = document.getElementById('home') || document.body;
+    const root = getScrollParent(homeEl);
 
     const onScroll = () => {
-        var y = (scrollParent === window)
-            ? (window.pageYOffset || document.documentElement.scrollTop || 0)
-            : (scrollParent.scrollTop || 0);
-        setIsHeaderShrunk(y > 8);
+        const y = root.scrollTop || 0;
+        setIsHeaderCompact(y > 8);
     };
 
     onScroll();
-
-    if (scrollParent === window) window.addEventListener("scroll", onScroll, { passive: true });
-    else scrollParent.addEventListener("scroll", onScroll, { passive: true });
-
-    var sectionIds = ["home", "features", "how", "pricing", "faq"];
-    var observed = sectionIds.map((id) => document.getElementById(id)).filter(Boolean);
-
-    var observer = null;
-    if (typeof IntersectionObserver !== "undefined" && observed.length) {
-        observer = new IntersectionObserver(
-            (entries) => {
-                var best = null;
-                for (var i = 0; i < entries.length; i++) {
-                    var en = entries[i];
-                    if (!en.isIntersecting) continue;
-                    if (!best || en.intersectionRatio > best.intersectionRatio) best = en;
-                }
-                if (best && best.target && best.target.id) setActiveSection(best.target.id);
-            },
-            {
-                root: scrollParent === window ? null : scrollParent,
-                rootMargin: "-" + Math.round(getHeaderHeight() + 16) + "px 0px -60% 0px",
-                threshold: [0.1, 0.2, 0.35, 0.5, 0.65, 0.8],
-            }
-        );
-
-        for (var j = 0; j < observed.length; j++) observer.observe(observed[j]);
-    }
-
-    return () => {
-        if (scrollParent === window) window.removeEventListener("scroll", onScroll);
-        else scrollParent.removeEventListener("scroll", onScroll);
-        if (observer) observer.disconnect();
-    };
+    root.addEventListener('scroll', onScroll, { passive: true });
+    return () => root.removeEventListener('scroll', onScroll);
 }, []);
+
+useEffect(() => {
+    const ids = ['home', 'features', 'how', 'pricing', 'faq'];
+    const targets = ids.map((id) => document.getElementById(id)).filter(Boolean);
+    if (!targets.length) return;
+
+    const root = getScrollParent(targets[0]);
+    const io = new IntersectionObserver((entries) => {
+        const visible = entries
+            .filter((e) => e.isIntersecting)
+            .sort((a, b) => (b.intersectionRatio - a.intersectionRatio));
+        if (!visible.length) return;
+        const id = visible[0].target.id;
+        if (id) setActiveSection(id);
+    }, {
+        root: root === (document.scrollingElement || document.documentElement) ? null : root,
+        threshold: [0.2, 0.35, 0.5, 0.65, 0.8],
+        rootMargin: '-20% 0px -55% 0px'
+    });
+
+    targets.forEach((t) => io.observe(t));
+    return () => io.disconnect();
+}, []);
+
+useEffect(() => {
+    const update = () => {
+        const nav = desktopNavRef.current;
+        const item = navItemRefs.current[activeSection];
+        if (!nav || !item) {
+            setUnderlineStyle((s) => ({ ...s, opacity: 0 }));
+            return;
+        }
+        const nb = nav.getBoundingClientRect();
+        const ib = item.getBoundingClientRect();
+        setUnderlineStyle({
+            left: Math.max(0, ib.left - nb.left),
+            width: Math.max(0, ib.width),
+            opacity: 1
+        });
+    };
+
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+}, [activeSection]);
+
+useEffect(() => {
+    const run = () => {
+        const id = (window.location.hash || '').replace('#', '');
+        if (!id) return;
+        requestAnimationFrame(() => scrollToSection(id, { skipHash: true }));
+    };
+
+    run();
+    window.addEventListener('hashchange', run);
+    return () => window.removeEventListener('hashchange', run);
+}, []);
+
+
+
 
 
             const faqItems = [
@@ -2350,14 +2346,11 @@ useEffect(() => {
             };
 
             return (
-                <div id="home" ref={pageRef} className="min-h-screen landing-bg text-white font-inter flex flex-col relative overflow-x-hidden pt-20">
+                <div className="min-h-screen landing-bg text-white font-inter flex flex-col relative overflow-x-hidden pt-20">
 
 {/* Top Navigation */}
-<header
-    ref={headerRef}
-    className={"fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur border-b border-slate-800 transition-all duration-200 " + (isHeaderShrunk ? "shadow-lg shadow-black/20" : "")}
->
-    <div className={"max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between transition-all duration-200 " + (isHeaderShrunk ? "h-14" : "h-16")}>
+<header ref={headerRef} className="fixed top-0 left-0 right-0 z-50 bg-slate-950/80 backdrop-blur border-b border-slate-800">
+    <div className={`max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between transition-all duration-200 ${isHeaderCompact ? "h-14" : "h-16"}`}>
         <button type="button" onClick={() => scrollToSection("home")} className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-teal-500/15 border border-teal-500/20 flex items-center justify-center">
                 <i className="fas fa-feather-alt text-teal-400"></i>
@@ -2369,7 +2362,7 @@ useEffect(() => {
         </button>
 
         {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-1">
+        <nav ref={desktopNavRef} className="hidden md:flex items-center gap-2 relative">
             {[
                 ["features", "Features"],
                 ["how", "How it works"],
@@ -2380,16 +2373,14 @@ useEffect(() => {
                     key={id}
                     type="button"
                     onClick={() => scrollToSection(id)}
-                    className={
-                        "px-3 py-2 rounded-lg text-sm transition " +
-                        (activeSection === id
-                            ? "bg-white/10 text-white"
-                            : "text-slate-200 hover:text-white hover:bg-white/5")
-                    }
+                    ref={(el) => { navItemRefs.current[id] = el; }}
+                    className={`px-3 py-2 rounded-lg text-sm transition ${activeSection === id ? "text-white bg-white/10" : "text-slate-200 hover:text-white hover:bg-white/5"}`}
                 >
                     {label}
                 </button>
             ))}
+        {/* underline */}
+            <span aria-hidden="true" className="absolute -bottom-[1px] h-[2px] bg-teal-400 rounded-full transition-all duration-300" style={{ left: underlineStyle.left, width: underlineStyle.width, opacity: underlineStyle.opacity }} />
         </nav>
 
         <div className="flex items-center gap-2">
@@ -2407,7 +2398,7 @@ useEffect(() => {
                 className="md:hidden inline-flex items-center justify-center w-10 h-10 rounded-lg hover:bg-white/5 transition"
                 aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
                 aria-expanded={isMobileMenuOpen}
-                onClick={() => setIsMobileMenuOpen(function (v) { return !v; })}
+                onClick={() => setIsMobileMenuOpen(v => !v)}
             >
                 <i className={isMobileMenuOpen ? "fas fa-times text-xl" : "fas fa-bars text-xl"}></i>
             </button>
@@ -2415,40 +2406,34 @@ useEffect(() => {
     </div>
 
     {/* Mobile menu */}
-    <div
-        className={
-            "md:hidden border-t border-slate-800 bg-slate-950/90 overflow-hidden transition-all duration-200 " +
-            (isMobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0 pointer-events-none")
-        }
-    >
-        <div ref={mobileMenuRef} className={"max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-col gap-1 transition-transform duration-200 " + (isMobileMenuOpen ? "translate-y-0" : "-translate-y-2")}>
-            {[
-                ["features", "Features"],
-                ["how", "How it works"],
-                ["pricing", "Pricing"],
-                ["faq", "FAQ"],
-            ].map(([id, label]) => (
-                <a
-                    key={id}
-                    href={"#" + id}
-                    onClick={(e) => { e.preventDefault(); scrollToSection(id); }}
-                    className={
-                        "w-full text-left px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/5 transition " +
-                        (activeSection === id ? "bg-white/10" : "")
-                    }
+    {isMobileMenuOpen && (
+        <div className="md:hidden border-t border-slate-800 bg-slate-950/90">
+            <div ref={mobileMenuRef} className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex flex-col gap-1">
+                {[
+                    ["features", "Features"],
+                    ["how", "How it works"],
+                    ["pricing", "Pricing"],
+                    ["faq", "FAQ"],
+                ].map(([id, label]) => (
+                    <button
+                        key={id}
+                        type="button"
+                        onClick={() => scrollToSection(id)}
+                        className="w-full text-left px-3 py-2 rounded-lg text-slate-200 hover:text-white hover:bg-white/5 transition"
+                    >
+                        {label}
+                    </button>
+                ))}
+                <button
+                    type="button"
+                    onClick={() => scrollToSection("pricing")}
+                    className="mt-2 w-full px-4 py-2 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition"
                 >
-                    {label}
-                </a>
-            ))}
-            <a
-                href="#pricing"
-                onClick={(e) => { e.preventDefault(); scrollToSection("pricing"); }}
-                className="mt-2 w-full px-4 py-2 rounded-lg bg-teal-500 hover:bg-teal-400 text-slate-900 font-bold transition text-center"
-            >
-                Get started
-            </a>
+                    Get started
+                </button>
+            </div>
         </div>
-    </div>
+    )}
 </header>
                     <div id="home"></div>
 
@@ -5488,7 +5473,9 @@ const handleUpgrade = (targetPlan = 'pro') => {
                         onSettings={() => setShowSettings(true)}
                     />
                     <main className="flex-1 flex flex-col app-viewport md:ml-64 relative theme-app-bg no-x-overflow px-safe">
-                        <Header title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} onNotify={handleNotify} onSyncNow={handleSyncNow} />
+                        {!(currentView === 'landing' || currentView === 'auth') && (
+                            <Header title={currentView.charAt(0).toUpperCase() + currentView.slice(1)} onNotify={handleNotify} onSyncNow={handleSyncNow} />
+                        )}
                         <div className="flex-1 overflow-y-auto relative no-x-overflow pb-safe" style={{ paddingBottom: "calc(96px + env(safe-area-inset-bottom))" }}><div className="app-container">{renderView()}</div></div>
                         <MobileNav currentView={viewLabel(currentView)} setView={setCurrentView} onOpenMenu={() => setShowMobileMenu(true)} user={user} onLockedFeature={handleLockedFeature} />
                     
